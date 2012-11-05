@@ -1,0 +1,9 @@
+@import url("commonIcons.css");
+
+.dformaLabel {
+    text-align: left;
+    width: 100px;
+}
+.dformaLabel:hover {
+    background-color: gold;
+}
