@@ -297,6 +297,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 					}
 				break;
 				case "checkbox":
+					c.checked = (c.value==true);
 					dj = new dijit.form.CheckBox(c);
 				break;
 				case "select":
@@ -326,6 +327,10 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				case "multiselect":
 				case "multiselect_freekey":
 					dj = new dforma.MultiSelect(c);
+				break;
+				case "color":
+					dojo.require("dojox.widget.ColorPicker");
+					dj = new dojox.widget.ColorPicker(c);
 				break;
 				default:
 				break;
@@ -373,6 +378,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				placeHolder:c.name.toProperCase(),
 				label:c.name.toProperCase(),
 				onChange:function(){
+					if(c.type=="checkbox") this.value = (this.checked == true);
 					controls[i].value = this.value;
 					if(c.controller) {
 						self.rebuild();
