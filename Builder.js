@@ -330,8 +330,8 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				break;
 				case "color":
 					var dj = dojo;
-					dj.require("dojox.widget.ColorPicker");
-					co = new dojox.widget.ColorPicker(c);
+					dj.require("dforma.ColorPickerBox");
+					co = new dforma.ColorPickerBox(c);
 				break;
 				default:
 				break;
