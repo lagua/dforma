@@ -131,7 +131,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 		var optional = [];
 		var hideOptional = this.hideOptional;
 		function render(c) {
-			var dj,l,edit,del;
+			var co,l,edit,del;
 			if(c.edit || c["delete"]) {
 				l = new dforma.Label({
 					label:c.label+":",
@@ -291,17 +291,17 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				case "password":
 				case "hidden":
 					if(c.required) {
-						dj = new dijit.form.ValidationTextBox(c);
+						co = new dijit.form.ValidationTextBox(c);
 					} else {
-						dj = new dijit.form.TextBox(c);
+						co = new dijit.form.TextBox(c);
 					}
 				break;
 				case "checkbox":
 					c.checked = (c.value==true);
-					dj = new dijit.form.CheckBox(c);
+					co = new dijit.form.CheckBox(c);
 				break;
 				case "select":
-					dj = new dijit.form.FilteringSelect(dojo.mixin({
+					co = new dijit.form.FilteringSelect(dojo.mixin({
 						store: new dojo.data.ObjectStore({
 							objectStore: new dojo.store.Memory({
 								data:c.options
@@ -313,7 +313,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 					},c));
 					break;
 				case "combo":
-					dj = new dijit.form.ComboBox(dojo.mixin({
+					co = new dijit.form.ComboBox(dojo.mixin({
 						store: new dojo.data.ObjectStore({
 							objectStore: new dojo.store.Memory({
 								data:c.options
@@ -326,38 +326,39 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 					break;
 				case "multiselect":
 				case "multiselect_freekey":
-					dj = new dforma.MultiSelect(c);
+					co = new dforma.MultiSelect(c);
 				break;
 				case "color":
-					dojo.require("dojox.widget.ColorPicker");
-					dj = new dojox.widget.ColorPicker(c);
+					var dj = dojo;
+					dj.require("dojox.widget.ColorPicker");
+					co = new dojox.widget.ColorPicker(c);
 				break;
 				default:
 				break;
 			}
 			if(c.controller) {
-				controller = dj;
+				controller = co;
 				self.controllerWidget = controller;
 			}
 			if(c.type=="hidden") {
-				maingroup.addChild(dj);
+				maingroup.addChild(co);
 			} else if(c["delete"]) {
-				l.addChild(dj);
+				l.addChild(co);
 				l.addChild(del);
 				//l.startup();
 			} else {
 				l = new dforma.Label({
 					label:c.label+":",
-					child:dj,
+					child:co,
 					title:c.description || c.label,
 					style:"display:block;margin:5px"
 				});
 				if(c.type=="multiselect_freekey") {
 					l.child = null;
-					l.addChild(dj);
+					l.addChild(co);
 					l.addChild(new dijit.form.TextBox({
 						onChange:function(val){
-							if(val) dj.addOption({value:val,label:val,selected:true});
+							if(val) co.addOption({value:val,label:val,selected:true});
 							this.set("value","");
 						},
 						onBlur:function(){
