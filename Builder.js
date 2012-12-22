@@ -113,6 +113,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 		} else {
 			data = this.data;
 		}
+		var dj = dojo;
 		this.destroyDescendants();
 		var maingroup = new dforma.Group();
 		this.addChild(maingroup);
@@ -329,7 +330,10 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 					co = new dforma.MultiSelect(c);
 				break;
 				case "color":
-					var dj = dojo;
+					dj.require("dojox.widget.ColorPicker");
+					co = new dojox.widget.ColorPicker(c);
+				break;
+				case "colorpicker":
 					dj.require("dforma.ColorPickerBox");
 					co = new dforma.ColorPickerBox(c);
 				break;
