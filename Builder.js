@@ -329,13 +329,17 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				case "multiselect_freekey":
 					co = new dforma.MultiSelect(c);
 				break;
-				case "color":
+				case "colorpicker":
 					dj.require("dojox.widget.ColorPicker");
 					co = new dojox.widget.ColorPicker(c);
 				break;
-				case "colorpicker":
-					dj.require("dforma.ColorPickerBox");
-					co = new dforma.ColorPickerBox(c);
+				case "color":
+					dj.require("dforma.ColorPaletteBox");
+					co = new dforma.ColorPaletteBox(c);
+				break;
+				case "colorpalette":
+					dj.require("dlagua.w.ColorPalette");
+					co = new dlagua.w.ColorPalette(c);
 				break;
 				default:
 				break;
@@ -344,6 +348,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				controller = co;
 				self.controllerWidget = controller;
 			}
+			c.widget = co;
 			if(c.type=="hidden") {
 				maingroup.addChild(co);
 			} else if(c["delete"]) {

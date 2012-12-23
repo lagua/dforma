@@ -32,6 +32,8 @@ dojo.declare(
 		//		Name of the popup widget class used to select a date/time.
 		//		Subclasses should specify this.
 		popupClass: "", // default is no popup = text only
+		
+		popupProps: null,
 
 		buildRendering: function(){
 			this.inherited(arguments);
@@ -72,19 +74,20 @@ dojo.declare(
 			var PopupProto = dojo.getObject(this.popupClass, false),
 				textBox = this,
 				value = this.get("value");
-			this.dropDown = new PopupProto({
-					onChange: function(value){
-						// this will cause InlineEditBox and other handlers to do stuff so make sure it's last
-						dforma._DropDownBox.superclass._setValueAttr.call(textBox, value, true);
-					},
-					id: this.id + "_popup",
-					dir: textBox.dir,
-					lang: textBox.lang,
-					value: value,
-					currentFocus: !this._isInvalid(value) ? value : this.dropDownDefaultValue,
-					constraints: textBox.constraints,
-					filterString: textBox.filterString, // for TimeTextBox, to filter times shown
-				});
+			var props = dojo.mixin(this.popupProps,{
+				onChange: function(value){
+					// this will cause InlineEditBox and other handlers to do stuff so make sure it's last
+					dforma._DropDownBox.superclass._setValueAttr.call(textBox, value, true);
+				},
+				id: this.id + "_popup",
+				dir: textBox.dir,
+				lang: textBox.lang,
+				value: value,
+				currentFocus: !this._isInvalid(value) ? value : this.dropDownDefaultValue,
+				constraints: textBox.constraints,
+				filterString: textBox.filterString, // for TimeTextBox, to filter times shown
+			});
+			this.dropDown = new PopupProto(props);
 
 			this.inherited(arguments);
 		},
