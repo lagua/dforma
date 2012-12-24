@@ -131,7 +131,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 		});
 		var optional = [];
 		var hideOptional = this.hideOptional;
-		function render(c) {
+		function render(c,i,controls) {
 			var co,l,edit,del;
 			if(c.edit || c["delete"]) {
 				l = new dforma.Label({
@@ -341,6 +341,9 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 					dj.require("dlagua.w.ColorPalette");
 					co = new dlagua.w.ColorPalette(c);
 				break;
+				case "switch":
+					
+				break;
 				default:
 				break;
 			}
@@ -348,7 +351,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				controller = co;
 				self.controllerWidget = controller;
 			}
-			c.widget = co;
+			controls[i].widget = co;
 			if(c.type=="hidden") {
 				maingroup.addChild(co);
 			} else if(c["delete"]) {
@@ -397,7 +400,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 			},c);
 			if(c.required || !hideOptional || c.hasOwnProperty("value") || c.hasOwnProperty("checked")) {
 				if(!c.required && self.allowOptionalDeletion) c["delete"] = true;
-				render(c);
+				render(c,i,controls);
 			} else {
 				c["delete"] = true;
 				optional.push(c);
@@ -428,7 +431,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 							if(c.name==val) {
 								isOption = true;
 								index = i;
-								render(c);
+								render(c,i,controls);
 							}
 						});
 						if(index>-1) optional.splice(index,1);
@@ -448,7 +451,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 								if(!controller.item.properties) controller.item.properties = {};
 								controller.item.properties[val] = {};
 							}
-							render(c);
+							render(c,i,controls);
 						}
 						if(optional.length || self.allowFreeKey) {
 							self.addChild(add);
