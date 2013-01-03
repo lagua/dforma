@@ -1,9 +1,19 @@
 .dformaAddIcon {
-	background:url("images/icons/add.png") repeat scroll 0 0 transparent;
+	background:url("images/icons/add.png") repeat scroll 0 0 transparent !important;
 }
 .dformaDeleteIcon {
-	background:url("images/icons/delete.png") repeat scroll 0 0 transparent;
+	background:url("images/icons/delete.png") repeat scroll 0 0 transparent !important;
 }
 .dformaEditIcon {
-	background:url("images/icons/edit.png") repeat scroll 0 0 transparent;
+	background:url("images/icons/edit.png") repeat scroll 0 0 transparent !important;
+}
+
+.dijitDisabled .dformaAddIcon {
+	background:url("images/icons/disabled/add.png") repeat scroll 0 0 transparent !important;
+}
+.dijitDisabled .dformaDeleteIcon {
+	background:url("images/icons/disabled/delete.png") repeat scroll 0 0 transparent !important;
+}
+.dijitDisabled .dformaEditIcon {
+	background:url("images/icons/disabled/edit.png") repeat scroll 0 0 transparent !important;
 }
