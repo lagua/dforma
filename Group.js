@@ -14,5 +14,13 @@ dojo.declare("dforma.Group",[dijit._Widget,dijit._Templated,dijit._Container,dij
 	startup:function(){
 		if(this.label) dojo.style(this.id+"_label","display","inline-block");
 		this.inherited(arguments);
-	}
+	},
+	_setLabelAttr: function(/*String*/ content){
+		// summary:
+		//		Hook for set('label', ...) to work.
+		// description:
+		//		Set the label (text) of the button; takes an HTML string.
+		this._set("label", content);
+		this["labelNode"].innerHTML = content;
+ 	}
 });

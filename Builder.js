@@ -297,6 +297,10 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 						co = new dijit.form.TextBox(c);
 					}
 				break;
+				case "date":
+					dj.require("dijit.form.DateTextBox");
+					co = new dijit.form.DateTextBox(c);
+				break;
 				case "checkbox":
 					c.checked = (c.value==true);
 					co = new dijit.form.CheckBox(c);
