@@ -66,7 +66,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				// TODO: add array type /w options for select
 				// TODO: add default values (for reference only)
 				var type = prop.type=="boolean" ? "checkbox" : "input";
-				if(dojo.isArray(prop.allowedValues) && prop.allowedValues.length) {
+				if(dojo.isArray(prop.enum) && prop.enum.length) {
 					type = "select";
 				}
 				var c = {
@@ -76,7 +76,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				};
 				if(type=="select") {
 					c.options = [];
-					dojo.forEach(prop.allowedValues,function(op) {
+					dojo.forEach(prop.enum,function(op) {
 						c.options.push({id:op});
 					});
 				}
@@ -94,11 +94,11 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 					} else {
 						c.value = data[k];
 					}
-				} else if(prop.hasOwnProperty("defaultValue")) {
+				} else if(prop.hasOwnProperty("default")) {
 					if(type=="checkbox") {
-						c.checked = prop.defaultValue==true;
+						c.checked = prop["default"]==true;
 					} else {
-						c.value = prop.defaultValue;
+						c.value = prop["default"];
 					}
 				}
 				option.controls.push(c);
