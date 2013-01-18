@@ -66,7 +66,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				// TODO: add array type /w options for select
 				// TODO: add default values (for reference only)
 				var type = prop.type=="boolean" ? "checkbox" : "input";
-				if(dojo.isArray(prop.enum) && prop.enum.length) {
+				if(dojo.isArray(prop["enum"]) && prop["enum"].length) {
 					type = "select";
 				}
 				var c = {
@@ -76,7 +76,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				};
 				if(type=="select") {
 					c.options = [];
-					dojo.forEach(prop.enum,function(op) {
+					dojo.forEach(prop["enum"],function(op) {
 						c.options.push({id:op});
 					});
 				}
