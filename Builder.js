@@ -1,23 +1,23 @@
-dojo.provide("dforma.Builder");
-
-dojo.require("dforma.Group");
-dojo.require("dforma.Label");
-dojo.require("dijit.form.Button");
-dojo.require("dijit.form.Form");
-dojo.require("dijit.form.FilteringSelect");
-dojo.require("dijit.form.MultiSelect");
-dojo.require("dijit.form.ComboBox");
-dojo.require("dijit.form.TextBox");
-dojo.require("dijit.form.ValidationTextBox");
-dojo.require("dijit.form.CheckBox");
-dojo.require("dlagua.x.dtl.filter.strings");
-dojo.require("dlagua.c.string.toProperCase");
-dojo.require("dijit._Container");
-
-dojo.require("dojo.store.Memory");
-dojo.require("dojo.data.ObjectStore");
-
-dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
+define([
+	"dojo/_base/declare",
+	"dojo/_base/lang",
+	"dojo/_base/array",
+	"dojo/when",
+	"dojo/keys",
+	"dojo/dom-construct",
+	"dojo/store/Memory",
+	"dforma/Group",
+	"dforma/Label",
+	"dijit/form/_Container",
+	"dijit/form/Form",
+	"dijit/form/Button",
+	"dijit/form/FilteringSelect",
+	"dijit/form/ComboBox",
+	"dijit/form/TextBox",
+	"dlagua/x/dtl/filter/strings",
+	"dlagua/c/string/toProperCase",
+],function(declare,lang,array,when,keys,domConstruct,Memory,Group,Label,_Container,Form,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
+return declare("dforma.Builder",[_Container,Form],{
 	baseClass:"dformaBuilder",
 	controller:null,
 	controllerWidget:null,
@@ -47,7 +47,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 			control.labelAttr = control.searchAttr = "name";
 			this.allowOptionalDeletion = false;
 		}
-		dojo.forEach(schemaList,function(schema){
+		array.forEach(schemaList,function(schema){
 			if(schema["default"]) control["default"] = schema[name];
 			var option = {
 				id:schema[name],
@@ -66,7 +66,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				// TODO: add array type /w options for select
 				// TODO: add default values (for reference only)
 				var type = prop.type=="boolean" ? "checkbox" : "input";
-				if(dojo.isArray(prop["enum"]) && prop["enum"].length) {
+				if(lang.isArray(prop["enum"]) && prop["enum"].length) {
 					type = "select";
 				}
 				var c = {
@@ -76,7 +76,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				};
 				if(type=="select") {
 					c.options = [];
-					dojo.forEach(prop["enum"],function(op) {
+					array.forEach(prop["enum"],function(op) {
 						c.options.push({id:op});
 					});
 				}
@@ -121,17 +121,59 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 		var controller;
 		var self = this;
 		// get the controls of the current controller selection 
-		dojo.forEach(controls,function(c){
+		array.forEach(controls,function(c){
 			if(c.controller) {
 				self.controller = c;
-				dojo.forEach(c.options,function(o){
+				array.forEach(c.options,function(o){
 					if(o.id==c.value && o.controls) controls = controls.concat(o.controls);
 				});
 			}
 		});
 		var optional = [];
 		var hideOptional = this.hideOptional;
-		function render(c,i,controls) {
+		function render(c,i,controls,Widget) {
+			if(!Widget) {
+				var req;
+				switch(c.type) {
+					case "date":
+						req = "dijit/form/DateTextBox";
+					break;
+					case "checkbox":
+						req = "dijit/form/CheckBox";
+					break;
+					case "select":
+						req = "dijit/form/FilteringSelect";
+					case "combo":
+						req = "dijit/form/ComboBox";
+					break;
+					case "multiselect":
+					case "multiselect_freekey":
+						req = "dforma/MultiSelect";
+					break;
+					case "colorpicker":
+						req = "dojox/widget/ColorPicker";
+					break;
+					case "color":
+						req = "dforma/ColorPaletteBox";
+					break;
+					case "colorpalette":
+						req = "dlagua/w/ColorPalette";
+					break;
+					case "switch":
+					break;
+					default:
+						if(c.required) {
+							req = "dijit/form/ValidationTextBox";
+						} else {
+							req = "dijit/form/TextBox";
+						}
+					break;
+				}
+				require([req],function(Widget){
+					render(c,i,controls,Widget);
+				});
+				return;
+			}
 			var co,l,edit,del;
 			if(c.edit || c["delete"]) {
 				l = new dforma.Label({
@@ -141,8 +183,8 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				});
 				maingroup.addChild(l);
 				if(!self.allowOptionalDeletion && c.description) {
-					dojo.create("span",{
-						innerHTML:dlagua.x.dtl.filter.strings.truncatewords_html(c.description,{
+					domConstruct.create("span",{
+						innerHTML:strings.truncatewords_html(c.description,{
 							words:8
 						}),
 						title:c.description,
@@ -150,7 +192,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 					},l.domNode);
 				}
 				if(c.edit) {
-					edit = new dijit.form.Button({
+					edit = new Button({
 						label:"Edit",
 						controller:controller,
 						showLabel:false,
@@ -162,13 +204,13 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 							var bools = [];
 							for(var k in props) {
 								if(c.name==k) {
-									dojo.forEach(c.controls,function(ctrl,i){
+									array.forEach(c.controls,function(ctrl,i){
 										if(ctrl.type=="checkbox") {
 											bools.push(ctrl.name);
 											c.controls[i].checked = props[k][ctrl.name];
 										} else if(ctrl.type=="multiselect_freekey") {
 											var ops = [];
-											dojo.forEach(props[k][ctrl.name],function(op){
+											array.forEach(props[k][ctrl.name],function(op){
 												ops.push({value:op,label:op,selected:true});
 											});
 											c.controls[i].options = ops;
@@ -189,9 +231,9 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 											for(var k in data) {
 												// it may be a group
 												// make all booleans explicit
-												if(dojo.isArray(data[k])) {
-													if(dojo.indexOf(bools,k)>-1) {
-														dojo.forEach(data[k],function(v,i){
+												if(lang.isArray(data[k])) {
+													if(array.indexOf(bools,k)>-1) {
+														array.forEach(data[k],function(v,i){
 															data[k][i] = (v=="on" ? true : false);
 														});
 														if(data[k].length==0) {
@@ -207,9 +249,9 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 											props[c.name] = data;
 											if(c.add) {
 												delete c["add"];
-												controller.item.controls.push(dojo.mixin(c,data));
+												controller.item.controls.push(lang.mixin(c,data));
 											}
-											if(self.store) dojo.when(self.store.put({id:id,properties:props},{incremental:true}),function(res){
+											if(self.store) when(self.store.put({id:id,properties:props},{incremental:true}),function(res){
 											},function(err){
 												if(self.store.onError) self.store.onError(err,"put",{id:id,properties:props},{incremental:true});
 											});
@@ -234,7 +276,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 					l.addChild(edit);
 				}
 				if(c["delete"]) {
-					del = new dijit.form.Button({
+					del = new Button({
 						label:"Delete",
 						showLabel:false,
 						iconClass:"dijitEditorIcon dformaDeleteIcon",
@@ -246,7 +288,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 							for(var k in props) {
 								if(c.name==k) {
 									delete props[k];
-									if(self.store) dojo.when(self.store.put({id:id,properties:props},{incremental:true}),function(res){
+									if(self.store) when(self.store.put({id:id,properties:props},{incremental:true}),function(res){
 									},function(err){
 										if(self.store.onError) self.store.onError(err,"put",{id:id,properties:props},{incremental:true});
 									});
@@ -254,7 +296,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 								}
 							}
 							var index = -1;
-							dojo.forEach(controller.item.controls,function(ctrl,i){
+							array.forEach(controller.item.controls,function(ctrl,i){
 								if(c.name==ctrl.name) {
 									index = i;
 									if(!fromOptions) optional.push(c);
@@ -262,7 +304,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 							});
 							// item could be not in controller
 							if(self.allowOptionalDeletion) {
-								dojo.forEach(controls,function(ctrl,i){
+								array.forEach(controls,function(ctrl,i){
 									if(c.name==ctrl.name) {
 										index = i;
 									}
@@ -287,70 +329,28 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 					return;
 				}
 			}
+			var cc = lang.clone(c);
 			switch(c.type) {
-				case "input":
-				case "password":
-				case "hidden":
-					if(c.required) {
-						co = new dijit.form.ValidationTextBox(c);
-					} else {
-						co = new dijit.form.TextBox(c);
-					}
-				break;
-				case "date":
-					dj.require("dijit.form.DateTextBox");
-					co = new dijit.form.DateTextBox(c);
-				break;
 				case "checkbox":
-					c.checked = (c.value==true);
-					co = new dijit.form.CheckBox(c);
+					cc.checked = (c.value==true);
 				break;
 				case "select":
-					co = new dijit.form.FilteringSelect(dojo.mixin({
-						store: new dojo.data.ObjectStore({
-							objectStore: new dojo.store.Memory({
-								data:c.options
-							})
-						}),
-						searchAttr:"id",
-						labelAttr:"id",
-						autoComplete:true
-					},c));
-					break;
 				case "combo":
-					co = new dijit.form.ComboBox(dojo.mixin({
-						store: new dojo.data.ObjectStore({
-							objectStore: new dojo.store.Memory({
-								data:c.options
-							})
+					cc = lang.mixin({
+						store: new Memory({
+							data:c.options
 						}),
 						searchAttr:"id",
 						labelAttr:"id",
 						autoComplete:true
 					},c));
-					break;
-				case "multiselect":
-				case "multiselect_freekey":
-					co = new dforma.MultiSelect(c);
-				break;
-				case "colorpicker":
-					dj.require("dojox.widget.ColorPicker");
-					co = new dojox.widget.ColorPicker(c);
-				break;
-				case "color":
-					dj.require("dforma.ColorPaletteBox");
-					co = new dforma.ColorPaletteBox(c);
-				break;
-				case "colorpalette":
-					dj.require("dlagua.w.ColorPalette");
-					co = new dlagua.w.ColorPalette(c);
 				break;
 				case "switch":
-					
 				break;
 				default:
 				break;
 			}
+			co = new Widget(cc);
 			if(c.controller) {
 				controller = co;
 				self.controllerWidget = controller;
@@ -372,7 +372,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				if(c.type=="multiselect_freekey") {
 					l.child = null;
 					l.addChild(co);
-					l.addChild(new dijit.form.TextBox({
+					l.addChild(new TextBox({
 						onChange:function(val){
 							if(val) co.addOption({value:val,label:val,selected:true});
 							this.set("value","");
@@ -381,7 +381,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 							this.onChange(this.value);
 						},
 						onKeyPress:function(e) {
-							if(e.charOrCode==dojo.keys.ENTER) {
+							if(e.charOrCode==keys.ENTER) {
 								this.focusNode.blur();
 							}
 						}
@@ -390,8 +390,8 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 				maingroup.addChild(l);
 			} 
 		}
-		dojo.forEach(controls,function(c,i){
-			c = dojo.mixin({
+		array.forEach(controls,function(c,i){
+			c = lang.mixin({
 				placeHolder:c.name.toProperCase(),
 				label:c.name.toProperCase(),
 				onChange:function(){
@@ -414,11 +414,9 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 			var select;
 			function addSelect(){
 				var props = {
-					store: new dojo.data.ObjectStore({
-						objectStore: new dojo.store.Memory({
-							idProperty:"name",
-							data:optional
-						})
+					store: new Memory({
+						idProperty:"name",
+						data:optional
 					}),
 					searchAttr:"name",
 					labelType:"html",
@@ -431,7 +429,7 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 						add.set("disabled",false);
 						var isOption = false;
 						var index = -1;
-						dojo.forEach(optional,function(c,i) {
+						array.forEach(optional,function(c,i) {
 							if(c.name==val) {
 								isOption = true;
 								index = i;
@@ -468,14 +466,14 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 					}
 				};
 				if(self.allowFreeKey) {
-					select = new dijit.form.ComboBox(props);
+					select = new ComboBox(props);
 					self.addChild(select);
 				} else {
-					select = new dijit.form.FilteringSelect(props);
+					select = new FilteringSelect(props);
 					self.addChild(select);
 				}
 			}
-			var add = new dijit.form.Button({
+			var add = new Button({
 				label:"Add optional property",
 				showLabel:false,
 				iconClass:"dijitEditorIcon dformaAddIcon",
@@ -486,16 +484,16 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 			});
 			self.addChild(add);
 		}
-		var cancel = new dijit.form.Button(dojo.mixin({
+		var cancel = new Button(lang.mixin({
 			label:"Cancel",
 			style:"float:right;margin-top:-10px;",
-			onClick:dojo.hitch(this,this.cancel)
+			onClick:lang.hitch(this,this.cancel)
 		},this.data.cancel));
 		this.addChild(cancel);
-		var submit = new dijit.form.Button(dojo.mixin({
+		var submit = new Button(lang.mixin({
 			label:"Ok",
 			style:"float:right;margin-top:-10px;",
-			onClick:dojo.hitch(this,this.submit)
+			onClick:lang.hitch(this,this.submit)
 		},this.data.submit));
 		this.addChild(submit);
 	},
@@ -503,4 +501,5 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 		if(this.data) this.rebuild();
 		this.inherited(arguments);
 	}
+});
 });
