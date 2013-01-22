@@ -1,12 +1,14 @@
-dojo.provide("dforma.Label");
-
-dojo.require("dijit._Widget");
-dojo.require("dijit._Templated");
-dojo.require("dijit._Container");
-dojo.require("dijit._Contained");
-
-dojo.declare("dforma.Label",[dijit._Widget,dijit._Templated,dijit._Container,dijit._Contained],{
-	templateString: "<span class=\"dijit dijitReset dijitInline\" aria-labelledby=\"${id}_label_${position}\"><span style=\"display:none\" class=\"dijitReset dijitInline dijitButtonText dformaLabel\" dojoAttachPoint=\"labelNode_left\" id=\"${id}_label_left\"></span><span id=\"${id}_containerNode\" dojoAttachPoint=\"containerNode\"></span><span dojoAttachPoint=\"labelNode_right\" style=\"display:none\" class=\"dijitReset dijitInline dijitButtonText dformaLabel\" id=\"${id}_label_right\"></span></span>",
+define([
+	"dojo/_base/declare",
+	"dojo/_base/lang",
+	"dojo/dom-style",
+	"dijit/_Widget",
+	"dijit/_TemplatedMixin",
+	"dijit/_Container",
+	"dijit/_Contained"
+],function(declare,lang,domStyle,_Widget,_TemplatedMixin,_Container,_Contained){
+return declare("dforma.Label",[_Widget,_TemplatedMixin,_Container,_Contained],{
+	templateString: "<span class=\"dijit dijitReset dijitInline\" aria-labelledby=\"${id}_label_${position}\"><span style=\"display:none\" class=\"dijitReset dijitInline dijitButtonText dformaLabel\" data-dojo-attach-point=\"labelNode_left\" id=\"${id}_label_left\"></span><span id=\"${id}_containerNode\" data-dojo-attach-point=\"containerNode\"></span><span data-dojo-attach-point=\"labelNode_right\" style=\"display:none\" class=\"dijitReset dijitInline dijitButtonText dformaLabel\" id=\"${id}_label_right\"></span></span>",
 	label: "",
 	position: "left",
 	child: null,
@@ -16,7 +18,7 @@ dojo.declare("dforma.Label",[dijit._Widget,dijit._Templated,dijit._Container,dij
 		this.inherited(arguments);
 	},
  	startup: function(){
-		dojo.style(this.id+"_label_"+this.position,"display","inline-block");
+		domStyle.set(this.id+"_label_"+this.position,"display","inline-block");
 		if(this.child) this.addChild(this.child);
 		this.inherited(arguments);
  	},
@@ -28,4 +30,5 @@ dojo.declare("dforma.Label",[dijit._Widget,dijit._Templated,dijit._Container,dij
 		this._set("label", content);
 		this["labelNode_"+this.position].innerHTML = content;
 	}
+});
 });

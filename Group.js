@@ -1,18 +1,20 @@
 /*
 simple grouping panel for form elements
 */
-dojo.provide("dforma.Group");
-
-dojo.require("dijit._Widget");
-dojo.require("dijit._Templated");
-dojo.require("dijit._Container");
-dojo.require("dijit._Contained");
-
-dojo.declare("dforma.Group",[dijit._Widget,dijit._Templated,dijit._Container,dijit._Contained],{
-	templateString: "<div class=\"dijit dijitReset dformaGroup\" aria-labelledby=\"${id}_label\"><span style=\"display:none\" class=\"dijitReset dijitInline dformaGroupLabel\" dojoAttachPoint=\"labelNode\" id=\"${id}_label\"></span><span id=\"${id}_containerNode\" dojoAttachPoint=\"containerNode\"></span></div>",
+define([
+	"dojo/_base/declare",
+	"dojo/_base/lang",
+	"dojo/dom-style",
+	"dijit/_Widget",
+	"dijit/_TemplatedMixin",
+	"dijit/_Container",
+	"dijit/_Contained"
+],function(declare,lang,domStyle,_Widget,_TemplatedMixin,_Container,_Contained){
+return declare("dforma.Group",[_Widget,_TemplatedMixin,_Container,_Contained],{
+	templateString: "<div class=\"dijit dijitReset dformaGroup\" aria-labelledby=\"${id}_label\"><span style=\"display:none\" class=\"dijitReset dijitInline dformaGroupLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></span><span id=\"${id}_containerNode\" data-dojo-attach-point=\"containerNode\"></span></div>",
 	label: "",
 	startup:function(){
-		if(this.label) dojo.style(this.id+"_label","display","inline-block");
+		if(this.label) domStyle.set(this.id+"_label","display","inline-block");
 		this.inherited(arguments);
 	},
 	_setLabelAttr: function(/*String*/ content){
@@ -23,4 +25,5 @@ dojo.declare("dforma.Group",[dijit._Widget,dijit._Templated,dijit._Container,dij
 		this._set("label", content);
 		this["labelNode"].innerHTML = content;
  	}
+});
 });
