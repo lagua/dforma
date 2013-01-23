@@ -1,16 +1,10 @@
-define("dforma/ColorPickerBox", ["dojo", "dijit", "dojox/widget/ColorPicker", "dforma/_DropDownBox"], function(dojo, dijit) {
+define(["dojo/_base/declare", "dojox/widget/ColorPicker", "dforma/_DropDownBox"], function(declare, ColorPicker,_DropDownBox) {
 
-dojo.declare(
-	"dforma.ColorPickerBox",
-	dforma._DropDownBox,
-	{
-		baseClass: "dijitTextBox dijitComboBox dformaColorPickerBox",
-		dropDownDefaultValue : "#ffffff",
-		value: "#ffffff",
-		popupClass: "dojox.widget.ColorPicker", // default is no popup = text only
-	}
-);
+return declare("dforma.ColorPickerBox",	_DropDownBox,{
+	baseClass: "dijitTextBox dijitComboBox dformaColorPickerBox",
+	dropDownDefaultValue : "#ffffff",
+	value: "#ffffff",
+	popupClass: ColorPicker, // default is no popup = text only
+});
 
-
-return dforma.ColorPickerBox;
 });
