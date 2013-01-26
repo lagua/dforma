@@ -1,8 +1,8 @@
 define([
 	"dojo/_base/declare", // declare
 	"dojo/_base/lang", // lang.getObject
-	"./RangeBoundTextBox",
-	"../_HasDropDown",
+	"dijit/form/RangeBoundTextBox",
+	"dijit/_HasDropDown",
 	"dojo/text!dijit/form/templates/DropDownBox.html"
 ], function(declare, lang, RangeBoundTextBox, _HasDropDown, template){
 	var  _DropDownBox = declare("dforma._DropDownBox", [RangeBoundTextBox, _HasDropDown], {

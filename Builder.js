@@ -8,7 +8,7 @@ define([
 	"dojo/store/Memory",
 	"dforma/Group",
 	"dforma/Label",
-	"dijit/form/_Container",
+	"dijit/_Container",
 	"dijit/form/Form",
 	"dijit/form/Button",
 	"dijit/form/FilteringSelect",
