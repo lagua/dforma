@@ -15,7 +15,7 @@ define([
 	"dijit/form/ComboBox",
 	"dijit/form/TextBox",
 	"dlagua/x/dtl/filter/strings",
-	"dlagua/c/string/toProperCase",
+	"dlagua/c/string/toProperCase"
 ],function(declare,lang,array,when,keys,domConstruct,Memory,Group,Label,_Container,Form,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
 return declare("dforma.Builder",[_Container,Form],{
 	baseClass:"dformaBuilder",
@@ -90,13 +90,13 @@ return declare("dforma.Builder",[_Container,Form],{
 				}
 				if(data && data.hasOwnProperty(k)) {
 					if(type=="checkbox") {
-						c.checked = data[k]==true;
+						c.checked = data[k]===true;
 					} else {
 						c.value = data[k];
 					}
 				} else if(prop.hasOwnProperty("default")) {
 					if(type=="checkbox") {
-						c.checked = prop["default"]==true;
+						c.checked = prop["default"]===true;
 					} else {
 						c.value = prop["default"];
 					}
@@ -143,6 +143,7 @@ return declare("dforma.Builder",[_Container,Form],{
 					break;
 					case "select":
 						req = "dijit/form/FilteringSelect";
+					break;
 					case "combo":
 						req = "dijit/form/ComboBox";
 					break;
@@ -236,7 +237,7 @@ return declare("dforma.Builder",[_Container,Form],{
 														array.forEach(data[k],function(v,i){
 															data[k][i] = (v=="on" ? true : false);
 														});
-														if(data[k].length==0) {
+														if(data[k].length===0) {
 															data[k] = false;
 														} else if(data[k].length<2) {
 															data[k] = data[k][0];
@@ -332,7 +333,7 @@ return declare("dforma.Builder",[_Container,Form],{
 			var cc = lang.clone(c);
 			switch(c.type) {
 				case "checkbox":
-					cc.checked = (c.value==true);
+					cc.checked = (c.value===true);
 				break;
 				case "select":
 				case "combo":
@@ -343,7 +344,7 @@ return declare("dforma.Builder",[_Container,Form],{
 						searchAttr:"id",
 						labelAttr:"id",
 						autoComplete:true
-					},c));
+					},c);
 				break;
 				case "switch":
 				break;
@@ -395,7 +396,7 @@ return declare("dforma.Builder",[_Container,Form],{
 				placeHolder:c.name.toProperCase(),
 				label:c.name.toProperCase(),
 				onChange:function(){
-					if(c.type=="checkbox") this.value = (this.checked == true);
+					if(c.type=="checkbox") this.value = (this.checked === true);
 					controls[i].value = this.value;
 					if(c.controller) {
 						self.rebuild();

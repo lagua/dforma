@@ -4,7 +4,7 @@ return declare("dforma.ColorPickerBox",	_DropDownBox,{
 	baseClass: "dijitTextBox dijitComboBox dformaColorPickerBox",
 	dropDownDefaultValue : "#ffffff",
 	value: "#ffffff",
-	popupClass: ColorPicker, // default is no popup = text only
+	popupClass: ColorPicker // default is no popup = text only
 });
 
 });
