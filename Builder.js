@@ -115,7 +115,7 @@ return declare("dforma.Builder",[_Container,Form],{
 		}
 		var dj = dojo;
 		this.destroyDescendants();
-		var maingroup = new dforma.Group();
+		var maingroup = new Group();
 		this.addChild(maingroup);
 		var controls = this.data.controls;
 		var controller;
@@ -177,7 +177,7 @@ return declare("dforma.Builder",[_Container,Form],{
 			}
 			var co,l,edit,del;
 			if(c.edit || c["delete"]) {
-				l = new dforma.Label({
+				l = new Label({
 					label:c.label+":",
 					title:c.description || c.label,
 					style:"display:block;margin:5px"
@@ -220,7 +220,7 @@ return declare("dforma.Builder",[_Container,Form],{
 										}
 									});
 									// TODO: insert a subform
-									var fb = new dforma.Builder({
+									var fb = new Builder({
 										style:"height:100%;border:1px solid gray",
 										cancel:function(){
 											self.rebuild();
@@ -364,7 +364,7 @@ return declare("dforma.Builder",[_Container,Form],{
 				l.addChild(del);
 				//l.startup();
 			} else {
-				l = new dforma.Label({
+				l = new Label({
 					label:c.label+":",
 					child:co,
 					title:c.description || c.label,
