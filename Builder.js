@@ -151,6 +151,12 @@ return declare("dforma.Builder",[_Container,Form],{
 					case "multiselect_freekey":
 						req = "dforma/MultiSelect";
 					break;
+					case "hslider":
+						req = "dijit/form/HorizontalSlider";
+					break;
+					case "vslider":
+						req = "dijit/form/VerticalSlider";
+					break;
 					case "colorpicker":
 						req = "dojox/widget/ColorPicker";
 					break;
@@ -330,7 +336,8 @@ return declare("dforma.Builder",[_Container,Form],{
 					return;
 				}
 			}
-			var cc = lang.clone(c);
+			if(c.widget) c.widget = null;
+			var cc = lang.mixin({},c);
 			switch(c.type) {
 				case "checkbox":
 					cc.checked = (c.value===true);
@@ -422,7 +429,7 @@ return declare("dforma.Builder",[_Container,Form],{
 					searchAttr:"name",
 					labelType:"html",
 					labelFunc:function(item,store){
-						var label = store.getValue(item, "name");
+						var label = item.name;
 						if(item.description) label = "<div title=\""+item.description+"\">"+label+"</div>";
 						return label;
 					},
