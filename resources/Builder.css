@@ -8,3 +8,10 @@
 .dformaLabel:hover {
     background-color: gold;
 }
+
+.dformaGroupMessage {
+	display:block;
+	color:red;
+	height:40px;
+	padding:10px;
+}

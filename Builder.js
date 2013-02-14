@@ -306,7 +306,12 @@ return declare("dforma.Builder",[_Container,Form],{
 							array.forEach(controller.item.controls,function(ctrl,i){
 								if(c.name==ctrl.name) {
 									index = i;
-									if(!fromOptions) optional.push(c);
+									if(!fromOptions) {
+										// reset value!
+										ctrl.widget.set("value",null);
+										// push back up stack
+										optional.push(c);
+									}
 								}
 							});
 							// item could be not in controller
