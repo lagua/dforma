@@ -1,0 +1,6 @@
+{
+    "name": "dforma",
+    "description": "dforma",
+    "version": 1.0,
+    "dojoBuild": "dforma.profile.js"
+}
