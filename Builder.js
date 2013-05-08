@@ -89,17 +89,9 @@ dojo.declare("dforma.Builder", [dijit._Container,dijit.form.Form], {
 					c.description = properties[k][options.description];
 				}
 				if(data && data.hasOwnProperty(k)) {
-					if(type=="checkbox") {
-						c.checked = data[k]==true;
-					} else {
-						c.value = data[k];
-					}
+					c.value = data[k];
 				} else if(prop.hasOwnProperty("default")) {
-					if(type=="checkbox") {
-						c.checked = prop["default"]==true;
-					} else {
-						c.value = prop["default"];
-					}
+					c.value = prop["default"];
 				}
 				option.controls.push(c);
 			}
