@@ -62,9 +62,7 @@ return declare("dforma.Builder",[_Container,Form],{
 			}
 			for(var k in properties) {
 				var prop = properties[k];
-				// more possible types?
-				// TODO: add array type /w options for select
-				// TODO: add default values (for reference only)
+				// TODO: add more types
 				var type = prop.type=="boolean" ? "checkbox" : "input";
 				if(lang.isArray(prop["enum"]) && prop["enum"].length) {
 					type = "select";
@@ -89,17 +87,9 @@ return declare("dforma.Builder",[_Container,Form],{
 					c.description = properties[k][options.description];
 				}
 				if(data && data.hasOwnProperty(k)) {
-					if(type=="checkbox") {
-						c.checked = data[k]===true;
-					} else {
-						c.value = data[k];
-					}
+					c.value = data[k];
 				} else if(prop.hasOwnProperty("default")) {
-					if(type=="checkbox") {
-						c.checked = prop["default"]===true;
-					} else {
-						c.value = prop["default"];
-					}
+					c.value = prop["default"];
 				}
 				option.controls.push(c);
 			}
