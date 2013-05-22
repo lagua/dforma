@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+
+	<title>dforma from schema</title>
+<!--[if lt IE 9]>
+<script src="/js_shared/html5shiv.js"></script>
+<![endif]-->
+	<link rel="stylesheet" type="text/css" href="../../dijit/themes/claro/claro.css" />
+	<link rel="stylesheet" type="text/css" href="../resources/Builder.css" />
+	<script type="text/javascript" src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
+	<script type="text/javascript">
+		require([
+			"dojo/_base/lang", "dforma/Builder", "dojo/json", "dojo/store/Memory", "dojo/dom-construct", "dojo/ready"
+		], function(lang,Builder,JSON,Memory,domConstruct,ready){
+			ready(function(){
+				var fb = new dforma.Builder({
+					store:new Memory(),
+					hideOptional:false,
+					allowOptionalDeletion:false,
+					allowFreeKey:false,
+					cancel: function(){
+						myDialog.hide();
+					},
+					submit: function(){
+						if(!this.validate()) return;
+						var data = this.get("value");
+						var schema = this.get("controllerWidget").item.schema;
+						for(var k in data) {
+							if(!schema.properties[k]) continue;
+							// it may be a group
+							// make all booleans explicit
+							if(schema.properties[k].type=="boolean") {
+								if(dojo.isArray(data[k])) {
+									if(data[k].length==0) {
+										data[k] = false;
+									} else if(data[k].length<2) {
+										data[k] = data[k][0];
+									}
+								}
+							} else {
+								if(schema.properties[k].type=="integer") data[k] = parseInt(data[k],10);
+								if(schema.properties[k].type=="float") data[k] = parseFloat(data[k],10);
+								if(!data[k]) delete data[k];
+							}
+						}
+						// submit data
+						this.store.put(data);
+						domConstruct.create("div",{
+							innerHTML:JSON.stringify(data,2)
+						},"data");
+					}
+				}).placeAt("form");
+				fb.startup();
+				var data,options;
+				var control = fb.toControl("dojoType",[{
+						"type" : "widget",
+						"dojoType" : "dbrota.widget.EditableTree",
+						"allow_widget" : false,
+						"allow_content" : false,
+						"allow_restservice" : false,
+						"allow_datastore" : false,
+						"allow_model" : true,
+						"allow_subscription" : true,
+						"properties" : {
+							"locale" : {
+								"required" : false,
+								"type" : "string"
+							},
+							"domain" : {
+								"required" : false,
+								"type" : "string"
+							},
+							"role" : {
+								"required" : false,
+								"type" : "string"
+							},
+							"foldersArePages" : {
+								"required" : false,
+								"type" : "string"
+							},
+							"region" : {
+								"type" : "string",
+								"allowedValues" : []
+							}
+						}
+					}],data,options);
+				/*control = lang.mixin(control, {
+					value:props[target],
+					labelType: "html",
+					labelFunc:function(item, store) {
+						var label = store.getValue(item, "id");
+						if(item.schema.description) label = "<div title=\""+item.schema.description+"\">"+label+"</div>";
+						return label;
+			        }
+				});*/
+				fb.rebuild({
+					controls:[control],
+				  	submit:{
+				  		label:"Add"
+				  	}
+				});
+			});
+		});
+
+	</script>
+</head>
+<body class="claro">
+		<h3>Form from JSON Schema</h3>
+		<div id="form"></div>
+		<div id="data"></div>
+</body>
+</html>
