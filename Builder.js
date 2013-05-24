@@ -31,7 +31,7 @@ return declare("dforma.Builder",[_Container,Form],{
 	toControl:function(name,schemaList,data,options){
 		if(!options) options = {};
 		var control = {
-			type:"select",
+			type:options.controllerType || "select",
 			required:true,
 			controller:true,
 			name: name,
@@ -95,6 +95,7 @@ return declare("dforma.Builder",[_Container,Form],{
 			}
 			control.options.push(option);
 		});
+		if(options.selectFirst) control.value = control.options[0].id;
 		return control;
 	},
 	rebuild:function(data){
@@ -156,6 +157,10 @@ return declare("dforma.Builder",[_Container,Form],{
 					case "colorpalette":
 						req = "dlagua/w/ColorPalette";
 					break;
+					case "group":
+						render(c,i,controls,Group);
+						return;
+					break;
 					case "switch":
 					break;
 					default:
@@ -175,7 +180,7 @@ return declare("dforma.Builder",[_Container,Form],{
 			if(c.edit || c["delete"]) {
 				l = new Label({
 					label:c.label+":",
-					title:c.description || c.label,
+					title:c.description ? c.description : c.label,
 					style:"display:block;margin:5px"
 				});
 				maingroup.addChild(l);
@@ -337,6 +342,9 @@ return declare("dforma.Builder",[_Container,Form],{
 				case "checkbox":
 					cc.checked = (c.value===true);
 				break;
+				case "group":
+					cc.item = c.options[0];
+				break;
 				case "select":
 				case "combo":
 					cc = lang.mixin({
@@ -369,7 +377,7 @@ return declare("dforma.Builder",[_Container,Form],{
 				l = new Label({
 					label:c.label+":",
 					child:co,
-					title:c.description || c.label,
+					title:c.description ? c.description : c.label,
 					style:"display:block;margin:5px"
 				});
 				if(c.type=="multiselect_freekey") {
