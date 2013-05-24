@@ -13,8 +13,14 @@
 	<script type="text/javascript" src="../../dojo/dojo.js" data-dojo-config="async: true"></script>
 	<script type="text/javascript">
 		require([
-			"dojo/_base/lang", "dforma/Builder", "dojo/json", "dojo/store/Memory", "dojo/dom-construct", "dojo/ready"
-		], function(lang,Builder,JSON,Memory,domConstruct,ready){
+			"dojo/_base/lang", 
+			"dforma/Builder", 
+			"dojo/json", 
+			"dojo/store/Memory", 
+			"dojo/dom-construct",
+			"dojo/ready",
+			"dforma/jsonschema"
+		], function(lang,Builder,JSON,Memory,domConstruct,ready,jsonschema){
 			ready(function(){
 				var fb = new dforma.Builder({
 					store:new Memory(),
@@ -46,6 +52,8 @@
 								if(!data[k]) delete data[k];
 							}
 						}
+						//var valid = jsonschema.validate(data,schema);
+						//console.log(valid)
 						// submit data
 						this.store.put(data);
 						domConstruct.create("div",{
@@ -54,48 +62,35 @@
 					}
 				}).placeAt("form");
 				fb.startup();
-				var data,options;
-				var control = fb.toControl("dojoType",[{
-						"type" : "widget",
-						"dojoType" : "dbrota.widget.EditableTree",
-						"allow_widget" : false,
-						"allow_content" : false,
-						"allow_restservice" : false,
-						"allow_datastore" : false,
-						"allow_model" : true,
-						"allow_subscription" : true,
-						"properties" : {
-							"locale" : {
-								"required" : false,
-								"type" : "string"
-							},
-							"domain" : {
-								"required" : false,
-								"type" : "string"
-							},
-							"role" : {
-								"required" : false,
-								"type" : "string"
-							},
-							"foldersArePages" : {
-								"required" : false,
-								"type" : "string"
-							},
-							"region" : {
-								"type" : "string",
-								"allowedValues" : []
-							}
+				var data;
+				var control = fb.toControl("order",[{
+					"order" : 1,
+					"properties" : {
+						"locale" : {
+							"required" : false,
+							"type" : "string"
+						},
+						"domain" : {
+							"required" : false,
+							"type" : "string"
+						},
+						"role" : {
+							"required" : false,
+							"type" : "string"
+						},
+						"foldersArePages" : {
+							"required" : false,
+							"type" : "boolean"
+						},
+						"region" : {
+							"type" : "string",
+							"enum" : ["leading","center","trailing"]
 						}
-					}],data,options);
-				/*control = lang.mixin(control, {
-					value:props[target],
-					labelType: "html",
-					labelFunc:function(item, store) {
-						var label = store.getValue(item, "id");
-						if(item.schema.description) label = "<div title=\""+item.schema.description+"\">"+label+"</div>";
-						return label;
-			        }
-				});*/
+					}
+				}],data,{
+					controllerType:"group",
+					selectFirst:true
+				});
 				fb.rebuild({
 					controls:[control],
 				  	submit:{
