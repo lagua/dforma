@@ -111,9 +111,9 @@ return declare("dforma.Builder",[_Container,Form],{
 		var controls = this.data.controls;
 		var controller;
 		var self = this;
-		// get the controls of the current controller selection 
+		// get the controls of the current controller selection
 		array.forEach(controls,function(c){
-			if(c.controller) {
+			if(c.controller && c.type!="repeat") {
 				self.controller = c;
 				array.forEach(c.options,function(o){
 					if(o.id==c.value && o.controls) controls = controls.concat(o.controls);
@@ -122,12 +122,15 @@ return declare("dforma.Builder",[_Container,Form],{
 		});
 		var optional = [];
 		var hideOptional = this.hideOptional;
-		function render(c,i,controls,Widget) {
+		function render(c,i,controls,Widget,parent) {
 			if(!Widget) {
 				var req;
 				switch(c.type) {
 					case "date":
 						req = "dijit/form/DateTextBox";
+					break;
+					case "repeat":
+						req = "dforma/Repeat";
 					break;
 					case "checkbox":
 						req = "dijit/form/CheckBox";
@@ -158,7 +161,7 @@ return declare("dforma.Builder",[_Container,Form],{
 						req = "dlagua/w/ColorPalette";
 					break;
 					case "group":
-						render(c,i,controls,Group);
+						render(c,i,controls,Group,parent);
 						return;
 					break;
 					case "switch":
@@ -172,7 +175,7 @@ return declare("dforma.Builder",[_Container,Form],{
 					break;
 				}
 				require([req],function(Widget){
-					render(c,i,controls,Widget);
+					render(c,i,controls,Widget,parent);
 				});
 				return;
 			}
@@ -183,7 +186,7 @@ return declare("dforma.Builder",[_Container,Form],{
 					title:c.description ? c.description : c.label,
 					style:"display:block;margin:5px"
 				});
-				maingroup.addChild(l);
+				parent.addChild(l);
 				if(!self.allowOptionalDeletion && c.description) {
 					domConstruct.create("span",{
 						innerHTML:strings.truncatewords_html(c.description,{
@@ -342,6 +345,9 @@ return declare("dforma.Builder",[_Container,Form],{
 				case "checkbox":
 					cc.checked = (c.value===true);
 				break;
+				case "repeat":
+					cc.cols = c.options[0].controls.length;
+				break;
 				case "group":
 					cc.item = c.options[0];
 				break;
@@ -367,8 +373,34 @@ return declare("dforma.Builder",[_Container,Form],{
 				self.controllerWidget = controller;
 			}
 			controls[i].widget = co;
-			if(c.type=="hidden") {
-				maingroup.addChild(co);
+			if(c.type=="repeat"){
+				array.forEach(c.options,function(o){
+					if(o.id==c.value && o.controls) {
+						array.forEach(o.controls,function(c,i){
+							c = lang.mixin({
+								placeHolder:c.name.toProperCase(),
+								label:c.name.toProperCase(),
+								onChange:function(){
+									if(c.type=="checkbox") this.value = (this.checked === true);
+									o.controls[i].value = this.value;
+									if(c.controller) {
+										self.rebuild();
+									}
+								}
+							},c);
+							if(c.required || !hideOptional || c.hasOwnProperty("value") || c.hasOwnProperty("checked")) {
+								if(!c.required && self.allowOptionalDeletion) c["delete"] = true;
+								render(c,i,o.controls,null,co);
+							} else {
+								c["delete"] = true;
+								optional.push(c);
+							}
+						});
+					}
+				});
+			}
+			if(c.type=="hidden" || parent.type=="repeat") {
+				parent.addChild(co);
 			} else if(c["delete"]) {
 				l.addChild(co);
 				l.addChild(del);
@@ -398,9 +430,10 @@ return declare("dforma.Builder",[_Container,Form],{
 						}
 					}));
 				}
-				maingroup.addChild(l);
+				parent.addChild(l);
 			} 
 		}
+		// end render
 		array.forEach(controls,function(c,i){
 			c = lang.mixin({
 				placeHolder:c.name.toProperCase(),
@@ -415,7 +448,7 @@ return declare("dforma.Builder",[_Container,Form],{
 			},c);
 			if(c.required || !hideOptional || c.hasOwnProperty("value") || c.hasOwnProperty("checked")) {
 				if(!c.required && self.allowOptionalDeletion) c["delete"] = true;
-				render(c,i,controls);
+				render(c,i,controls,null,maingroup);
 			} else {
 				c["delete"] = true;
 				optional.push(c);
@@ -444,7 +477,7 @@ return declare("dforma.Builder",[_Container,Form],{
 							if(c.name==val) {
 								isOption = true;
 								index = i;
-								render(c,i,controls);
+								render(c,i,controls,parent);
 							}
 						});
 						if(index>-1) optional.splice(index,1);
@@ -464,7 +497,7 @@ return declare("dforma.Builder",[_Container,Form],{
 								if(!controller.item.properties) controller.item.properties = {};
 								controller.item.properties[val] = {};
 							}
-							render(c,i,controls);
+							render(c,i,controls,parent);
 						}
 						if(optional.length || self.allowFreeKey) {
 							self.addChild(add);
