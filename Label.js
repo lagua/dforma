@@ -1,25 +1,29 @@
 define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
-	"dojo/dom-style",
+	"dojo/dom-class",
 	"dijit/_Widget",
 	"dijit/_TemplatedMixin",
 	"dijit/_Container",
 	"dijit/_Contained"
-],function(declare,lang,domStyle,_Widget,_TemplatedMixin,_Container,_Contained){
+],function(declare,lang,domClass,_Widget,_TemplatedMixin,_Container,_Contained){
 return declare("dforma.Label",[_Widget,_TemplatedMixin,_Container,_Contained],{
-	templateString: "<span class=\"dijit dijitReset dijitInline\" aria-labelledby=\"${id}_label_${position}\"><span style=\"display:none\" class=\"dijitReset dijitInline dijitButtonText dformaLabel\" data-dojo-attach-point=\"labelNode_left\" id=\"${id}_label_left\"></span><span id=\"${id}_containerNode\" data-dojo-attach-point=\"containerNode\"></span><span data-dojo-attach-point=\"labelNode_right\" style=\"display:none\" class=\"dijitReset dijitInline dijitButtonText dformaLabel\" id=\"${id}_label_right\"></span></span>",
+	templateString: "<span class=\"dijit dijitReset dijitInline\" aria-labelledby=\"${id}_label_${position}\"><span class=\"dijitReset dijitInline dijitHidden dformaLabelNode\" data-dojo-attach-point=\"labelNode_left\" id=\"${id}_label_left\"></span><span id=\"${id}_containerNode\" data-dojo-attach-point=\"containerNode\"></span><span data-dojo-attach-point=\"labelNode_right\" class=\"dijitReset dijitInline dijitHidden dformaLabelNode\" id=\"${id}_label_right\"></span></span>",
 	label: "",
 	position: "left",
 	child: null,
-	baseClass: "formLabel",
+	baseClass: "dformaLabel",
 	destroyRecursive:function(preserveDom) {
 		if(this.child) this.child.destroyRecursive(preserveDom);
 		this.inherited(arguments);
 	},
  	startup: function(){
-		domStyle.set(this.id+"_label_"+this.position,"display","inline-block");
-		if(this.child) this.addChild(this.child);
+		domClass.remove(this.id+"_label_"+this.position,"dijitHidden");
+		if(this.child) {
+			if(this.child.required) domClass.add(this.id+"_label_"+this.position,"dformaRequired");
+			if(this.child.block) domClass.add(this.domNode,"dformaBlock");
+			this.addChild(this.child);
+		}
 		this.inherited(arguments);
  	},
 	_setLabelAttr: function(/*String*/ content){
