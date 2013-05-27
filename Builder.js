@@ -8,6 +8,7 @@ define([
 	"dojo/store/Memory",
 	"dforma/Group",
 	"dforma/Label",
+	"dojo/i18n!/js_shared/dojo/1.8/dforma/nls/common.js",
 	"dijit/_Container",
 	"dijit/form/Form",
 	"dijit/form/Button",
@@ -16,9 +17,10 @@ define([
 	"dijit/form/TextBox",
 	"dlagua/x/dtl/filter/strings",
 	"dlagua/c/string/toProperCase"
-],function(declare,lang,array,when,keys,domConstruct,Memory,Group,Label,_Container,Form,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
+],function(declare,lang,array,when,keys,domConstruct,Memory,Group,Label,common,_Container,Form,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
 return declare("dforma.Builder",[_Container,Form],{
 	baseClass:"dformaBuilder",
+	templateString: "<div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div data-dojo-attach-point=\"buttonNode\"></div></div>",
 	controller:null,
 	controllerWidget:null,
 	data:null,
@@ -63,20 +65,51 @@ return declare("dforma.Builder",[_Container,Form],{
 			for(var k in properties) {
 				var prop = properties[k];
 				// TODO: add more types
-				var type = prop.type=="boolean" ? "checkbox" : "input";
+				var type;
+				if(prop.type=="boolean") {
+					type = "checkbox";
+				} else if(prop.type=="integer") {
+					type = "spinner";
+				} else if(prop.type=="date") {
+					type = "date";
+				} else if(prop.type=="array") {
+					type = "repeat";
+				} else if(prop.type=="object") {
+					type = "group";
+				} else if(prop.type=="string" && prop.format=="text"){
+					type = "textarea";
+				} else {
+					type = "input";
+				}
 				if(lang.isArray(prop["enum"]) && prop["enum"].length) {
 					type = "select";
 				}
 				var c = {
 					name:k,
 					type:type,
-					required:(prop.required===true)
+					schema:prop,
+					required:(prop.required === true),
+					disabled:(prop.readonly === true)
 				};
+				if(prop.title) {
+					c.title = prop.title;
+				}
+				if(prop.description) {
+					c.description = prop.description;
+				}
 				if(type=="select") {
 					c.options = [];
 					array.forEach(prop["enum"],function(op) {
 						c.options.push({id:op});
 					});
+				}
+				if(type=="repeat" || type=="group"){
+					var items = this.toControl(c.name,[{
+						properties:type=="repeat"? prop.items : prop.properties
+					}],null,{
+						controllerType:type
+					});
+					c = lang.mixin(c,items);
 				}
 				if(options.edit) {
 					c.edit = true;
@@ -94,7 +127,7 @@ return declare("dforma.Builder",[_Container,Form],{
 				option.controls.push(c);
 			}
 			control.options.push(option);
-		});
+		},this);
 		if(options.selectFirst) control.value = control.options[0].id;
 		return control;
 	},
@@ -106,14 +139,12 @@ return declare("dforma.Builder",[_Container,Form],{
 		}
 		var dj = dojo;
 		this.destroyDescendants();
-		var maingroup = new Group();
-		this.addChild(maingroup);
 		var controls = this.data.controls;
 		var controller;
 		var self = this;
 		// get the controls of the current controller selection
 		array.forEach(controls,function(c){
-			if(c.controller && c.type!="repeat") {
+			if(c.controller && c.type!="repeat" && c.type!="group") {
 				self.controller = c;
 				array.forEach(c.options,function(o){
 					if(o.id==c.value && o.controls) controls = controls.concat(o.controls);
@@ -123,6 +154,11 @@ return declare("dforma.Builder",[_Container,Form],{
 		var optional = [];
 		var hideOptional = this.hideOptional;
 		function render(c,i,controls,Widget,parent) {
+			var lbl = c.title ? c.title : c.name.toProperCase();
+			c = lang.mixin({
+				placeHolder:lbl,
+				label:lbl
+			},c);
 			if(!Widget) {
 				var req;
 				switch(c.type) {
@@ -137,6 +173,12 @@ return declare("dforma.Builder",[_Container,Form],{
 					break;
 					case "select":
 						req = "dijit/form/FilteringSelect";
+					break;
+					case "textarea":
+						req = "dijit/form/Textarea";
+					break;
+					case "spinner":
+						req = "dijit/form/NumberSpinner";
 					break;
 					case "combo":
 						req = "dijit/form/ComboBox";
@@ -161,8 +203,7 @@ return declare("dforma.Builder",[_Container,Form],{
 						req = "dlagua/w/ColorPalette";
 					break;
 					case "group":
-						render(c,i,controls,Group,parent);
-						return;
+						req = "dforma/Group";
 					break;
 					case "switch":
 					break;
@@ -174,17 +215,28 @@ return declare("dforma.Builder",[_Container,Form],{
 						}
 					break;
 				}
-				require([req],function(Widget){
-					render(c,i,controls,Widget,parent);
-				});
+				if(!parent._reqs) parent._reqs = [];
+				parent._reqs[i] = {
+					req:req,
+					control:c
+				};
+				if(i==controls.length-1) {
+					var reqs = array.map(parent._reqs,function(_){ return _.req });
+					require(reqs,function(){
+						array.forEach(arguments,function(Widget,index){
+							var item = parent._reqs[index];
+							render(item.control,index,controls,Widget,parent);
+						});
+						delete parent._reqs;
+					});
+				}
 				return;
 			}
 			var co,l,edit,del;
 			if(c.edit || c["delete"]) {
 				l = new Label({
-					label:c.label+":",
-					title:c.description ? c.description : c.label,
-					style:"display:block;margin:5px"
+					label:c.title ? c.title : c.label,
+					title:c.description ? c.description : c.label
 				});
 				parent.addChild(l);
 				if(!self.allowOptionalDeletion && c.description) {
@@ -193,7 +245,7 @@ return declare("dforma.Builder",[_Container,Form],{
 							words:8
 						}),
 						title:c.description,
-						"class":"dijitReset dijitInline dijitButtonText"
+						"class":"dijitReset dijitInline"
 					},l.domNode);
 				}
 				if(c.edit) {
@@ -347,9 +399,15 @@ return declare("dforma.Builder",[_Container,Form],{
 				break;
 				case "repeat":
 					cc.cols = c.options[0].controls.length;
+					cc.item = c.options[0];
+					cc.hint = c.description || "";
+				break;
+				case "textarea":
+					cc.block = true;
 				break;
 				case "group":
 					cc.item = c.options[0];
+					cc.hint = c.description || "";
 				break;
 				case "select":
 				case "combo":
@@ -360,7 +418,7 @@ return declare("dforma.Builder",[_Container,Form],{
 						searchAttr:"id",
 						labelAttr:"id",
 						autoComplete:true
-					},c);
+					},cc);
 				break;
 				case "switch":
 				break;
@@ -373,45 +431,31 @@ return declare("dforma.Builder",[_Container,Form],{
 				self.controllerWidget = controller;
 			}
 			controls[i].widget = co;
-			if(c.type=="repeat"){
+			if(c.type=="repeat" || c.type=="group"){
+				parent.addChild(co);
 				array.forEach(c.options,function(o){
 					if(o.id==c.value && o.controls) {
 						array.forEach(o.controls,function(c,i){
-							c = lang.mixin({
-								placeHolder:c.name.toProperCase(),
-								label:c.name.toProperCase(),
-								onChange:function(){
-									if(c.type=="checkbox") this.value = (this.checked === true);
-									o.controls[i].value = this.value;
-									if(c.controller) {
-										self.rebuild();
-									}
-								}
-							},c);
-							if(c.required || !hideOptional || c.hasOwnProperty("value") || c.hasOwnProperty("checked")) {
-								if(!c.required && self.allowOptionalDeletion) c["delete"] = true;
-								render(c,i,o.controls,null,co);
-							} else {
-								c["delete"] = true;
-								optional.push(c);
-							}
+							render(c,i,o.controls,null,co);
 						});
 					}
 				});
-			}
-			if(c.type=="hidden" || parent.type=="repeat") {
+			} else if(parent.type=="repeat"){
+				parent.addControl(Widget,cc);
+			} else if(c.type=="hidden") {
 				parent.addChild(co);
 			} else if(c["delete"]) {
 				l.addChild(co);
 				l.addChild(del);
 				//l.startup();
 			} else {
-				l = new Label({
-					label:c.label+":",
+		 		l = new Label({
+					label:c.label,
 					child:co,
-					title:c.description ? c.description : c.label,
-					style:"display:block;margin:5px"
+					title:c.description ? c.description : c.label
 				});
+		 		parent.addChild(l);
+				/*
 				if(c.type=="multiselect_freekey") {
 					l.child = null;
 					l.addChild(co);
@@ -430,14 +474,12 @@ return declare("dforma.Builder",[_Container,Form],{
 						}
 					}));
 				}
-				parent.addChild(l);
+				*/
 			} 
 		}
 		// end render
 		array.forEach(controls,function(c,i){
 			c = lang.mixin({
-				placeHolder:c.name.toProperCase(),
-				label:c.name.toProperCase(),
 				onChange:function(){
 					if(c.type=="checkbox") this.value = (this.checked === true);
 					controls[i].value = this.value;
@@ -448,12 +490,12 @@ return declare("dforma.Builder",[_Container,Form],{
 			},c);
 			if(c.required || !hideOptional || c.hasOwnProperty("value") || c.hasOwnProperty("checked")) {
 				if(!c.required && self.allowOptionalDeletion) c["delete"] = true;
-				render(c,i,controls,null,maingroup);
+				render(c,i,controls,null,this);
 			} else {
 				c["delete"] = true;
 				optional.push(c);
 			}
-		});
+		},this);
 		if(((hideOptional && optional.length) || this.allowFreeKey) && controller && controller.get("value")) {
 			var select;
 			function addSelect(){
@@ -528,20 +570,44 @@ return declare("dforma.Builder",[_Container,Form],{
 			});
 			self.addChild(add);
 		}
-		var cancel = new Button(lang.mixin({
-			label:"Cancel",
-			style:"float:right;margin-top:-10px;",
+		this.cancelBtn.destroy();
+		this.submitBtn.destroy();
+		this.cancelBtn = new Button(lang.mixin({
+			label:common.buttonCancel,
+			"class":"dformaCancel",
 			onClick:lang.hitch(this,this.cancel)
-		},this.data.cancel));
-		this.addChild(cancel);
-		var submit = new Button(lang.mixin({
-			label:"Ok",
-			style:"float:right;margin-top:-10px;",
+		},this.data.cancel)).placeAt(this.buttonNode);
+		this.submitBtn = new Button(lang.mixin({
+			label:common.buttonSubmit,
+			"class":"dformaSubmit",
 			onClick:lang.hitch(this,this.submit)
-		},this.data.submit));
-		this.addChild(submit);
+		},this.data.submit)).placeAt(this.buttonNode);
+	},
+	enforceTypes:function(data,schema){
+		for(var k in data) {
+			if(!schema.properties[k]) continue;
+			// it may be a group
+			// make all booleans explicit
+			if(schema.properties[k].type=="boolean") {
+				if(dojo.isArray(data[k])) {
+					if(data[k].length==0) {
+						data[k] = false;
+					} else if(data[k].length<2) {
+						data[k] = data[k][0];
+					}
+				}
+			} else if(schema.properties[k].type=="object"){
+				this.enforceTypes(data[k],schema.properties[k]);
+			} else {
+				if(schema.properties[k].type=="integer") data[k] = parseInt(data[k],10);
+				if(schema.properties[k].type=="float") data[k] = parseFloat(data[k],10);
+				if(!data[k]) delete data[k];
+			}
+		}
 	},
 	startup:function(){
+		this.cancelBtn = new Button();
+		this.submitBtn = new Button();
 		if(this.data) this.rebuild();
 		this.inherited(arguments);
 	}
