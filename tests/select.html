@@ -80,12 +80,6 @@
 			};
 			var fb = new dforma.Builder({
 				store:new Memory(),
-				hideOptional:false,
-				allowOptionalDeletion:false,
-				allowFreeKey:false,
-				cancel: function(){
-					myDialog.hide();
-				},
 				submit: function(){
 					if(!this.validate()) return;
 					var data = this.get("value");
@@ -109,6 +103,42 @@
 				}
 			}).placeAt("form");
 			fb.startup();
+			
+			var select = new dforma.Builder({
+				store:new Memory(),
+				data:{
+					controls:[{
+						type:"list",
+						name:"verhuur",
+						data:[{
+							id:"test",
+							name:"test"
+						}]
+					}]
+				},
+				submit: function(){
+					if(!this.validate()) return;
+					var data = this.get("value");
+					var schema = this.get("controllerWidget").item.schema;
+					this.enforceTypes(data,schema);
+					//var jsonvalid = jsonschema.validate(data,schema);
+					//var valid = jsonvalid.errors.length == 0;
+					//console.log(jsonvalid)
+					//var validtext = valid ? "This data is valid" : jsonvalid.errors.map(function(_){return _.message});
+					//if(!valid) {
+					//	alert(validtext);
+					//	return;
+					//}
+					// submit data
+					var valid = true;
+					this.store.put(data);
+					domConstruct.create("div",{
+						innerHTML:JSON.stringify(data,null,2),
+						style:"color:"+(valid ?"green" : "red")
+					},"data");
+				}
+			}).placeAt("select");
+			select.startup();
 			function loadFB(){
 				var data;
 				var nls = {
@@ -291,6 +321,7 @@
 <body class="claro">
 		<h3>Form from JSON Schema</h3>
 		<div><a href="#nl">Nederlands</a> / <a href="#en">Engels</a></div>
+		<div id="select"></div>
 		<div id="form"></div>
 		<div id="data"></div>
 		<div id="schema">
