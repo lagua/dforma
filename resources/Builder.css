@@ -1,17 +1,19 @@
-@import url("../../dojox/widget/ColorPicker/ColorPicker.css");
 @import url("commonIcons.css");
 
-.dformaLabel {
-    text-align: left;
-    width: 100px;
+.dformaLabelNode {
+    text-align: center;
+}
+.dformaRequired:after {
+    color: #8B0000;
+    content: "*";
+}
+.dformaBlock {
+	display:block !important;
+}
+.dformaBlock .dformaLabelNode {
+	display:inline-block !important;
+	width: 100px;
 }
 .dformaLabel:hover {
     background-color: gold;
-}
-
-.dformaGroupMessage {
-	display:block;
-	color:red;
-	height:40px;
-	padding:10px;
 }
