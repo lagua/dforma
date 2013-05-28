@@ -18,13 +18,15 @@ return declare("dforma.Label",[_Widget,_TemplatedMixin,_Container,_Contained],{
 		this.inherited(arguments);
 	},
  	startup: function(){
+ 		if(this._started){ return; } // prevent double-triggering
+		this.inherited(arguments);
+		this._started = true;
 		domClass.remove(this.id+"_label_"+this.position,"dijitHidden");
 		if(this.child) {
 			if(this.child.required) domClass.add(this.id+"_label_"+this.position,"dformaRequired");
 			if(this.child.block) domClass.add(this.domNode,"dformaBlock");
 			this.addChild(this.child);
 		}
-		this.inherited(arguments);
  	},
 	_setLabelAttr: function(/*String*/ content){
 		// summary:
