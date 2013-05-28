@@ -45,7 +45,7 @@ return declare("dforma.Builder",[_Container,Form],{
 			this.allowFreeKey = true;
 			this.addControls = options.controls;
 		}
-		if(options.edit || options["delete"]) {
+		if(options.edit===true || options["delete"]===true) {
 			control.labelAttr = control.searchAttr = "name";
 			this.allowOptionalDeletion = false;
 		}
@@ -57,7 +57,7 @@ return declare("dforma.Builder",[_Container,Form],{
 				controls:[]
 			};
 			var properties = schema.properties;
-			if(options.edit || options["delete"]) {
+			if(options.edit===true || options["delete"]===true) {
 				option.name = schema[name];
 				option.id = schema["id"];
 				option.properties = properties;
@@ -113,7 +113,7 @@ return declare("dforma.Builder",[_Container,Form],{
 					});
 					c = lang.mixin(c,items);
 				}
-				if(options.edit) {
+				if(options.edit===true) {
 					c.edit = true;
 					c.controls = options.controls;
 				}
@@ -156,11 +156,6 @@ return declare("dforma.Builder",[_Container,Form],{
 		var optional = [];
 		var hideOptional = this.hideOptional;
 		function render(c,i,controls,Widget,parent) {
-			var lbl = c.title ? c.title : c.name.toProperCase();
-			c = lang.mixin({
-				placeHolder:lbl,
-				label:lbl
-			},c);
 			if(!Widget) {
 				var req;
 				switch(c.type) {
@@ -187,6 +182,9 @@ return declare("dforma.Builder",[_Container,Form],{
 					break;
 					case "combo":
 						req = "dijit/form/ComboBox";
+					break;
+					case "list":
+						req = "dforma/List";
 					break;
 					case "multiselect":
 					case "multiselect_freekey":
@@ -237,8 +235,13 @@ return declare("dforma.Builder",[_Container,Form],{
 				}
 				return;
 			}
+			var lbl = c.title ? c.title : c.name.toProperCase();
+			c = lang.mixin({
+				placeHolder:lbl,
+				label:lbl
+			},c);
 			var co,l,edit,del;
-			if(c.edit || c["delete"]) {
+			if(c.edit===true || c["delete"]===true) {
 				l = new Label({
 					label:c.title ? c.title : c.label,
 					title:c.description ? c.description : c.label
@@ -253,7 +256,7 @@ return declare("dforma.Builder",[_Container,Form],{
 						"class":"dijitReset dijitInline"
 					},l.domNode);
 				}
-				if(c.edit) {
+				if(c.edit===true) {
 					edit = new Button({
 						label:"Edit",
 						controller:controller,
@@ -575,22 +578,22 @@ return declare("dforma.Builder",[_Container,Form],{
 			});
 			self.addChild(add);
 		}
-		this.cancelBtn.destroy();
-		this.submitBtn.destroy();
-		this.cancelBtn = new Button(lang.mixin({
+		this.cancelButton.destroy();
+		this.submitButton.destroy();
+		this.cancelButton = new Button(lang.mixin({
 			label:common.buttonCancel,
 			"class":"dformaCancel",
 			onClick:lang.hitch(this,this.cancel)
 		},this.data.cancel)).placeAt(this.buttonNode);
-		this.submitBtn = new Button(lang.mixin({
+		this.submitButton = new Button(lang.mixin({
 			label:common.buttonSubmit,
 			"class":"dformaSubmit",
 			onClick:lang.hitch(this,this.submit)
 		},this.data.submit)).placeAt(this.buttonNode);
 	},
 	startup:function(){
-		this.cancelBtn = new Button();
-		this.submitBtn = new Button();
+		this.cancelButton = new Button();
+		this.submitButton = new Button();
 		if(this.data) this.rebuild();
 		this.inherited(arguments);
 	}
