@@ -6,6 +6,8 @@ define({ root:
 	buttonSubmit: "Submit",
 	buttonSave: "Save",
 	buttonAdd: "Add",
+	buttonEditSelected: "Edit Selected",
+	buttonRemoveSelected: "Remove Selected",
 	buttonRemove: "Remove",
 	itemClose: "Close"
 })
