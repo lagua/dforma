@@ -52,7 +52,7 @@
 			"dojo/_base/lang",
 			"dojo/_base/array",
 			"dforma/Builder",
-			"dforma/jsonschema",
+			//"dforma/jsonschema",
 			"dojo/json", 
 			"dojo/store/Memory", 
 			"dojo/dom-construct",
@@ -62,7 +62,7 @@
 			"dojo/topic",
 			"dojo/text!./nl.json",
 			"dojo/text!./en.json"
-		], function(lang,array,Builder,jsonschema,JSON,Memory,domConstruct,dom,ready,hash,topic,lang_nl,lang_en){
+		], function(lang,array,Builder,JSON,Memory,domConstruct,dom,ready,hash,topic,lang_nl,lang_en){
 			function traverse(obj,func, parent) {
 				for (i in obj){
 					func.apply(obj,[i,obj[i],parent]);
@@ -91,9 +91,9 @@
 					if(!this.validate()) return;
 					var data = this.get("value");
 					var schema = this.get("controllerWidget").item.schema;
-					var jsonvalid = jsonschema.validate(data,schema);
+					//var jsonvalid = jsonschema.validate(data,schema);
 					//var valid = jsonvalid.errors.length == 0;
-					console.log(jsonvalid)
+					//console.log(jsonvalid)
 					//var validtext = valid ? "This data is valid" : jsonvalid.errors.map(function(_){return _.message});
 					//if(!valid) {
 					//	alert(validtext);
