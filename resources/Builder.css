@@ -14,6 +14,6 @@
 	display:inline-block !important;
 	width: 100px;
 }
-.dformaLabel:hover {
+.dformaLabelNode:hover {
     background-color: gold;
 }
