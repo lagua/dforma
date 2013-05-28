@@ -6,9 +6,9 @@ define([
 	"dojo/keys",
 	"dojo/dom-construct",
 	"dojo/store/Memory",
-	"dforma/Group",
-	"dforma/Label",
-	"dojo/i18n!/js_shared/dojo/1.8/dforma/nls/common.js",
+	"./Group",
+	"./Label",
+	"dojo/i18n!./nls/common",
 	"dijit/_Container",
 	"dijit/form/Form",
 	"dijit/form/Button",
@@ -70,6 +70,8 @@ return declare("dforma.Builder",[_Container,Form],{
 					type = "checkbox";
 				} else if(prop.type=="integer") {
 					type = "spinner";
+				} else if(prop.type=="float") {
+					type = "number";
 				} else if(prop.type=="date") {
 					type = "date";
 				} else if(prop.type=="array") {
@@ -179,6 +181,9 @@ return declare("dforma.Builder",[_Container,Form],{
 					break;
 					case "spinner":
 						req = "dijit/form/NumberSpinner";
+					break;
+					case "number":
+						req = "dijit/form/NumberTextBox";
 					break;
 					case "combo":
 						req = "dijit/form/ComboBox";
@@ -582,28 +587,6 @@ return declare("dforma.Builder",[_Container,Form],{
 			"class":"dformaSubmit",
 			onClick:lang.hitch(this,this.submit)
 		},this.data.submit)).placeAt(this.buttonNode);
-	},
-	enforceTypes:function(data,schema){
-		for(var k in data) {
-			if(!schema.properties[k]) continue;
-			// it may be a group
-			// make all booleans explicit
-			if(schema.properties[k].type=="boolean") {
-				if(dojo.isArray(data[k])) {
-					if(data[k].length==0) {
-						data[k] = false;
-					} else if(data[k].length<2) {
-						data[k] = data[k][0];
-					}
-				}
-			} else if(schema.properties[k].type=="object"){
-				this.enforceTypes(data[k],schema.properties[k]);
-			} else {
-				if(schema.properties[k].type=="integer") data[k] = parseInt(data[k],10);
-				if(schema.properties[k].type=="float") data[k] = parseFloat(data[k],10);
-				if(!data[k]) delete data[k];
-			}
-		}
 	},
 	startup:function(){
 		this.cancelBtn = new Button();
