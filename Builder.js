@@ -93,10 +93,15 @@ return declare("dforma.Builder",[_Container,Form],{
 					required:(prop.required === true),
 					disabled:(prop.readonly === true)
 				};
-				if(prop.title) {
+				if(prop.hasOwnProperty("minimum") || prop.hasOwnProperty("maximum")) {
+					c.constraints = {};
+					if(prop.hasOwnProperty("minimum")) c.constraints.min = prop.minimum;
+					if(prop.hasOwnProperty("maximum")) c.constraints.max = prop.maximum;
+				}
+				if(prop.hasOwnProperty("title")) {
 					c.title = prop.title;
 				}
-				if(prop.description) {
+				if(prop.hasOwnProperty("description")) {
 					c.description = prop.description;
 				}
 				if(type=="select") {
@@ -113,12 +118,12 @@ return declare("dforma.Builder",[_Container,Form],{
 					});
 					c = lang.mixin(c,items);
 				}
-				if(options.edit===true) {
+				if(options.hasOwnProperty("edit") && options.edit===true) {
 					c.edit = true;
 					c.controls = options.controls;
 				}
-				if(options["delete"]) c["delete"] = true;
-				if(options.description) {
+				if(options.hasOwnProperty("delete") && options["delete"]===true) c["delete"] = true;
+				if(options.hasOwnProperty("description")) {
 					c.description = properties[k][options.description];
 				}
 				if(data && data.hasOwnProperty(k)) {
