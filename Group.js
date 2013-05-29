@@ -24,7 +24,6 @@ return declare("dforma.Group",[_FormWidget,_Container,_Contained, _FormMixin],{
 	value:null, // in case of object
 	startup:function(){
 		this.inherited(arguments);
-		this.value = {};
 		domClass.toggle(this.labelNode,"dijitHidden",!this.label);
 		domClass.toggle(this.messageNode,"dijitHidden",!this.message);
 	},
@@ -110,7 +109,7 @@ return declare("dforma.Group",[_FormWidget,_Container,_Contained, _FormMixin],{
 			if(typeof widgets[0].checked == 'boolean'){
 				// for checkbox/radio, values is a list of which widgets should be checked
 				array.forEach(widgets, function(w){
-					w.set('value', array.indexOf(values, w._get('value')) != -1);
+					w.set('value', array.indexOf(values, w._get('value')==="on") != -1);
 				});
 			}else if(widgets[0].multiple){
 				// it takes an array (e.g. multi-select)
