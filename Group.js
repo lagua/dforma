@@ -122,6 +122,9 @@ return declare("dforma.Group",[_FormWidget,_Container,_Contained, _FormMixin],{
 			}
 		}
  	},
+	_onFocus: function(){
+		// override to cancel early validation
+	},
 	_setHintAttr: function(/*String*/ content){
 		// summary:
 		//		Hook for set('label', ...) to work.
