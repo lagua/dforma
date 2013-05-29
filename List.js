@@ -58,7 +58,7 @@ define([
 		},
 		add:function(){
 			// override to set initial data
-			var id = this.store.add(this.defaultInstance);
+			var id = this.store.add(lang.clone(this.defaultInstance));
 			this.select(id);
 			this.onEdit(id);
 		},
