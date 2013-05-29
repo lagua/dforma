@@ -92,7 +92,7 @@
 				nl:lang_nl
 			};
 			var schemas = [{
-				"title" : "{concert_material}",
+				"type" : "{concert_material}",
 				"properties":{
 					"componist" : {
 						"title": "{composer}",
@@ -114,10 +114,12 @@
 						"properties":{
 							"pianouittreksel":{
 								"type":"integer",
+								"minimum":0,
 								"default":0
 							},
 							"koormateriaal":{
 								"type":"integer",
+								"minimum":0,
 								"default":0
 							}
 						}
@@ -130,26 +132,31 @@
 							"viool1":{
 								"title": "{violin1}",
 								"type":"integer",
+								"minimum":0,
 								"default":0
 							},
 							"viool2":{
 								"title": "{violin2}",
 								"type":"integer",
+								"minimum":0,
 								"default":0
 							},
 							"altviool":{
 								"title": "{viola}",
 								"type":"integer",
+								"minimum":0,
 								"default":0
 							},
 							"cello":{
 								"title": "{violoncello}",
 								"type":"integer",
+								"minimum":0,
 								"default":0
 							},
 							"contrabas":{
 								"title": "{double_bass}",
 								"type":"integer",
+								"minimum":0,
 								"default":0
 							}
 						}
