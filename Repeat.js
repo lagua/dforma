@@ -51,10 +51,8 @@ return declare("dforma.Repeat",[Group],{
 			node:domConstruct.create("tr",{},this.repeatNode),
 			controls:[]
 		});
-		this.value.push({});
 		array.forEach(this._controls,function(_){
 			// TODO add _setValueAttr
-			if(_.params.value) this.value[row][_.params.name] = _.params.value;
 			_.params.row = row;
 			var widget = new _.Widget(_.params);
 			this.addChild(widget);
@@ -118,44 +116,47 @@ return declare("dforma.Repeat",[Group],{
 		});
 		return arr;
  	},
- 	_setValueAttr: function(/*Object*/ obj){
+ 	_setValueAttr: function(/*Object*/ arr){
+ 		if(!this._started) return;
 		// summary:
 		//		Fill in form values from according to an Object (in the format returned by get('value'))
+ 		array.forEach(arr,function(obj,i){
+ 			if(i>0) this.cloneRow();
+ 			// generate map from name --> [list of widgets with that name]
+ 			var map = { };
+ 			array.forEach(this._getDescendantFormWidgets(), function(widget){
+ 				if(!widget.name){ return; }
+ 				var entry = map[widget.name] || (map[widget.name] = [] );
+ 				if(widget.row==i) entry.push(widget);
+ 			});
 
-		// generate map from name --> [list of widgets with that name]
-		var map = { };
-		array.forEach(this._getDescendantFormWidgets(), function(widget){
-			if(!widget.name){ return; }
-			var entry = map[widget.name] || (map[widget.name] = [] );
-			entry.push(widget);
-		});
+ 			for(var name in map){
+ 				if(!map.hasOwnProperty(name)){
+ 					continue;
+ 				}
+ 				var widgets = map[name],						// array of widgets w/this name
+ 					values = lang.getObject(name, false, obj);	// list of values for those widgets
 
-		for(var name in map){
-			if(!map.hasOwnProperty(name)){
-				continue;
-			}
-			var widgets = map[name],						// array of widgets w/this name
-				values = lang.getObject(name, false, obj);	// list of values for those widgets
-
-			if(values === undefined){
-				continue;
-			}
-			values = [].concat(values);
-			if(typeof widgets[0].checked == 'boolean'){
-				// for checkbox/radio, values is a list of which widgets should be checked
-				array.forEach(widgets, function(w){
-					w.set('value', array.indexOf(values, w._get('value')) != -1);
-				});
-			}else if(widgets[0].multiple){
-				// it takes an array (e.g. multi-select)
-				widgets[0].set('value', values);
-			}else{
-				// otherwise, values is a list of values to be assigned sequentially to each widget
-				array.forEach(widgets, function(w, i){
-					w.set('value', values[i]);
-				});
-			}
-		}
+ 				if(values === undefined){
+ 					continue;
+ 				}
+ 				values = [].concat(values);
+ 				if(typeof widgets[0].checked == 'boolean'){
+ 					// for checkbox/radio, values is a list of which widgets should be checked
+ 					array.forEach(widgets, function(w){
+ 						w.set('value', array.indexOf(values, w._get('value')==="on") != -1);
+ 					});
+ 				}else if(widgets[0].multiple){
+ 					// it takes an array (e.g. multi-select)
+ 					widgets[0].set('value', values);
+ 				}else{
+ 					// otherwise, values is a list of values to be assigned sequentially to each widget
+ 					array.forEach(widgets, function(w, i){
+ 						w.set('value', values[i]);
+ 					});
+ 				}
+ 			}
+ 		},this);
  	},
  	removeRow:function(row){
  		if(this.schema.minItems && this._rows.length==this.schema.minItems) return;
