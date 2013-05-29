@@ -36,14 +36,14 @@
 			display:inline-block;
 			width:100px;
 		}
-		.dformaCancel {
-			display:none;
-		}
-		.dijitTextArea {
-			width:400px;
+		/*.dformaCancel {
+			float:right;
 		}
 		.dformaSubmit {
 			float:right;
+		}*/
+		.dijitTextArea {
+			width:400px;
 		}
 		.dgrid {
 			max-width:500px;
@@ -92,7 +92,7 @@
 				nl:lang_nl
 			};
 			var schemas = [{
-				"type" : "{concert_material}",
+				"title" : "{concert_material}",
 				"properties":{
 					"componist" : {
 						"title": "{composer}",
@@ -258,22 +258,14 @@
 			columns = replaceNlsRecursive(columns,JSON.parse(nls[locale]));
 			var select = new dforma.Builder({
 				store:Observable(new Memory({
-					identifier: "id",
-					data:[{
-						id:1,
-						componist:"kees",
-						titel:"test"
-					}]
+					identifier: "id"
 				})),
 				submit: function(){
 					if(!this.validate()) return;
-					var data = this.get("value");
-					var schema = this.get("controllerWidget").item.schema;
-					var valid = true;
-					this.store.put(data);
+					var data = this.store.query();
 					domConstruct.create("div",{
-						innerHTML:JSON.stringify(data,null,2),
-						style:"color:"+(valid ?"green" : "red")
+						innerHTML:"<pre>"+JSON.stringify(data,null,2)+"</pre>"
+						//style:"color:"+(valid ?"green" : "red")
 					},"data");
 				}
 			}).placeAt("select");
@@ -289,6 +281,7 @@
 				    	titel:""
 				    },
 					onEdit:function(id,options){
+						options = options || {};
 						var self = this;
 						var data = this.store.get(id);
 						domClass.toggle(select.domNode,"dijitHidden",true);
@@ -298,6 +291,7 @@
 						});
 						fb.rebuild({
 							id:id,
+							options:options,
 							controls:[control],
 							submit:{
 								label:common.buttonSave
@@ -307,6 +301,12 @@
 				}]
 			});
 			var fb = new dforma.Builder({
+				cancel: function(){
+					domClass.toggle(select.domNode,"dijitHidden",false);
+					domClass.toggle(fb.domNode,"dijitHidden",true);
+					// cancelled new?
+					if(!this.data.options.overwrite) select.store.remove(this.data.id);
+				},
 				submit: function(){
 					if(!this.validate()) return;
 					domClass.toggle(select.domNode,"dijitHidden",false);
