@@ -442,12 +442,13 @@ return declare("dforma.Builder",[_Container,Form],{
 			if(c.type=="repeat" || c.type=="group"){
 				parent.addChild(co);
 				array.forEach(c.options,function(o){
-					if(o.id==c.value && o.controls) {
+					if(o.controls) {
 						array.forEach(o.controls,function(c,i){
 							render(c,i,o.controls,null,co);
 						});
 					}
 				});
+				co.set("value",c.value);
 			} else if(parent.type=="repeat"){
 				parent.addControl(Widget,cc);
 			} else if(c.type=="hidden") {
