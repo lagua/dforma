@@ -7,9 +7,8 @@ define([
 	"dijit/form/Button",
 	"dgrid/OnDemandGrid",
 	"dgrid/Selection",
-	"dojo/i18n!./nls/common"
-],function(declare,lang,array,_WidgetBase,_Contained,Button,OnDemandGrid,Selection,common){
-	
+	"dojox/mobile/i18n"
+],function(declare,lang,array,_WidgetBase,_Contained,Button,OnDemandGrid,Selection,i18n){
 	
 	return declare("dforma.List",[_WidgetBase,_Contained,OnDemandGrid,Selection],{
 		store:null,
@@ -19,6 +18,7 @@ define([
 		startup:function(){
 			this.inherited(arguments);
 			var self = this;
+			var common = i18n.load("dforma","common");
 			this.addButton = new Button({
 				label:common.buttonAdd,
 				"class": "dformaListEditButton",
