@@ -5,10 +5,11 @@ define([
 	"dojo/when",
 	"dojo/keys",
 	"dojo/dom-construct",
+	"dojo/dom-class",
 	"dojo/store/Memory",
 	"./Group",
 	"./Label",
-	"dojo/i18n!./nls/common",
+	"dojox/mobile/i18n",
 	"dijit/_Container",
 	"dijit/form/Form",
 	"dijit/form/Button",
@@ -17,8 +18,8 @@ define([
 	"dijit/form/TextBox",
 	"dlagua/x/dtl/filter/strings",
 	"dlagua/c/string/toProperCase"
-],function(declare,lang,array,when,keys,domConstruct,Memory,Group,Label,common,_Container,Form,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
-return declare("dforma.Builder",[_Container,Form],{
+],function(declare,lang,array,when,keys,domConstruct,domClass,Memory,Group,Label,i18n,_Container,Form,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
+var Builder = declare("dforma.Builder",[_Container,Form],{
 	baseClass:"dformaBuilder",
 	templateString: "<div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div data-dojo-attach-point=\"buttonNode\"></div></div>",
 	controller:null,
@@ -45,14 +46,20 @@ return declare("dforma.Builder",[_Container,Form],{
 			this.allowFreeKey = true;
 			this.addControls = options.controls;
 		}
+		if(control.type=="select") {
+			control.searchAttr = "label";
+			control.labelAttr = "label";
+		}
 		if(options.edit===true || options["delete"]===true) {
-			control.labelAttr = control.searchAttr = "name";
 			this.allowOptionalDeletion = false;
 		}
-		array.forEach(schemaList,function(schema){
+		array.forEach(schemaList,function(schema,sindex){
 			if(schema["default"]) control["default"] = schema[name];
+			var id = schema.id ? schema.id : sindex;
+			var title = schema.title ? schema.title : (schema.id ? toProperCase(id) : "item"+id);
 			var option = {
-				id:schema[name],
+				id:id,
+				label:title,
 				schema:schema,
 				controls:[]
 			};
@@ -75,7 +82,11 @@ return declare("dforma.Builder",[_Container,Form],{
 				} else if(prop.type=="date") {
 					type = "date";
 				} else if(prop.type=="array") {
-					type = "repeat";
+					if(prop.format == "list") {
+						// TODO: create list type
+					} else {
+						type = "repeat";
+					}
 				} else if(prop.type=="object") {
 					type = "group";
 				} else if(prop.type=="string" && prop.format=="text"){
@@ -418,6 +429,47 @@ return declare("dforma.Builder",[_Container,Form],{
 				case "textarea":
 					cc.block = true;
 				break;
+				case "list":
+					// create bound subform
+					if(!cc.store) cc.store = parent.store; 
+					cc.subform = new Builder({
+						cancel: function(){
+							domClass.toggle(this.parentform.domNode,"dijitHidden",false);
+							domClass.toggle(parent.buttonNode,"dijitHidden",false);
+							domClass.toggle(this.domNode,"dijitHidden",true);
+							// cancelled new?
+							if(!this.data.options.overwrite) this.parentform.store.remove(this.data.id);
+						},
+						submit: function(){
+							if(!this.validate()) return;
+							domClass.toggle(this.parentform.domNode,"dijitHidden",false);
+							domClass.toggle(parent.buttonNode,"dijitHidden",false);
+							domClass.toggle(this.domNode,"dijitHidden",true);
+							var data = this.get("value");
+							this.parentform.store.put(data,{
+								id:this.data.id,
+								overwrite:true
+							});
+						}
+					});
+					cc.onEdit = function(id,options){
+						options = options || {};
+						var data = this.store.get(id);
+						domClass.toggle(this.domNode,"dijitHidden",true);
+						domClass.toggle(parent.buttonNode,"dijitHidden",true);
+						domClass.toggle(this.subform.domNode,"dijitHidden",false);
+						this.subform.rebuild({
+							id:id,
+							options:options,
+							controls:[self.toControl(c.controller.name,c.schemas,data,{
+								selectFirst:true
+							})],
+							submit:{
+								label:common.buttonSave
+							}
+						});
+					};
+				break;
 				case "group":
 					cc.item = c.options[0];
 					cc.hint = c.description || "";
@@ -444,7 +496,11 @@ return declare("dforma.Builder",[_Container,Form],{
 				self.controllerWidget = controller;
 			}
 			controls[i].widget = co;
-			if(c.type=="repeat" || c.type=="group"){
+			if(c.type=="list") {
+				parent.addChild(co);
+				cc.subform.parentform = co;
+				parent.addChild(cc.subform);
+			} else if(c.type=="repeat" || c.type=="group"){
 				parent.addChild(co);
 				array.forEach(c.options,function(o){
 					if(o.controls) {
@@ -586,6 +642,7 @@ return declare("dforma.Builder",[_Container,Form],{
 		}
 		this.cancelButton.destroy();
 		this.submitButton.destroy();
+		var common = i18n.load("dforma","common");
 		this.cancelButton = new Button(lang.mixin({
 			label:common.buttonCancel,
 			"class":"dformaCancel",
@@ -604,4 +661,5 @@ return declare("dforma.Builder",[_Container,Form],{
 		this.inherited(arguments);
 	}
 });
+return Builder;
 });
