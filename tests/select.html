@@ -65,15 +65,19 @@
 			"dojo/ready",
 			"dojo/hash",
 			"dojo/topic",
-			"dojo/i18n!dforma/nls/common",
+			"dojox/mobile/i18n",
 			"dojo/text!./nl.json",
 			"dojo/text!./en.json"
-		], function(lang,array,Builder,JSON,Memory,Observable,domConstruct,domClass,dom,ready,hash,topic,common,lang_nl,lang_en){
+		], function(lang,array,Builder,JSON,Memory,Observable,domConstruct,domClass,dom,ready,hash,topic,i18n,lang_nl,lang_en){
 			function traverse(obj,func, parent) {
 				for (i in obj){
 					func.apply(obj,[i,obj[i],parent]);
 					if (obj[i] instanceof Object && !(obj[i] instanceof Array)) {
 						traverse(obj[i],func, i);
+					} else if(obj[i] instanceof Array) {
+						array.forEach(obj[i],function(o){
+							traverse(o,func, i);
+						});
 					}
 				}
 			};
@@ -85,249 +89,229 @@
 				});
 				return obj;
 			};
-			dojo.locale = hash() || "nl";
-			var locale = dojo.locale.split("_").pop();
 			var nls = {
-				en:lang_en,
-				nl:lang_nl
+				"en-us":lang_en,
+				"nl-nl":lang_nl
 			};
-			var schemas = [{
-				"type" : "{concert_material}",
-				"properties":{
-					"componist" : {
-						"title": "{composer}",
-						"required" : true,
-						"type" : "string"
-					},
-					"titel" : {
-						"title": "{title}",
-						"required" : true,
-						"type" : "string"
-					},
-					"uitgever" : {
-						"title": "{publisher}",
-						"type" : "string"
-					},
-					"materialen" : {
-						"title": "{material_type}",
+			var select;
+			function rebuild() {
+				var schema = {
+					"id":"verhuur",
+					"type":"array",
+					"format":"list",
+					"title":"{rental}",
+					"items":[{
+						"id":"uitvoeringsmateriaal",
+						"title":"{concert_material}",
 						"type" : "object",
 						"properties":{
-							"pianouittreksel":{
-								"type":"integer",
-								"minimum":0,
-								"default":0
-							},
-							"koormateriaal":{
-								"type":"integer",
-								"minimum":0,
-								"default":0
-							}
-						}
-					},
-					"strijkers" : {
-						"title": "{string_set}",
-						"description":"{no_strings_info}",
-						"type" : "object",
-						"properties":{
-							"viool1":{
-								"title": "{violin1}",
-								"type":"integer",
-								"minimum":0,
-								"default":0
-							},
-							"viool2":{
-								"title": "{violin2}",
-								"type":"integer",
-								"minimum":0,
-								"default":0
-							},
-							"altviool":{
-								"title": "{viola}",
-								"type":"integer",
-								"minimum":0,
-								"default":0
-							},
-							"cello":{
-								"title": "{violoncello}",
-								"type":"integer",
-								"minimum":0,
-								"default":0
-							},
-							"contrabas":{
-								"title": "{double_bass}",
-								"type":"integer",
-								"minimum":0,
-								"default":0
-							}
-						}
-					},
-					"uitvoeringen":{
-						"title": "{performances}",
-						"description":"{performance_info}",
-						"type":"array",
-						"minItems":1,
-						"items":{
-							"datum" : {
-								"title": "{date}",
-								"required" : true,
-								"type" : "date"
-							},
-							"plaats" : {
-								"title": "{place}",
+							"componist" : {
+								"title": "{composer}",
 								"required" : true,
 								"type" : "string"
 							},
-							"zaal" : {
-								"title": "{location}",
+							"titel" : {
+								"title": "{title}",
 								"required" : true,
 								"type" : "string"
+							},
+							"uitgever" : {
+								"title": "{publisher}",
+								"type" : "string"
+							},
+							"materialen" : {
+								"title": "{material_type}",
+								"type" : "object",
+								"properties":{
+									"pianouittreksel":{
+										"type":"integer",
+										"minimum":0,
+										"default":0
+									},
+									"koormateriaal":{
+										"type":"integer",
+										"minimum":0,
+										"default":0
+									}
+								}
+							},
+							"strijkers" : {
+								"title": "{string_set}",
+								"description":"{no_strings_info}",
+								"type" : "object",
+								"properties":{
+									"viool1":{
+										"title": "{violin1}",
+										"type":"integer",
+										"minimum":0,
+										"default":0
+									},
+									"viool2":{
+										"title": "{violin2}",
+										"type":"integer",
+										"minimum":0,
+										"default":0
+									},
+									"altviool":{
+										"title": "{viola}",
+										"type":"integer",
+										"minimum":0,
+										"default":0
+									},
+									"cello":{
+										"title": "{violoncello}",
+										"type":"integer",
+										"minimum":0,
+										"default":0
+									},
+									"contrabas":{
+										"title": "{double_bass}",
+										"type":"integer",
+										"minimum":0,
+										"default":0
+									}
+								}
+							},
+							"uitvoeringen":{
+								"title": "{performances}",
+								"description":"{performance_info}",
+								"type":"array",
+								"minItems":1,
+								"items":{
+									"datum" : {
+										"title": "{date}",
+										"required" : true,
+										"type" : "date"
+									},
+									"plaats" : {
+										"title": "{place}",
+										"required" : true,
+										"type" : "string"
+									},
+									"zaal" : {
+										"title": "{location}",
+										"required" : true,
+										"type" : "string"
+									}
+								}
+							},
+							"dirigent":{
+								"title": "{conductor}",
+								"type":"string"
+							},
+							"solisten":{
+								"title": "{soloists}",
+								"type":"string"
+							},
+							"eersterepetitie":{
+								"title": "{first_rehearsal}",
+								"type":"date"
+							},
+							"opnames":{
+								"title":"{recording}",
+								"description":"{add_recording_info}",
+								"type":"object",
+								"properties":{
+									"radio":{
+										"type":"boolean"
+									},
+									"tv":{
+										"type":"boolean"
+									},
+									"cd-dvd":{
+										"title":"{cd_dvd}",
+										"type":"boolean"
+									},
+									"internet":{
+										"type":"boolean"
+									},
+									"overig":{
+										"title":"{other}",
+										"type":"boolean"
+									}
+								}
+							},
+							"opmerkingen" : {
+								"title": "{remarks}",
+								"type" : "string",
+								"format" : "text"
 							}
 						}
-					},
-					"dirigent":{
-						"title": "{conductor}",
-						"type":"string"
-					},
-					"solisten":{
-						"title": "{soloists}",
-						"type":"string"
-					},
-					"eersterepetitie":{
-						"title": "{first_rehearsal}",
-						"type":"date"
-					},
-					"opnames":{
-						"title":"{recording}",
-						"description":"{add_recording_info}",
+					},{
+						"id":"zichtpartituur",
 						"type":"object",
+						"title" : "{perusal_score}",
 						"properties":{
-							"radio":{
-								"type":"boolean"
+							"componist" : {
+								"title": "{composer}",
+								"required" : true,
+								"type" : "string"
 							},
-							"tv":{
-								"type":"boolean"
+							"titel" : {
+								"title": "{title}",
+								"required" : true,
+								"type" : "string"
 							},
-							"cd-dvd":{
-								"title":"{cd_dvd}",
-								"type":"boolean"
+							"uitgever" : {
+								"title": "{publisher}",
+								"type" : "string"
 							},
-							"internet":{
-								"type":"boolean"
-							},
-							"overig":{
-								"title":"{other}",
-								"type":"boolean"
+							"opmerkingen" : {
+								"title": "{remarks}",
+								"type" : "string",
+								"format" : "text"
 							}
 						}
-					},
-					"opmerkingen" : {
-						"title": "{remarks}",
-						"type" : "string",
-						"format" : "text"
+					}]
+				};
+				var columns = {
+			        componist: {
+			            label: "{composer}"
+			        },
+			        titel: {
+			            label: "{title}"
+			        }
+			    };
+				var h = hash();
+				if(h) dojo.locale = h;
+				if(select) select.destroyRecursive();
+				var common = i18n.load("dforma","common");
+				schema = replaceNlsRecursive(schema,JSON.parse(nls[dojo.locale]));
+				columns = replaceNlsRecursive(columns,JSON.parse(nls[dojo.locale]));
+				select = new Builder({
+					store:Observable(new Memory({
+						identifier: "id"
+					})),
+					submit: function(){
+						if(!this.validate()) return;
+						var data = this.store.query();
+						domConstruct.create("div",{
+							innerHTML:"<pre>"+JSON.stringify(data,null,2)+"</pre>"
+							//style:"color:"+(valid ?"green" : "red")
+						},"data");
 					}
-				}
-			},{
-				"type" : "{perusal_score}",
-				"properties":{
-					"componist" : {
-						"title": "{composer}",
-						"required" : true,
-						"type" : "string"
-					},
-					"titel" : {
-						"title": "{title}",
-						"required" : true,
-						"type" : "string"
-					},
-					"uitgever" : {
-						"title": "{publisher}",
-						"type" : "string"
-					},
-					"opmerkingen" : {
-						"title": "{remarks}",
-						"type" : "string",
-						"format" : "text"
-					}
-				}
-			}];
-			
-			schemas = array.map(schemas,function(schema){
-				return replaceNlsRecursive(schema,JSON.parse(nls[locale]));
-			});
-			var columns = {
-		        componist: {
-		            label: "{composer}"
-		        },
-		        titel: {
-		            label: "{title}"
-		        }
-		    };
-			columns = replaceNlsRecursive(columns,JSON.parse(nls[locale]));
-			var select = new dforma.Builder({
-				store:Observable(new Memory({
-					identifier: "id"
-				})),
-				submit: function(){
-					if(!this.validate()) return;
-					var data = this.store.query();
-					domConstruct.create("div",{
-						innerHTML:"<pre>"+JSON.stringify(data,null,2)+"</pre>"
-						//style:"color:"+(valid ?"green" : "red")
-					},"data");
-				}
-			}).placeAt("select");
-			select.startup();
-			select.rebuild({
-				controls:[{
-					type:"list",
-					name:"verhuur",
-					store:select.store,
-					columns: columns,
-				    defaultInstance:{
-				    	componist:"",
-				    	titel:""
-				    },
-					onEdit:function(id,options){
-						options = options || {};
-						var self = this;
-						var data = this.store.get(id);
-						domClass.toggle(select.domNode,"dijitHidden",true);
-						domClass.toggle(fb.domNode,"dijitHidden",false);
-						var control = fb.toControl("type",schemas,data,{
-							selectFirst:true
-						});
-						fb.rebuild({
-							id:id,
-							options:options,
-							controls:[control],
-							submit:{
-								label:common.buttonSave
-							}
-						});
-					}
-				}]
-			});
-			var fb = new dforma.Builder({
-				cancel: function(){
-					domClass.toggle(select.domNode,"dijitHidden",false);
-					domClass.toggle(fb.domNode,"dijitHidden",true);
-					// cancelled new?
-					if(!this.data.options.overwrite) select.store.remove(this.data.id);
-				},
-				submit: function(){
-					if(!this.validate()) return;
-					domClass.toggle(select.domNode,"dijitHidden",false);
-					domClass.toggle(fb.domNode,"dijitHidden",true);
-					var data = this.get("value");
-					var schema = this.get("controllerWidget").item.schema;
-					select.store.put(data,{
-						id:this.data.id,
-						overwrite:true
-					});
-				}
-			}).placeAt("form");
-			fb.startup();
+				}).placeAt("select");
+				select.startup();
+				select.rebuild({
+					controls:[{
+						type:"list",
+						name:schema.title,
+						columns: columns,
+						schemas:schema.items,
+						controller:{
+							type:"select",
+							name:"aanvraagtype"
+						},
+					    defaultInstance:{
+					    	componist:"",
+					    	titel:""
+					    }
+					}]
+				});
+			}
+			ready(rebuild);
 			topic.subscribe("/dojo/hashchange",function(){
+				rebuild();
 			});
 		});
 
@@ -335,7 +319,7 @@
 </head>
 <body class="claro">
 		<h3>Form from JSON Schema</h3>
-		<div><a href="#nl">Nederlands</a> / <a href="#en">Engels</a></div>
+		<div><a href="#nl-nl">Nederlands</a> / <a href="#en-us">Engels</a></div>
 		<div id="select"></div>
 		<div id="form"></div>
 		<div id="data"></div>
