@@ -7,10 +7,11 @@ define([
 	"dijit/form/Button",
 	"dgrid/OnDemandGrid",
 	"dgrid/Selection",
+	"dgrid/extensions/DijitRegistry",
 	"dojox/mobile/i18n"
-],function(declare,lang,array,_WidgetBase,_Contained,Button,OnDemandGrid,Selection,i18n){
+],function(declare,lang,array,_WidgetBase,_Contained,Button,OnDemandGrid,Selection,DijitRegistry,i18n){
 	
-	return declare("dforma.List",[_WidgetBase,_Contained,OnDemandGrid,Selection],{
+	return declare("dforma.List",[_WidgetBase,_Contained,OnDemandGrid,Selection,DijitRegistry],{
 		store:null,
 		selectionMode:"single",
 		showFooter:true,
