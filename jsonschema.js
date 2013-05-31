@@ -1,6 +1,6 @@
 define([
 	"dojo/_base/lang",
-	"dojo/_base/array",
+	"dojo/_base/array"
 ],function(lang,array){
 	var jsonschema = lang.getObject("dforma.jsonschema", true);
 	lang.mixin(jsonschema,{
