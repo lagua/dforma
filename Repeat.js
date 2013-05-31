@@ -7,9 +7,9 @@ define([
 	"dojo/_base/array",
 	"dojo/dom-construct",
 	"dforma/Group",
-	"dojo/i18n!/js_shared/dojo/1.8/dforma/nls/common.js",
+	"dojox/mobile/i18n",
 	"dijit/form/Button"
-],function(declare,lang,array,domConstruct,Group,common,Button){
+],function(declare,lang,array,domConstruct,Group,i18n,Button){
 return declare("dforma.Repeat",[Group],{
 	templateString: "<div class=\"dijit dijitReset dformaRepeat\" data-dojo-attach-point=\"focusNode\" aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden dformaRepeatLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><div class=\"dijitReset dijitHidden dformaRepeatHint\" data-dojo-attach-point=\"hintNode\"></div><table data-dojo-attach-point=\"repeatNode\"></table><div id=\"${id}_buttonNode\" class=\"dijitReset dformaRepeatButton\" data-dojo-attach-point=\"buttonNode\"></div><div class=\"dijitReset dformaRepeatMessage\" data-dojo-attach-point=\"messageNode\"></div></div>",
 	label: "",
@@ -28,6 +28,7 @@ return declare("dforma.Repeat",[Group],{
 		this._controls = [];
 		var self = this;
 		this.value = [];
+		var common = i18n.load("dforma","common");
 		this._addButton = new Button({
 			label:common.buttonAdd,
 			onClick:function(){
@@ -45,6 +46,7 @@ return declare("dforma.Repeat",[Group],{
  	},
  	cloneRow:function(){
  		// add new row
+ 		var common = i18n.load("dforma","common");
  		var row = this._rows.length;
  		var self = this;
 		this._rows.push({
