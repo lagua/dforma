@@ -2,6 +2,7 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/_base/array",
+	"dojo/aspect",
 	"dojo/when",
 	"dojo/keys",
 	"dojo/dom-construct",
@@ -18,11 +19,12 @@ define([
 	"dijit/form/ComboBox",
 	"dijit/form/TextBox",
 	"dlagua/x/dtl/filter/strings",
-	"dlagua/c/string/toProperCase"
-],function(declare,lang,array,when,keys,domConstruct,domClass,Memory,Group,Label,jsonschema,i18n,_Container,Form,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
+	"dlagua/c/string/toProperCase",
+	"dojo/i18n!./nls/common"
+],function(declare,lang,array,aspect,when,keys,domConstruct,domClass,Memory,Group,Label,jsonschema,i18n,_Container,Form,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
 var Builder = declare("dforma.Builder",[_Container,Form],{
 	baseClass:"dformaBuilder",
-	templateString: "<div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div data-dojo-attach-point=\"buttonNode\"></div></div>",
+	templateString: "<div aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden dformaBuilderLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div data-dojo-attach-point=\"buttonNode\"></div></div>",
 	controller:null,
 	controllerWidget:null,
 	data:null,
@@ -30,8 +32,19 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 	hideOptional:false,
 	allowFreeKey:false,
 	allowOptionalDeletion:false,
+	header:false,
+	footer:false,
 	submit:function(){},
 	cancel:function(){},
+	_setLabelAttr: function(/*String*/ content){
+		// summary:
+		//		Hook for set('label', ...) to work.
+		// description:
+		//		Set the label (text) of the button; takes an HTML string.
+		this._set("label", content);
+		this["labelNode"].innerHTML = content;
+		domClass.toggle(this.labelNode,"dijitHidden",!this.label);
+ 	},
 	rebuild:function(data){
 		if(data) {
 			this.data = data;
@@ -313,6 +326,7 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 					cc.block = true;
 				break;
 				case "list":
+					cc.hint = c.description || "";
 					// create bound subform
 					if(!cc.store) cc.store = parent.store; 
 					cc.subform = new Builder({
@@ -320,6 +334,7 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 							domClass.toggle(this.parentform.domNode,"dijitHidden",false);
 							domClass.toggle(parent.buttonNode,"dijitHidden",false);
 							domClass.toggle(this.domNode,"dijitHidden",true);
+							parent.layout();
 							// cancelled new?
 							if(!this.data.options.overwrite) this.parentform.store.remove(this.data.id);
 						},
@@ -328,6 +343,7 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 							domClass.toggle(this.parentform.domNode,"dijitHidden",false);
 							domClass.toggle(parent.buttonNode,"dijitHidden",false);
 							domClass.toggle(this.domNode,"dijitHidden",true);
+							parent.layout();
 							var data = this.get("value");
 							this.parentform.store.put(data,{
 								id:this.data.id,
@@ -335,6 +351,9 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 							});
 						}
 					});
+					parent.own(aspect.after(cc.subform,"layout",function(){
+						parent.layout();
+					}));
 					cc.onEdit = function(id,options){
 						options = options || {};
 						var data = this.store.get(id);
@@ -352,6 +371,7 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 								label:common.buttonSave
 							}
 						});
+						//parent.layout();
 					};
 				break;
 				case "group":
@@ -429,7 +449,8 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 					}));
 				}
 				*/
-			} 
+			}
+			parent.layout && parent.layout();
 		}
 		// end render
 		array.forEach(controls,function(c,i){
@@ -538,9 +559,21 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 			onClick:lang.hitch(this,this.submit)
 		},this.data.submit)).placeAt(this.buttonNode);
 	},
-	startup:function(){
+	postCreate:function(){
+		this.inherited(arguments);
 		this.cancelButton = new Button();
 		this.submitButton = new Button();
+		if(this.header) {
+			this.headerNode = domConstruct.create("div",{
+				"class":"dformaBuilderHeader"
+			},this.containerNode,"before");
+		}if(this.footer) {
+			this.footerNode = domConstruct.create("div",{
+				"class":"dformaBuilderFooter"
+			},this.containerNode,"after");
+		}
+	},
+	startup:function(){
 		if(this.data) this.rebuild();
 		this.inherited(arguments);
 	}
