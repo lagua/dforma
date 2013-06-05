@@ -8,11 +8,11 @@ define([
 	"dojo/dom-construct",
 	"dojo/dom-class",
 	"dojo/store/Memory",
+	"./_GroupMixin",
 	"./Group",
 	"./Label",
 	"./jsonschema",
 	"dojox/mobile/i18n",
-	"dijit/_Container",
 	"dijit/form/Form",
 	"dijit/form/Button",
 	"dijit/form/FilteringSelect",
@@ -21,30 +21,20 @@ define([
 	"dlagua/x/dtl/filter/strings",
 	"dlagua/c/string/toProperCase",
 	"dojo/i18n!./nls/common"
-],function(declare,lang,array,aspect,when,keys,domConstruct,domClass,Memory,Group,Label,jsonschema,i18n,_Container,Form,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
-var Builder = declare("dforma.Builder",[_Container,Form],{
+],function(declare,lang,array,aspect,when,keys,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Form,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
+var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	baseClass:"dformaBuilder",
-	templateString: "<div aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden dformaBuilderLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div data-dojo-attach-point=\"buttonNode\"></div></div>",
+	templateString: "<div aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden ${baseClass}Label\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div class=\"dijitReset dijitHidden ${baseClass}Hint\" data-dojo-attach-point=\"hintNode\"></div><div class=\"dijitReset dijitHidden ${baseClass}Message\" data-dojo-attach-point=\"messageNode\"></div><div data-dojo-attach-point=\"buttonNode\"></div></div>",
 	controller:null,
 	controllerWidget:null,
 	data:null,
 	store:null,
 	hideOptional:false,
-	allowFreeKey:false,
-	allowOptionalDeletion:false,
-	header:false,
-	footer:false,
+	allowFreeKey:false, // schema editor: set true for add
+	allowOptionalDeletion:false, // schema editor: set false for edit/delete
+	addControls:null, // schema editor: set as controls for the editor 
 	submit:function(){},
 	cancel:function(){},
-	_setLabelAttr: function(/*String*/ content){
-		// summary:
-		//		Hook for set('label', ...) to work.
-		// description:
-		//		Set the label (text) of the button; takes an HTML string.
-		this._set("label", content);
-		this["labelNode"].innerHTML = content;
-		domClass.toggle(this.labelNode,"dijitHidden",!this.label);
- 	},
 	rebuild:function(data){
 		if(data) {
 			this.data = data;
@@ -333,6 +323,7 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 						cancel: function(){
 							domClass.toggle(this.parentform.domNode,"dijitHidden",false);
 							domClass.toggle(parent.buttonNode,"dijitHidden",false);
+							domClass.toggle(parent.hintNode,"dijitHidden",false);
 							domClass.toggle(this.domNode,"dijitHidden",true);
 							parent.layout();
 							// cancelled new?
@@ -342,6 +333,7 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 							if(!this.validate()) return;
 							domClass.toggle(this.parentform.domNode,"dijitHidden",false);
 							domClass.toggle(parent.buttonNode,"dijitHidden",false);
+							domClass.toggle(parent.hintNode,"dijitHidden",false);
 							domClass.toggle(this.domNode,"dijitHidden",true);
 							parent.layout();
 							var data = this.get("value");
@@ -359,6 +351,7 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 						var data = this.store.get(id);
 						domClass.toggle(this.domNode,"dijitHidden",true);
 						domClass.toggle(parent.buttonNode,"dijitHidden",true);
+						domClass.toggle(parent.hintNode,"dijitHidden",true);
 						domClass.toggle(this.subform.domNode,"dijitHidden",false);
 						this.subform.rebuild({
 							id:id,
@@ -509,6 +502,7 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 								c.edit = true;
 								c.add = true;
 								c["delete"] = true;
+								// TODO: set addControls on data
 								c.controls = self.addControls;
 								// instantiate properties if undef
 								if(!controller.item.properties) controller.item.properties = {};
@@ -559,23 +553,11 @@ var Builder = declare("dforma.Builder",[_Container,Form],{
 			onClick:lang.hitch(this,this.submit)
 		},this.data.submit)).placeAt(this.buttonNode);
 	},
-	postCreate:function(){
-		this.inherited(arguments);
+	startup:function(){
 		this.cancelButton = new Button();
 		this.submitButton = new Button();
-		if(this.header) {
-			this.headerNode = domConstruct.create("div",{
-				"class":"dformaBuilderHeader"
-			},this.containerNode,"before");
-		}if(this.footer) {
-			this.footerNode = domConstruct.create("div",{
-				"class":"dformaBuilderFooter"
-			},this.containerNode,"after");
-		}
-	},
-	startup:function(){
-		if(this.data) this.rebuild();
 		this.inherited(arguments);
+		if(this.data) this.rebuild();
 	}
 });
 return Builder;
