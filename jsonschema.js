@@ -16,15 +16,10 @@ define([
 			if(options.add) {
 				options.edit = true;
 				options["delete"] = true;
-				//this.allowFreeKey = true;
-				//this.addControls = options.controls;
 			}
 			if(control.type=="select") {
 				control.searchAttr = "label";
 				control.labelAttr = "label";
-			}
-			if(options.edit===true || options["delete"]===true) {
-				//this.allowOptionalDeletion = false;
 			}
 			array.forEach(schemaList,function(schema,sindex){
 				if(schema["default"]) control["default"] = schema[name];
@@ -43,7 +38,11 @@ define([
 				}
 				control.options.push(option);
 			});
-			if(options.selectFirst) control.value = control.options[0].id;
+			if(data && data[name]) {
+				control.value = data[name];
+			} else if(options.selectFirst) {
+				control.value = control.options[0].id;
+			}
 			return control;
 		},
 		schemaToControls:function(schema,data,options){
