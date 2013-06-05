@@ -6,13 +6,13 @@ define([
 	"dojo/_base/lang",
 	"dojo/_base/array",
 	"dojo/dom-construct",
-	"dforma/Group",
+	"dojo/dom-class",
+	"./Group",
 	"dojox/mobile/i18n",
 	"dijit/form/Button"
-],function(declare,lang,array,domConstruct,Group,i18n,Button){
+],function(declare,lang,array,domConstruct,domClass,Group,i18n,Button){
 return declare("dforma.Repeat",[Group],{
-	templateString: "<div class=\"dijit dijitReset dformaRepeat\" data-dojo-attach-point=\"focusNode\" aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden dformaRepeatLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><div class=\"dijitReset dijitHidden dformaRepeatHint\" data-dojo-attach-point=\"hintNode\"></div><table data-dojo-attach-point=\"repeatNode\"></table><div id=\"${id}_buttonNode\" class=\"dijitReset dformaRepeatButton\" data-dojo-attach-point=\"buttonNode\"></div><div class=\"dijitReset dformaRepeatMessage\" data-dojo-attach-point=\"messageNode\"></div></div>",
-	label: "",
+	baseClass:"dformaRepeat",
 	cols:1,
 	_col:0,
 	_headerNode:null,
@@ -20,9 +20,10 @@ return declare("dforma.Repeat",[Group],{
 	_controls:null,
 	_addButton:null,
 	value:null,
-	message:"",
 	startup:function(){
 		this.inherited(arguments);
+		domClass.remove(this.buttonNode,"dijitHidden");
+		this.repeatNode = this.containerNode;
 		this._headerNode = domConstruct.create("tr",{},this.repeatNode);
 		this._rows = [];
 		this._controls = [];
@@ -36,14 +37,6 @@ return declare("dforma.Repeat",[Group],{
 			}
 		}).placeAt(this.buttonNode);
 	},
-	_setLabelAttr: function(/*String*/ content){
-		// summary:
-		//		Hook for set('label', ...) to work.
-		// description:
-		//		Set the label (text) of the button; takes an HTML string.
-		this._set("label", content);
-		this["labelNode"].innerHTML = content;
- 	},
  	cloneRow:function(){
  		// add new row
  		var common = i18n.load("dforma","common");
@@ -191,14 +184,6 @@ return declare("dforma.Repeat",[Group],{
  		this.inherited(arguments);
  		// reset containerNode so all children are found
  		this.containerNode = this.repeatNode;
- 	},
- 	_setMessageAttr: function(/*String*/ content){
-		// summary:
-		//		Hook for set('label', ...) to work.
-		// description:
-		//		Set the label (text) of the button; takes an HTML string.
-		this._set("message", content);
-		this["messageNode"].innerHTML = content;
  	}
 });
 });
