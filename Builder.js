@@ -408,8 +408,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					cc.splitLabel = label;
 					cc.onClick = function(){
 						domClass.toggle(this.getParent().containerNode,"dijitHidden",!this.checked);
+						this.value = this.checked ? "on" : "";
 						this.set("label",this.splitLabel[(this.checked ? 1 : 0)]);
-					}
+					};
 				break;
 				case "select":
 				case "combo":
