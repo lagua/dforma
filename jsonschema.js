@@ -130,8 +130,8 @@ define([
 				if(prop.dialog) {
 					c.dialog = prop.dialog;
 				}
-				if(prop.format=="unhide") {
-					c.type = "unhide";
+				if(prop.format=="unhidebutton") {
+					c.type = "unhidebutton";
 					if(prop.target) c.target = prop.target;
 				}
 				if(options.hasOwnProperty("edit") && options.edit===true) {
