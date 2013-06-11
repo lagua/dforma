@@ -113,10 +113,14 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						req = "dlagua/w/ColorPalette";
 					break;
 					case "group":
-						req = "dforma/Group";
+						if(c.hidden) {
+							req = "dforma/HiddenGroup";
+						} else {
+							req = "dforma/Group";
+						}
 					break;
 					case "unhide":
-						req = "dforma/UnhideButton";
+						req = "dijit/form/ToggleButton";
 					break;
 					case "switch":
 					break;
@@ -393,6 +397,15 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				case "phone":
 					cc.validator = dojox.validate.us.isPhoneNumber;
 				break;
+				case "unhide":
+					var label = c.label.split("|");
+					cc.label = label[0];
+					cc.splitLabel = label;
+					cc.onClick = function(){
+						domClass.toggle(this.getParent().containerNode,"dijitHidden",!this.checked);
+						this.set("label",this.splitLabel[(this.checked ? 1 : 0)]);
+					}
+				break;
 				case "select":
 				case "combo":
 					cc = lang.mixin({
@@ -448,12 +461,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						parent.addChild(co);
 					}
 				} else {
-					var p = parent.getParent();
-					var s = parent.domNode.nextSibling;
-					var insertIndex = s ? "before" : "last";
-					var t = s ? s : p.domNode;
-					co.addChild(parent);
-					domConstruct.place(co.domNode,t,insertIndex);
+					co.placeAt(parent.buttonNode);
 				}
 			} else if(c["delete"]) {
 				l.addChild(co);
