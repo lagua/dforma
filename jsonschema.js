@@ -63,8 +63,9 @@ define([
 					type = "date";
 				} else if(prop.type=="array") {
 					if(prop.format == "list") {
-						// TODO: create list type
 						type = "list";
+					} else if(prop.format == "select") {
+						type = "select";
 					} else {
 						type = "repeat";
 					}
@@ -73,10 +74,13 @@ define([
 				} else if(prop.type=="string" && prop.format=="text"){
 					type = "textarea";
 				} else {
-					type = "input";
-				}
-				if(lang.isArray(prop["enum"]) && prop["enum"].length) {
-					type = "select";
+					if(prop.format=="email") {
+						type = "email";
+					} else if(prop.format=="phone") {
+						type = "phone";
+					} else {
+						type = "input";
+					}
 				}
 				var c = {
 					name:k,
@@ -85,6 +89,9 @@ define([
 					required:(prop.required === true),
 					disabled:(prop.readonly === true)
 				};
+				if(prop.hasOwnProperty("invalidMessage")) {
+					c.invalidMessage = prop.invalidMessage;
+				}
 				if(prop.hasOwnProperty("minimum") || prop.hasOwnProperty("maximum")) {
 					c.constraints = {};
 					if(prop.hasOwnProperty("minimum")) c.constraints.min = prop.minimum;
@@ -106,6 +113,9 @@ define([
 						c.options.push({id:op});
 					});
 				}
+				if(type=="checkbox" && prop.hasOwnProperty("enum")) {
+					c.isValid = prop.enum;
+				}
 				if(type=="repeat" || type=="group"){
 					var items = jsonschema.schemasToControl(c.name,[{
 						properties:type=="repeat"? prop.items : prop.properties
@@ -113,6 +123,16 @@ define([
 						controllerType:type
 					});
 					c = lang.mixin(c,items);
+				}
+				if(prop.format=="hidden") {
+					c.hidden = true;
+				}
+				if(prop.dialog) {
+					c.dialog = prop.dialog;
+				}
+				if(prop.format=="unhide") {
+					c.type = "unhide";
+					if(prop.target) c.target = prop.target;
 				}
 				if(options.hasOwnProperty("edit") && options.edit===true) {
 					c.edit = true;
