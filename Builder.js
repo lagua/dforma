@@ -119,7 +119,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							req = "dforma/Group";
 						}
 					break;
-					case "unhide":
+					case "unhidebutton":
 						req = "dijit/form/ToggleButton";
 					break;
 					case "switch":
@@ -327,6 +327,11 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						}
 					}
 				break;
+				case "date":
+					cc.constraints = {
+						selector:"date"
+					}
+				break;
 				case "repeat":
 					cc.cols = c.options[0].controls.length;
 					cc.item = c.options[0];
@@ -397,7 +402,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				case "phone":
 					cc.validator = dojox.validate.us.isPhoneNumber;
 				break;
-				case "unhide":
+				case "unhidebutton":
 					var label = c.label.split("|");
 					cc.label = label[0];
 					cc.splitLabel = label;
@@ -447,7 +452,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			} else if(c.type=="hidden" || c.hidden) {
 				parent.addChild(co);
 				domClass.toggle(co.domNode,"dijitHidden",true);
-			} else if(c.type=="unhide") {
+			} else if(c.type=="unhidebutton") {
 				var target;
 				if(c.target) {
 					for(var i=0;i<controls.length;i++) {
