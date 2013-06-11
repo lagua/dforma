@@ -3,8 +3,9 @@ define([
     	"dojo/_base/lang",
     	"dojo/dom-attr",
     	"dojo/dom-class",
+    	"dijit/registry",
     	"./Group"
-    ],function(declare,lang,domAttr,domClass,Group){
+    ],function(declare,lang,domAttr,domClass,registry,Group){
 
 	return declare("dforma.HiddenGroup",[Group],{
 		_setLabelAttr:function(){
@@ -14,7 +15,14 @@ define([
 		},
 		validate:function(){
 			if(this.isHidden()) return true;
-			this.inherited(arguments);
+			return this.inherited(arguments);
+		},
+		getChildren:function(){
+			var children = this.inherited(arguments);
+			if(this.buttonNode.firstChild) {
+				children.push(registry.byNode(this.buttonNode.firstChild));
+			}
+			return children;
 		},
 		postCreate:function(){
 			this.inherited(arguments);
