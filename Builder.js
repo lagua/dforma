@@ -13,15 +13,20 @@ define([
 	"./Label",
 	"./jsonschema",
 	"dojox/mobile/i18n",
+	"dijit/Dialog",
 	"dijit/form/Form",
+	"dijit/form/_FormValueWidget",
 	"dijit/form/Button",
 	"dijit/form/FilteringSelect",
 	"dijit/form/ComboBox",
 	"dijit/form/TextBox",
 	"dlagua/x/dtl/filter/strings",
 	"dlagua/c/string/toProperCase",
+	"dojox/validate/web",
+	"dojox/validate/us",
 	"dojo/i18n!./nls/common"
-],function(declare,lang,array,aspect,when,keys,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Form,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
+],function(declare,lang,array,aspect,when,keys,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
+
 var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	baseClass:"dformaBuilder",
 	templateString: "<div aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden ${baseClass}Label\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div class=\"dijitReset dijitHidden ${baseClass}Hint\" data-dojo-attach-point=\"hintNode\"></div><div class=\"dijitReset dijitHidden ${baseClass}Message\" data-dojo-attach-point=\"messageNode\"></div><div data-dojo-attach-point=\"buttonNode\"></div></div>",
@@ -110,10 +115,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					case "group":
 						req = "dforma/Group";
 					break;
+					case "unhide":
+						req = "dforma/UnhideButton";
+					break;
 					case "switch":
 					break;
 					default:
-						if(c.required) {
+						if(c.required || c.type=="email" || c.type=="phone") {
 							req = "dijit/form/ValidationTextBox";
 						} else {
 							req = "dijit/form/TextBox";
@@ -306,6 +314,14 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			switch(c.type) {
 				case "checkbox":
 					cc.checked = (c.value===true);
+					cc.validate = function(){
+						if(this.hasOwnProperty("isValid") && this.checked!=this.isValid) {
+							alert(this.invalidMessage);
+							return false;
+						} else {
+							return true;
+						}
+					}
 				break;
 				case "repeat":
 					cc.cols = c.options[0].controls.length;
@@ -371,6 +387,12 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					cc.item = c.options[0];
 					cc.hint = c.description || "";
 				break;
+				case "email":
+					cc.validator = dojox.validate.isEmailAddress;
+				break;
+				case "phone":
+					cc.validator = dojox.validate.us.isPhoneNumber;
+				break;
 				case "select":
 				case "combo":
 					cc = lang.mixin({
@@ -409,8 +431,30 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				co.set("value",c.value);
 			} else if(parent.type=="repeat"){
 				parent.addControl(Widget,cc);
-			} else if(c.type=="hidden") {
+			} else if(c.type=="hidden" || c.hidden) {
 				parent.addChild(co);
+				domClass.toggle(co.domNode,"dijitHidden",true);
+			} else if(c.type=="unhide") {
+				var target;
+				if(c.target) {
+					for(var i=0;i<controls.length;i++) {
+						if(controls[i].name==c.target) {
+							target = controls[i].widget;
+							break;
+						}
+					}
+					if(target) {
+						co.addChild(target);
+						parent.addChild(co);
+					}
+				} else {
+					var p = parent.getParent();
+					var s = parent.domNode.nextSibling;
+					var insertIndex = s ? "before" : "last";
+					var t = s ? s : p.domNode;
+					co.addChild(parent);
+					domConstruct.place(co.domNode,t,insertIndex);
+				}
 			} else if(c["delete"]) {
 				l.addChild(co);
 				l.addChild(del);
@@ -418,9 +462,27 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			} else {
 		 		l = new Label({
 					label:c.label,
+					"class":"dformaLabelFor"+c.type.toProperCase(),
 					child:co,
-					title:c.description ? c.description : c.label
+					title:c.description && !c.schema.dialog ? c.description : c.label
 				});
+		 		if(c.type=="checkbox") {
+		 			l.on("click", function(evt){
+		 				if(evt.target.nodeName=="INPUT") return;
+		 				co.set("checked",!co.checked);
+		 			});
+		 		}
+		 		if(c.dialog) {
+		 			var bt = new Button({
+		 				label:c.dialog,
+		 				"class":"dformaPopupTrigger",
+		 				onClick:function(){
+		 					new Dialog({
+								content:c.description
+							}).show();
+		 				}
+		 			}).placeAt(l["labelNode_"+l.position],"before")
+				}
 		 		parent.addChild(l);
 				/*
 				if(c.type=="multiselect_freekey") {
