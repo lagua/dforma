@@ -368,9 +368,14 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							});
 						}
 					});
-					parent.own(aspect.after(cc.subform,"layout",function(){
-						parent.layout();
-					}));
+					parent.own(
+						aspect.after(cc.subform,"layout",function(){
+							parent.layout();
+						}),
+						aspect.after(parent,"cancel",function(){
+							cc.subform.cancel();
+						})
+					);
 					cc.onEdit = function(id,options){
 						options = options || {};
 						var data = this.store.get(id);
