@@ -114,7 +114,7 @@ define([
 					});
 				}
 				if(type=="checkbox" && prop.hasOwnProperty("enum")) {
-					c.isValid = prop.enum;
+					c.isValid = prop["enum"];
 				}
 				if(type=="repeat" || type=="group"){
 					var items = jsonschema.schemasToControl(c.name,[{
