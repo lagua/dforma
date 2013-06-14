@@ -41,6 +41,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	submit:function(){},
 	cancel:function(){},
 	rebuild:function(data){
+		var common = i18n.load("dforma","common");
 		if(data) {
 			this.data = data;
 		} else {
@@ -352,7 +353,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							domClass.toggle(this.domNode,"dijitHidden",true);
 							parent.layout();
 							// cancelled new?
-							if(!this.data.options.overwrite) this.parentform.store.remove(this.data.id);
+							if(this.data && !this.data.options.overwrite) this.parentform.store.remove(this.data.id);
 						},
 						submit: function(){
 							if(!this.validate()) return;
@@ -373,9 +374,18 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							parent.layout();
 						}),
 						aspect.after(parent,"cancel",function(){
+							cc.subform.data = null;
 							cc.subform.cancel();
 						})
 					);
+					var _lh = aspect.after(parent,"layout",function(){
+						_lh.remove();
+						if(co.store && co.store.selectedId) {
+							var id = co.store.selectedId;
+							co.store.selectedId = null;
+							co.onEdit && co.onEdit(id);
+						}
+					});
 					cc.onEdit = function(id,options){
 						options = options || {};
 						var data = this.store.get(id);
@@ -443,6 +453,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				parent.addChild(co);
 				cc.subform.parentform = co;
 				parent.addChild(cc.subform);
+				console.warn("subform added")
 			} else if(c.type=="repeat" || c.type=="group"){
 				parent.addChild(co);
 				array.forEach(c.options,function(o){
@@ -524,7 +535,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				}
 				*/
 			}
-			parent.layout && parent.layout();
+			if(i == controls.length-1) parent.layout && parent.layout();
 		}
 		// end render
 		array.forEach(controls,function(c,i){
