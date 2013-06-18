@@ -29,11 +29,12 @@ define([
 
 var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	baseClass:"dformaBuilder",
-	templateString: "<div aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden ${baseClass}Label\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div class=\"dijitReset dijitHidden ${baseClass}Hint\" data-dojo-attach-point=\"hintNode\"></div><div class=\"dijitReset dijitHidden ${baseClass}Message\" data-dojo-attach-point=\"messageNode\"></div><div data-dojo-attach-point=\"buttonNode\"></div></div>",
+	templateString: "<div aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden ${baseClass}Label\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div class=\"dijitReset dijitHidden ${baseClass}Hint\" data-dojo-attach-point=\"hintNode\"></div><div class=\"dijitReset dijitHidden ${baseClass}Message\" data-dojo-attach-point=\"messageNode\"></div><div class=\"dijitReset ${baseClass}ButtonNode\" data-dojo-attach-point=\"buttonNode\"></div></div>",
 	controller:null,
 	controllerWidget:null,
 	data:null,
 	store:null,
+	cancellable:false,
 	hideOptional:false,
 	allowFreeKey:false, // schema editor: set true for add
 	allowOptionalDeletion:false, // schema editor: set false for edit/delete
@@ -153,7 +154,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			var lbl = c.title ? c.title : c.name.toProperCase();
 			c = lang.mixin({
 				placeHolder:lbl,
-				label:lbl
+				label:lbl,
+				"class": "dformaElementName-"+c.name
 			},c);
 			var co,l,edit,del;
 			if(c.edit===true || c["delete"]===true) {
@@ -346,6 +348,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					// create bound subform
 					if(!cc.store) cc.store = parent.store; 
 					cc.subform = new Builder({
+						cancellable:true,
 						cancel: function(){
 							domClass.toggle(this.parentform.domNode,"dijitHidden",false);
 							domClass.toggle(parent.buttonNode,"dijitHidden",false);
@@ -353,7 +356,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							domClass.toggle(this.domNode,"dijitHidden",true);
 							parent.layout();
 							// cancelled new?
-							if(this.data && !this.data.options.overwrite) this.parentform.store.remove(this.data.id);
+							if(this.data && this.data.id && this.parentform.newdata) this.parentform.store.remove(this.data.id);
+							this.parentform.newdata = false;
 						},
 						submit: function(){
 							if(!this.validate()) return;
@@ -363,7 +367,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							domClass.toggle(this.domNode,"dijitHidden",true);
 							parent.layout();
 							var data = this.get("value");
-							this.parentform.store.put(data,{
+							this.parentform.save(data,{
 								id:this.data.id,
 								overwrite:true
 							});
@@ -374,7 +378,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							parent.layout();
 						}),
 						aspect.after(parent,"cancel",function(){
-							cc.subform.data = null;
 							cc.subform.cancel();
 						})
 					);
@@ -631,23 +634,25 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			});
 			self.addChild(add);
 		}
-		this.cancelButton.destroy();
 		this.submitButton.destroy();
+		if(this.cancellable) this.cancelButton.destroy();
 		var common = i18n.load("dforma","common");
-		this.cancelButton = new Button(lang.mixin({
-			label:common.buttonCancel,
-			"class":"dformaCancel",
-			onClick:lang.hitch(this,this.cancel)
-		},this.data.cancel)).placeAt(this.buttonNode);
 		this.submitButton = new Button(lang.mixin({
 			label:common.buttonSubmit,
 			"class":"dformaSubmit",
 			onClick:lang.hitch(this,this.submit)
 		},this.data.submit)).placeAt(this.buttonNode);
+		if(this.cancellable) {
+			this.cancelButton = new Button(lang.mixin({
+				label:common.buttonCancel,
+				"class":"dformaCancel",
+				onClick:lang.hitch(this,this.cancel)
+			},this.data.cancel)).placeAt(this.buttonNode);
+		}
 	},
 	startup:function(){
-		this.cancelButton = new Button();
 		this.submitButton = new Button();
+		if(this.cancellable) this.cancelButton = new Button();
 		this.inherited(arguments);
 		if(this.data) this.rebuild();
 	}
