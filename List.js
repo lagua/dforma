@@ -18,6 +18,7 @@ define([
 	return declare("dforma.List",[_WidgetBase,_Contained,_Container,_TemplatedMixin],{
 		templateString: "<div class=\"dijit dijitReset\" data-dojo-attach-point=\"focusNode\" aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden dformaListLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><div class=\"dijitReset dijitHidden dformaListHint\" data-dojo-attach-point=\"hintNode\"></div><div data-dojo-attach-point=\"containerNode\"></div><div class=\"dijitReset dijitHidden dformaListMessage\" data-dojo-attach-point=\"messageNode\"></div></div>",
 		store:null,
+		newdata:false,
 		defaultInstance:{},
 		_setHintAttr: function(/*String*/ content){
 			// summary:
@@ -91,6 +92,7 @@ define([
 		add:function(){
 			// override to set initial data
 			var id = this.store.add(lang.clone(this.defaultInstance));
+			this.newdata = true;
 			this.grid.select(id);
 			this.onEdit(id);
 		},
@@ -98,6 +100,7 @@ define([
 			// override to edit
 		},
 		save:function(id,options){
+			this.newdata = false;
 			this.store.put(id,options);
 		},
 		editSelected:function(){
