@@ -43,7 +43,7 @@ define([
 			var self = this;
 			var Widget = declare([OnDemandGrid,Selection,DijitRegistry],{
 				selectionMode:"single",
-				showFooter:true,
+				showFooter:true
 	 		});
 			this.grid = new Widget(this.params);
 			this.addChild(this.grid);
