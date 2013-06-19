@@ -1,4 +1,5 @@
 define([
+	"require",
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/_base/array",
@@ -25,7 +26,7 @@ define([
 	"dojox/validate/web",
 	"dojox/validate/us",
 	"dojo/i18n!./nls/common"
-],function(declare,lang,array,aspect,when,keys,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
+],function(require,declare,lang,array,aspect,when,keys,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
 
 var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	baseClass:"dformaBuilder",
