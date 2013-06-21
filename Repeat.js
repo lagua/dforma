@@ -163,7 +163,7 @@ return declare("dforma.Repeat",[Group],{
  	},
  	addControl:function(Widget,params){
  		domConstruct.create("th",{
-			"class":"dformaRepeatHeader"+params.required ? " dformaRequired" : "",
+			"class":"dformaRepeatHeader"+(params.required ? " dformaRequired" : ""),
 			"innerHTML":params.label
 		},this._headerNode);
  		this._controls.push({
