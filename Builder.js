@@ -5,6 +5,7 @@ define([
 	"dojo/aspect",
 	"dojo/when",
 	"dojo/keys",
+	"dojo/number",
 	"dojo/dom-construct",
 	"dojo/dom-class",
 	"dojo/store/Memory",
@@ -25,7 +26,7 @@ define([
 	"dojox/validate/web",
 	"dojox/validate/us",
 	"dojo/i18n!./nls/common"
-],function(declare,lang,array,aspect,when,keys,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
+],function(declare,lang,array,aspect,when,keys,number,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
 
 var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	baseClass:"dformaBuilder",
@@ -88,6 +89,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					break;
 					case "number":
 						req = "dijit/form/NumberTextBox";
+					break;
+					case "currency":
+						req = "dijit/form/CurrencyTextBox";
 					break;
 					case "combo":
 						req = "dijit/form/ComboBox";
@@ -330,6 +334,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						}
 					}
 				break;
+				case "currency":
+					cc.value = parseInt(c.value,10);
+				break;
 				case "date":
 					cc.constraints = {
 						selector:"date"
@@ -345,6 +352,17 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				break;
 				case "list":
 					cc.hint = c.description || "";
+					if(c.columns) {
+						for(var k in c.columns) {
+							if(c.columns[k].format=="currency") {
+								cc.columns[k].get = function(object){
+					                return number.format(object[k], {
+					                	places: 2
+					                });
+					            }
+							}
+						}
+					}
 					// create bound subform
 					if(!cc.store) cc.store = parent.store; 
 					cc.subform = new Builder({
@@ -401,13 +419,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							options:options,
 							// TODO: create type for items instanceof array
 							controls:[jsonschema.schemasToControl(c.controller.name,c.schema.items,data,{
-								selectFirst:true
+								selectFirst:true,
+								controllerType:c.controller.type
 							})],
 							submit:{
 								label:common.buttonSave
 							}
 						});
-						//parent.layout();
 					};
 				break;
 				case "group":
