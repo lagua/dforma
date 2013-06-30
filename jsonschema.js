@@ -1,6 +1,7 @@
 define([
 	"dojo/_base/lang",
-	"dojo/_base/array"
+	"dojo/_base/array",
+	"dlagua/c/string/toProperCase"
 ],function(lang,array){
 	var jsonschema = lang.getObject("dforma.jsonschema", true);
 	lang.mixin(jsonschema,{
@@ -24,7 +25,7 @@ define([
 			array.forEach(schemaList,function(schema,sindex){
 				if(schema["default"]) control["default"] = schema[name];
 				var id = schema.id ? schema.id : sindex;
-				var title = schema.title ? schema.title : (schema.id ? toProperCase(id) : "item"+id);
+				var title = schema.title ? schema.title : (schema.id ? id.toProperCase() : "item"+id);
 				var option = {
 					id:id,
 					label:title,
@@ -57,8 +58,12 @@ define([
 					type = "checkbox";
 				} else if(prop.type=="integer") {
 					type = "spinner";
-				} else if(prop.type=="float") {
-					type = "number";
+				} else if(prop.type=="number") {
+					if(prop.format=="currency") {
+						type = "currency";
+					} else {
+						type = "number";
+					}
 				} else if(prop.type=="date") {
 					type = "date";
 				} else if(prop.type=="array") {
@@ -87,8 +92,11 @@ define([
 					type:type,
 					schema:prop,
 					required:(prop.required === true),
-					disabled:(prop.readonly === true)
+					readonly:(prop.readonly === true)
 				};
+				if(type=="currency") {
+					c.currency = prop.currency || "EUR";
+				}
 				if(prop.hasOwnProperty("invalidMessage")) {
 					c.invalidMessage = prop.invalidMessage;
 				}
