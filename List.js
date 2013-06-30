@@ -38,6 +38,12 @@ define([
 			this["labelNode"].innerHTML = content;
 			domClass.toggle(this.labelNode,"dijitHidden",!this.label);
 	 	},
+	 	destroyRecursive:function(){
+	 		this.inherited(arguments);
+	 		this.addButton && this.addButton.destroyRecursive();
+	 		this.editButton && this.editButton.destroyRecursive();
+	 		this.removeButton && this.removeButton.destroyRecursive();
+	 	},
 	 	postCreate:function(){
 			var common = i18n.load("dforma","common");
 			var self = this;
@@ -49,6 +55,7 @@ define([
 			this.addChild(this.grid);
 			this.addButton = new Button({
 				label:common.buttonAdd,
+				disabled:this.readonly,
 				"class": "dformaListEditButton",
 				onClick:function(){
 					self.add();
@@ -79,12 +86,12 @@ define([
 			this.own(
 				this.grid.on("dgrid-select", function(e){
 					selected += e.rows.length;
-					self.editButton.set("disabled", !selected);
+					if(!self.readonly) self.editButton.set("disabled", !selected);
 					self.removeButton.set("disabled", !selected);
 				}),
 				this.grid.on("dgrid-deselect", function(e){
 					selected -= e.rows.length;
-					self.editButton.set("disabled", !selected);
+					if(!self.readonly) self.editButton.set("disabled", !selected);
 					self.removeButton.set("disabled", !selected);
 				})
 			);
