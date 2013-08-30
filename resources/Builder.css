@@ -1,19 +1,61 @@
 @import url("commonIcons.css");
 
+.dformaLabel {
+	margin:6px;
+}
 .dformaLabelNode {
-    text-align: center;
+	min-width: 100px;
+	padding: 5px 0px 5px 5px;
 }
 .dformaRequired:after {
     color: #8B0000;
     content: "*";
 }
-.dformaBlock {
-	display:block !important;
-}
-.dformaBlock .dformaLabelNode {
-	display:inline-block !important;
-	width: 100px;
-}
 .dformaLabelNode:hover {
-    background-color: gold;
+	background-color: gold;
+	-webkit-transition: all 0.3s ease-in-out;
+	-moz-transition: all 0.3s ease-in-out;
+	-o-transition: all 0.3s ease-in-out;
+	transition: all 0.3s ease-in-out;
+}
+
+.dformaLabelNode:hover:after {
+}
+
+.dformaBuilderLabel {
+}
+.dijitReset.dformaListLabel {
+	font-weight: bold;
+	padding: 5px 0;
+}
+.dformaLabel:last-child{
+	clear:right;
+}
+.dformaGroup, .dformaRepeat {
+	clear:both;
+	margin:10px;
+}
+.dformaGroupLabel, .dformaRepeatLabel {
+	font-weight:bold;
+	padding: 0 0 3px;
+}
+.dformaBuilderForm > .dformaLabel:first-child {
+	display:block;
+}
+.dformaBuilderForm > .dformaLabel:first-child .dformaLabelNode {
+	display:inline-block;
+	width:100px;
+}
+.dformaCancel {
+	float:right;
+}
+.dformaSubmit {
+	float:right;
+}
+.dijitTextArea {
+	width:400px;
+}
+.dgrid {
+	max-width:500px;
+	max-height:200px;
 }
