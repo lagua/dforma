@@ -516,7 +516,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					label:c.label,
 					"class":"dformaLabelFor"+c.type.toProperCase(),
 					child:co,
-					title:c.description && !c.schema.dialog ? c.description : c.label
+					title:c.description /*&& !c.schema.dialog*/ ? c.description : c.label
 				});
 		 		if(c.type=="checkbox") {
 		 			l.on("click", function(evt){
