@@ -66,11 +66,13 @@ define([
 					}
 				} else if(prop.type=="date") {
 					type = "date";
-				} else if(prop.type=="array") {
+				} else if(prop.type=="array" || prop.hasOwnProperty("enum") || prop.hasOwnProperty("oneOf")) {
 					if(prop.format == "list") {
 						type = "list";
 					} else if(prop.format == "select") {
 						type = "select";
+					} else if(prop.format == "radiogroup") {
+						type = "radiogroup";
 					} else {
 						type = "repeat";
 					}
@@ -115,11 +117,15 @@ define([
 					c.columns = prop.columns;
 					c.controller = prop.controller;
 				}
-				if(type=="select") {
+				if(type=="select" || type=="radiogroup") {
 					c.options = [];
-					array.forEach(prop["enum"],function(op) {
-						c.options.push({id:op});
-					});
+					if(prop.hasOwnProperty("enum")) {
+						array.forEach(prop["enum"],function(op) {
+							c.options.push({id:op});
+						});
+					} else if(prop.hasOwnProperty("oneOf")) {
+						c.options = prop.oneOf;
+					}
 				}
 				if(type=="checkbox" && prop.hasOwnProperty("enum")) {
 					c.isValid = prop["enum"];

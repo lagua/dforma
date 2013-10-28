@@ -79,6 +79,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					case "checkbox":
 						req = "dijit/form/CheckBox";
 					break;
+					case "radiogroup":
+						req = "dforma/RadioGroup";
+					break;
 					case "select":
 						req = "dijit/form/FilteringSelect";
 					break;
@@ -334,6 +337,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							return true;
 						}
 					}
+				break;
+				case "radiogroup":
+					cc.labelAttr = "title";
 				break;
 				case "currency":
 					cc.value = parseInt(c.value,10);
