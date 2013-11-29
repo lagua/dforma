@@ -43,6 +43,10 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	addControls:null, // schema editor: set as controls for the editor 
 	submit:function(){},
 	cancel:function(){},
+	onSubmit:function(e) {
+		this.submit();
+		return false;
+	},
 	rebuild:function(data){
 		var common = i18n.load("dforma","common");
 		if(data) {
