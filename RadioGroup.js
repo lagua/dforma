@@ -4,7 +4,7 @@ define([
         "dojo/_base/array",
         "dojo/dom-construct",
         "dijit/form/_FormValueWidget",
-        "dijit/form/RadioButton",
+        "dijit/form/RadioButton"
     ], function (declare, lang, array, domConstruct, _FormValueWidget,RadioButton) {
 
     return declare("dforma.RadioGroup",[_FormValueWidget], {
