@@ -414,12 +414,15 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						_lh.remove();
 						if(co.store && co.store.selectedId) {
 							var id = co.store.selectedId;
+							var newdata = co.store.newdata;
+							delete co.store.newdata;
 							co.store.selectedId = null;
-							co.onEdit && co.onEdit(id);
+							co.onEdit && co.onEdit(id,{},newdata);
 						}
 					});
-					cc.onEdit = function(id,options){
+					cc.onEdit = function(id,options,newdata){
 						options = options || {};
+						this.newdata = newdata;
 						var data = this.store.get(id);
 						domClass.toggle(this.domNode,"dijitHidden",true);
 						domClass.toggle(parent.buttonNode,"dijitHidden",true);
