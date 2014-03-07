@@ -426,7 +426,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							co.newdata = co.store.newdata;
 							delete co.store.newdata;
 							co.store.selectedId = null;
-							co.onEdit && co.onEdit(id,{});
+							co.onEdit && co.onEdit(id);
 						}
 					});
 					cc.onEdit = function(id,options){
