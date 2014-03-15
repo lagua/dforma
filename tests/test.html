@@ -52,7 +52,7 @@
 			"dojo/_base/lang",
 			"dojo/_base/array",
 			"dforma/Builder",
-			//"dforma/jsonschema",
+			"dforma/jsonschema",
 			"dojo/json", 
 			"dojo/store/Memory", 
 			"dojo/dom-construct",
@@ -62,7 +62,7 @@
 			"dojo/topic",
 			"dojo/text!./nl.json",
 			"dojo/text!./en.json"
-		], function(lang,array,Builder,JSON,Memory,domConstruct,dom,ready,hash,topic,lang_nl,lang_en){
+		], function(lang,array,Builder,jsonschema,JSON,Memory,domConstruct,dom,ready,hash,topic,lang_nl,lang_en){
 			function traverse(obj,func, parent) {
 				for (i in obj){
 					func.apply(obj,[i,obj[i],parent]);
@@ -119,6 +119,7 @@
 				dojo.locale = locale;
 				var schemas = [{
 					"type" : "{concert_material}",
+					"title" : "{concert_material}",
 					"properties":{
 						"componist" : {
 							"title": "{composer}",
@@ -247,6 +248,7 @@
 					}
 				},{
 					"type" : "{perusal_score}",
+					"title" : "{perusal_score}",
 					"properties":{
 						"componist" : {
 							"title": "{composer}",
@@ -273,7 +275,7 @@
 					return replaceNlsRecursive(schema,JSON.parse(nls[locale]));
 				});
 				dom.byId("schema").innerHTML = "<pre>"+JSON.stringify(schemas,null,2)+"</pre>";
-				var control = fb.toControl("type",schemas,data,{
+				var control = jsonschema.schemasToControl("type",schemas,data,{
 					selectFirst:true
 				});
 				fb.rebuild({
@@ -290,7 +292,7 @@
 </head>
 <body class="claro">
 		<h3>Form from JSON Schema</h3>
-		<div><a href="#nl">Nederlands</a> / <a href="#en">Engels</a></div>
+		<div><a href="#nl">Nederlands</a> / <a href="#en">English</a></div>
 		<div id="form"></div>
 		<div id="data"></div>
 		<div id="schema">

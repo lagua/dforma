@@ -221,6 +221,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 										cancel:function(){
 											self.rebuild();
 										},
+										cancellable:true,
 										submit:function(){
 											if(!this.validate()) return;
 											var data = this.get("value");
@@ -258,13 +259,15 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 										},
 										data:{
 											controls:c.controls,
+											cancel: {
+												label:common.buttonCancel
+											},
 											submit:{
-												label:"Save"
+												label:common.buttonSave
 											}
 										}
 									});
 									l.addChild(fb);
-									fb.startup();
 									break;
 								}
 							}
@@ -691,6 +694,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		}
 	},
 	startup:function(){
+		if(this._started) return;
 		this.submitButton = new Button();
 		if(this.cancellable) this.cancelButton = new Button();
 		this.inherited(arguments);
