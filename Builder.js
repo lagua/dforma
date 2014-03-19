@@ -4,7 +4,9 @@ define([
 	"dojo/_base/lang",
 	"dojo/_base/array",
 	"dojo/aspect",
+	"dojo/Deferred",
 	"dojo/when",
+	"dojo/promise/all",
 	"dojo/keys",
 	"dojo/number",
 	"dojo/dom-construct",
@@ -27,8 +29,10 @@ define([
 	"dojox/validate/web",
 	"dojox/validate/us",
 	"dojo/i18n!./nls/common"
-],function(require,declare,lang,array,aspect,when,keys,number,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
+],function(require,declare,lang,array,aspect,Deferred,when,all,keys,number,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
 
+var common = i18n.load("dforma","common");
+	
 var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	baseClass:"dformaBuilder",
 	templateString: "<div aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden ${baseClass}Label\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div class=\"dijitReset dijitHidden ${baseClass}Hint\" data-dojo-attach-point=\"hintNode\"></div><div class=\"dijitReset dijitHidden ${baseClass}Message\" data-dojo-attach-point=\"messageNode\"></div><div class=\"dijitReset ${baseClass}ButtonNode\" data-dojo-attach-point=\"buttonNode\"></div></div>",
@@ -50,8 +54,83 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	focus: function(){
 		// no matter
 	},
+	_addEditForm:function(c,controller){
+		var item = controller.item;
+		var props = item.properties;
+		var self = this;
+		var id = item.id;
+		var bools = [];
+		for(var k in props) {
+			if(c.name==k) {
+				array.forEach(c.controls,function(ctrl,i){
+					if(ctrl.type=="checkbox") {
+						bools.push(ctrl.name);
+						c.controls[i].checked = props[k][ctrl.name];
+					} else if(ctrl.type=="multiselect_freekey") {
+						var ops = [];
+						array.forEach(props[k][ctrl.name],function(op){
+							ops.push({value:op,label:op,selected:true});
+						});
+						c.controls[i].options = ops;
+					} else {
+						c.controls[i].value = props[k][ctrl.name];
+					}
+				});
+				// TODO: insert a subform
+				var fb = new Builder({
+					style:"height:100%;border:1px solid gray",
+					cancel:function(){
+						self.rebuild();
+					},
+					cancellable:true,
+					submit:function(){
+						if(!this.validate()) return;
+						var data = this.get("value");
+						console.log(data);
+						for(var k in data) {
+							// it may be a group
+							// make all booleans explicit
+							if(lang.isArray(data[k])) {
+								if(array.indexOf(bools,k)>-1) {
+									array.forEach(data[k],function(v,i){
+										data[k][i] = (v=="on" ? true : false);
+									});
+									if(data[k].length===0) {
+										data[k] = false;
+									} else if(data[k].length<2) {
+										data[k] = data[k][0];
+									}
+								}
+							} else {
+								if(!data[k]) delete data[k];
+							}
+						}
+						props[c.name] = data;
+						if(c.add) {
+							delete c["add"];
+							controller.item.controls.push(lang.mixin(c,data));
+						}
+						if(self.store) when(self.store.put({id:id,properties:props},{incremental:true}),function(res){
+						},function(err){
+							if(self.store.onError) self.store.onError(err,"put",{id:id,properties:props},{incremental:true});
+						});
+						self.rebuild();
+					},
+					data:{
+						controls:c.controls,
+						cancel: {
+							label:common.buttonCancel
+						},
+						submit:{
+							label:common.buttonSave
+						}
+					}
+				});
+				return fb;
+			}
+		}
+	},
 	rebuild:function(data){
-		var common = i18n.load("dforma","common");
 		if(data) {
 			this.data = data;
 		} else {
@@ -73,7 +152,10 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		});
 		var optional = [];
 		var hideOptional = this.hideOptional;
+		var add;
 		function render(c,i,controls,Widget,parent) {
+			var d = new Deferred();
+			if(!parent) parent = self;
 			if(!Widget) {
 				var req;
 				switch(c.type) {
@@ -154,18 +236,20 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					req:req,
 					control:c
 				};
-				if(i==controls.length-1) {
+				if(i>=controls.length-1) {
 					var reqs = array.map(parent._reqs,function(_){ return _.req });
 					require(reqs,function(){
 						array.forEach(arguments,function(Widget,index){
 							var item = parent._reqs[index];
 							render(item.control,index,controls,Widget,parent);
+							if(!d.isResolved()) d.resolve();
 						});
 						delete parent._reqs;
 					});
 				}
-				return;
+				return d;
 			}
+			d.resolve();
 			var lbl = c.title ? c.title : c.name.toProperCase();
 			c = lang.mixin({
 				placeHolder:lbl,
@@ -179,7 +263,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					title:c.description ? c.description : c.label
 				});
 				parent.addChild(l);
-				if(!self.allowOptionalDeletion && c.description) {
+				/*if(!self.allowOptionalDeletion && c.description) {
 					domConstruct.create("span",{
 						innerHTML:strings.truncatewords_html(c.description,{
 							words:8
@@ -187,90 +271,34 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						title:c.description,
 						"class":"dijitReset dijitInline"
 					},l.domNode);
-				}
+				}*/
 				if(c.edit===true) {
 					edit = new Button({
 						label:"Edit",
+						control:c,
 						controller:controller,
 						showLabel:false,
 						iconClass:"dijitEditorIcon dformaEditIcon",
 						onClick:function(){
-							var item = this.controller.item;
-							var props = item.properties;
-							var id = item.id;
-							var bools = [];
-							for(var k in props) {
-								if(c.name==k) {
-									array.forEach(c.controls,function(ctrl,i){
-										if(ctrl.type=="checkbox") {
-											bools.push(ctrl.name);
-											c.controls[i].checked = props[k][ctrl.name];
-										} else if(ctrl.type=="multiselect_freekey") {
-											var ops = [];
-											array.forEach(props[k][ctrl.name],function(op){
-												ops.push({value:op,label:op,selected:true});
-											});
-											c.controls[i].options = ops;
-										} else {
-											c.controls[i].value = props[k][ctrl.name];
-										}
-									});
-									// TODO: insert a subform
-									var fb = new Builder({
-										style:"height:100%;border:1px solid gray",
-										cancel:function(){
-											self.rebuild();
-										},
-										cancellable:true,
-										submit:function(){
-											if(!this.validate()) return;
-											var data = this.get("value");
-											console.log(data);
-											for(var k in data) {
-												// it may be a group
-												// make all booleans explicit
-												if(lang.isArray(data[k])) {
-													if(array.indexOf(bools,k)>-1) {
-														array.forEach(data[k],function(v,i){
-															data[k][i] = (v=="on" ? true : false);
-														});
-														if(data[k].length===0) {
-															data[k] = false;
-														} else if(data[k].length<2) {
-															data[k] = data[k][0];
-														}
-													}
-												} else {
-													if(!data[k]) delete data[k];
-												}
-											}
-											props[c.name] = data;
-											if(c.add) {
-												delete c["add"];
-												controller.item.controls.push(lang.mixin(c,data));
-											}
-											if(self.store) when(self.store.put({id:id,properties:props},{incremental:true}),function(res){
-											},function(err){
-												if(self.store.onError) self.store.onError(err,"put",{id:id,properties:props},{incremental:true});
-											});
-											edit.destroyRecursive();
-											if(del) del.destroyRecursive();
-											self.rebuild();
-										},
-										data:{
-											controls:c.controls,
-											cancel: {
-												label:common.buttonCancel
-											},
-											submit:{
-												label:common.buttonSave
-											}
-										}
-									});
-									l.addChild(fb);
-									break;
+							var fb = self._addEditForm(this.control,this.controller);
+							l.addChild(fb);
+							var _sh, _ch;
+							function end(){
+								if(_sh) _sh.remove();
+								if(_ch) _ch.remove();
+								edit.destroyRecursive();
+								if(del) del.destroyRecursive();
+								if(this.control.add && add) {
+									// try destroying add button
+									if(optional.length || self.allowFreeKey) {
+										add.set("disabled",false);
+									} else {
+										add.destroyRecursive();
+									}
 								}
-							}
+							};
+							_sh = aspect.after(fb,"submit",lang.hitch(this,end));
+							_ch = aspect.after(fb,"cancel",lang.hitch(this,end));
 						}
 					});
 					l.addChild(edit);
@@ -328,10 +356,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						}
 					});
 				}
-				if(c.add) edit.onClick();
 				if(c["delete"] && !self.allowOptionalDeletion) {
 					l.addChild(del);
-					return;
+					return d;
+				}
+				if(c.add) {
+					edit.onClick();
+					return d;
 				}
 			}
 			if(c.widget) c.widget = null;
@@ -494,7 +525,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				controller = co;
 				self.controllerWidget = controller;
 			}
-			controls[i].widget = co;
+			if(controls[i]) controls[i].widget = co;
 			if(c.type=="list") {
 				parent.addChild(co);
 				cc.subform.parentform = co;
@@ -582,9 +613,11 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				*/
 			}
 			if(i == controls.length-1) parent.layout && parent.layout();
-		}
+			return d;
+		};
 		// end render
-		array.forEach(controls,function(c,i){
+		var res = array.map(controls,lang.hitch(this,function(c,i){
+			var d = new Deferred();
 			c = lang.mixin({
 				onChange:function(){
 					if(c.type=="checkbox") this.value = (this.checked === true);
@@ -596,90 +629,89 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			},c);
 			if(c.required || !hideOptional || c.hasOwnProperty("value") || c.hasOwnProperty("checked")) {
 				if(!c.required && self.allowOptionalDeletion) c["delete"] = true;
-				render(c,i,controls,null,this);
+				render(c,i,controls,null,this).then(function(){
+					d.resolve();
+				});
 			} else {
 				c["delete"] = true;
 				optional.push(c);
+				d.resolve();
 			}
-		},this);
-		if(((hideOptional && optional.length) || this.allowFreeKey) && controller && controller.get("value")) {
-			var select;
-			function addSelect(){
-				var props = {
-					store: new Memory({
-						idProperty:"name",
-						data:optional
-					}),
-					searchAttr:"name",
-					labelType:"html",
-					labelFunc:function(item,store){
-						var label = item.name;
-						if(item.description) label = "<div title=\""+item.description+"\">"+label+"</div>";
-						return label;
-					},
-					onChange:function(val){
-						add.set("disabled",false);
-						var isOption = false;
-						var index = -1;
-						array.forEach(optional,function(c,i) {
-							if(c.name==val) {
-								isOption = true;
-								index = i;
-								render(c,i,controls,parent);
+			return d;
+		}));
+		all(res,lang.hitch(this,function(){
+			if((hideOptional && optional.length) || this.allowFreeKey) {
+				function addSelect(optional){
+					var props = {
+						store: new Memory({
+							idProperty:"name",
+							data:optional
+						}),
+						searchAttr:"name",
+						labelType:"html",
+						labelFunc:function(item,store){
+							var label = item.name;
+							if(item.description) label = "<div title=\""+item.description+"\">"+label+"</div>";
+							return label;
+						},
+						onChange:function(val){
+							var index = -1;
+							array.forEach(optional,function(c,i) {
+								if(c.name==val) {
+									index = i;
+									render(c,i,controls);
+								}
+							});
+							if(index>-1) {
+								optional.splice(index,1);
+							} else if(self.allowFreeKey) {
+								// in case there are no optionals, just create new 
+								// textbox control with entered val as its name
+								// force edit/delete so it will be rendered as editable
+								var c = {
+									type:"input",
+									name:val,
+									placeHolder:val.toProperCase(),
+									label:val.toProperCase()
+								};
+								if(self.addControls || controller.addControls) {
+									c.edit = true;
+									c.add = true;
+									// TODO: set addControls on data
+									c.controls = self.addControls || controller.addControls;
+									// instantiate properties if undef
+									if(!controller.item.properties) controller.item.properties = {};
+									controller.item.properties[val] = {};
+								}
+								render(c,0,[]);
 							}
-						});
-						if(index>-1) optional.splice(index,1);
-						if(!isOption && self.allowFreeKey) {
-							var c = {
-								type:"input",
-								name:val,
-								placeHolder:val.toProperCase(),
-								label:val.toProperCase()
-							};
-							if(self.addControls) {
-								c.edit = true;
-								c.add = true;
-								c["delete"] = true;
-								// TODO: set addControls on data
-								c.controls = self.addControls;
-								// instantiate properties if undef
-								if(!controller.item.properties) controller.item.properties = {};
-								controller.item.properties[val] = {};
-							}
-							render(c,i,controls,parent);
+							this.destroyRecursive();
 						}
-						if(optional.length || self.allowFreeKey) {
-							self.addChild(add);
-						} else {
-							add.destroyRecursive();
-						}
-						self.addChild(cancel);
-						self.addChild(submit);
-						this.destroyRecursive();
+					};
+					var select;
+					if(self.allowFreeKey) {
+						select = new ComboBox(props);
+						self.addChild(select);
+					} else {
+						select = new FilteringSelect(props);
+						self.addChild(select);
 					}
-				};
-				if(self.allowFreeKey) {
-					select = new ComboBox(props);
-					self.addChild(select);
-				} else {
-					select = new FilteringSelect(props);
-					self.addChild(select);
 				}
+				// FIXME add is global
+				add = new Button({
+					label:"Add optional property",
+					showLabel:false,
+					iconClass:"dijitEditorIcon dformaAddIcon",
+					onClick:function(){
+						this.set("disabled",true);
+						addSelect(optional);
+					}
+				});
+				self.addChild(add);
 			}
-			var add = new Button({
-				label:"Add optional property",
-				showLabel:false,
-				iconClass:"dijitEditorIcon dformaAddIcon",
-				onClick:function(){
-					this.set("disabled",true);
-					addSelect();
-				}
-			});
-			self.addChild(add);
-		}
+		}));
 		this.submitButton.destroy();
 		if(this.cancellable) this.cancelButton.destroy();
-		var common = i18n.load("dforma","common");
 		this.submitButton = new Button(lang.mixin({
 			label:common.buttonSubmit,
 			"class":"dformaSubmit",

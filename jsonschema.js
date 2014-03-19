@@ -17,6 +17,7 @@ define([
 			if(options.add) {
 				options.edit = true;
 				options["delete"] = true;
+				control.addControls = options.controls;
 			}
 			if(control.type=="select") {
 				control.searchAttr = "label";
