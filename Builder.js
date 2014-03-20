@@ -131,6 +131,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		}
 	},
 	rebuild:function(data){
+		var dd = new Deferred();
 		if(data) {
 			this.data = data;
 		} else {
@@ -153,8 +154,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		var optional = [];
 		var hideOptional = this.hideOptional;
 		var add;
-		function render(c,i,controls,Widget,parent) {
-			var d = new Deferred();
+		function render(c,i,controls,Widget,parent,d) {
+			d = d || new Deferred();
 			if(!parent) parent = self;
 			if(!Widget) {
 				var req;
@@ -234,22 +235,21 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				if(!parent._reqs) parent._reqs = [];
 				parent._reqs[i] = {
 					req:req,
-					control:c
+					control:c,
+					promise:d
 				};
 				if(i>=controls.length-1) {
 					var reqs = array.map(parent._reqs,function(_){ return _.req });
 					require(reqs,function(){
 						array.forEach(arguments,function(Widget,index){
 							var item = parent._reqs[index];
-							render(item.control,index,controls,Widget,parent);
-							if(!d.isResolved()) d.resolve();
+							render(item.control,index,controls,Widget,parent,item.promise);
 						});
 						delete parent._reqs;
 					});
 				}
 				return d;
 			}
-			d.resolve();
 			var lbl = c.title ? c.title : c.name.toProperCase();
 			c = lang.mixin({
 				placeHolder:lbl,
@@ -358,10 +358,12 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				}
 				if(c["delete"] && !self.allowOptionalDeletion) {
 					l.addChild(del);
+					d.resolve();
 					return d;
 				}
 				if(c.add) {
 					edit.onClick();
+					d.resolve();
 					return d;
 				}
 			}
@@ -612,12 +614,15 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				}
 				*/
 			}
-			if(i == controls.length-1) parent.layout && parent.layout();
+			if(i == controls.length-1) {
+				parent.layout && parent.layout();
+			}
+			d.resolve();
 			return d;
 		};
 		// end render
 		var res = array.map(controls,lang.hitch(this,function(c,i){
-			var d = new Deferred();
+			var d;;
 			c = lang.mixin({
 				onChange:function(){
 					if(c.type=="checkbox") this.value = (this.checked === true);
@@ -629,17 +634,16 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			},c);
 			if(c.required || !hideOptional || c.hasOwnProperty("value") || c.hasOwnProperty("checked")) {
 				if(!c.required && self.allowOptionalDeletion) c["delete"] = true;
-				render(c,i,controls,null,this).then(function(){
-					d.resolve();
-				});
+				d = render(c,i,controls,null,this);
 			} else {
 				c["delete"] = true;
 				optional.push(c);
+				d = new Deferred();
 				d.resolve();
 			}
-			return d;
+			return d.promise;
 		}));
-		all(res,lang.hitch(this,function(){
+		all(res).then(lang.hitch(this,function(){
 			if((hideOptional && optional.length) || this.allowFreeKey) {
 				function addSelect(optional){
 					var props = {
@@ -708,6 +712,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					}
 				});
 				self.addChild(add);
+				dd.resolve();
 			}
 		}));
 		this.submitButton.destroy();
@@ -724,6 +729,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				onClick:lang.hitch(this,this.cancel)
 			},this.data.cancel)).placeAt(this.buttonNode);
 		}
+		return dd;
 	},
 	startup:function(){
 		if(this._started) return;
