@@ -621,8 +621,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			return d;
 		};
 		// end render
-		var res = array.map(controls,lang.hitch(this,function(c,i){
-			var d;;
+		controls = controls.filter(function(c,i){
 			c = lang.mixin({
 				onChange:function(){
 					if(c.type=="checkbox") this.value = (this.checked === true);
@@ -634,14 +633,14 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			},c);
 			if(c.required || !hideOptional || c.hasOwnProperty("value") || c.hasOwnProperty("checked")) {
 				if(!c.required && self.allowOptionalDeletion) c["delete"] = true;
-				d = render(c,i,controls,null,this);
+				return c;
 			} else {
 				c["delete"] = true;
 				optional.push(c);
-				d = new Deferred();
-				d.resolve();
 			}
-			return d.promise;
+		});
+		var res = array.map(controls,lang.hitch(this,function(c,i){
+			return render(c,i,controls,null,this).promise;
 		}));
 		all(res).then(lang.hitch(this,function(){
 			if((hideOptional && optional.length) || this.allowFreeKey) {
