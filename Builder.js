@@ -667,11 +667,11 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							array.forEach(optional,function(c,i) {
 								if(c.name==val) {
 									index = i;
-									render(c,i,controls);
 								}
 							});
 							if(index>-1) {
-								optional.splice(index,1);
+								var cs = optional.splice(index,1);
+								render(cs[0],index,controls);
 							} else if(self.allowFreeKey) {
 								// in case there are no optionals, just create new 
 								// textbox control with entered val as its name
