@@ -26,7 +26,8 @@ define([
 			array.forEach(schemaList,function(schema,sindex){
 				if(schema["default"]) control["default"] = schema[name];
 				var id = schema.id ? schema.id : sindex;
-				var title = schema.title ? schema.title : (schema.id ? id.toProperCase() : "item"+id);
+				var titleProp = options.titleProperty || "title";
+				var title = schema[titleProp] ? schema[titleProp] : (schema.id ? id.toProperCase() : "item"+id);
 				var option = {
 					id:id,
 					label:title,
