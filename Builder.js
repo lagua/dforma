@@ -236,14 +236,20 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				parent._reqs[i] = {
 					req:req,
 					control:c,
-					promise:d
+					promise:d,
+					optional:optional.indexOf(c)>-1
 				};
+				// this will already require optionals...
 				if(i>=controls.length-1) {
 					var reqs = array.map(parent._reqs,function(_){ return _.req });
 					require(reqs,function(){
 						array.forEach(arguments,function(Widget,index){
 							var item = parent._reqs[index];
-							render(item.control,index,controls,Widget,parent,item.promise);
+							if(!item.optional) {
+								render(item.control,index,controls,Widget,parent,item.promise);
+							} else {
+								item.promise.resolve();
+							}
 						});
 						delete parent._reqs;
 					});
@@ -621,7 +627,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			return d;
 		};
 		// end render
-		controls = controls.filter(function(c,i){
+		var res = array.map(controls,lang.hitch(this,function(c,i){
 			c = lang.mixin({
 				onChange:function(){
 					if(c.type=="checkbox") this.value = (this.checked === true);
@@ -633,13 +639,12 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			},c);
 			if(c.required || !hideOptional || c.hasOwnProperty("value") || c.hasOwnProperty("checked")) {
 				if(!c.required && self.allowOptionalDeletion) c["delete"] = true;
-				return c;
+				
 			} else {
 				c["delete"] = true;
 				optional.push(c);
 			}
-		});
-		var res = array.map(controls,lang.hitch(this,function(c,i){
+			// always render all for iteration, optional will return from render
 			return render(c,i,controls,null,this).promise;
 		}));
 		all(res).then(lang.hitch(this,function(){
