@@ -25,8 +25,9 @@ define([
 			}
 			array.forEach(schemaList,function(schema,sindex){
 				if(schema["default"]) control["default"] = schema[name];
-				var id = schema.id ? schema.id : sindex;
 				var titleProp = options.titleProperty || "title";
+				var idProp = options.idProperty || "id";
+				var id = schema[idProp] ? schema[idProp] : sindex;
 				var title = schema[titleProp] ? schema[titleProp] : (schema.id ? id.toProperCase() : "item"+id);
 				var option = {
 					id:id,
@@ -34,6 +35,7 @@ define([
 					schema:schema,
 					controls:jsonschema.schemaToControls(schema, data, options)
 				};
+				// FIXME what's this?
 				if(options.edit===true || options["delete"]===true) {
 					option.name = schema[name];
 					option.id = schema.id;
