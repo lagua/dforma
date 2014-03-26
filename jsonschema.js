@@ -20,8 +20,7 @@ define([
 				control.addControls = options.controls;
 			}
 			if(control.type=="select") {
-				control.searchAttr = "label";
-				control.labelAttr = "label";
+				control.searchAttr = options.searchAttr || "label";
 			}
 			array.forEach(schemaList,function(schema,sindex){
 				if(schema["default"]) control["default"] = schema[name];
