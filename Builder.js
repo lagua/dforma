@@ -402,8 +402,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						store: new Memory({
 							data:c.options
 						}),
-						searchAttr:"id",
-						labelAttr:"id",
+						searchAttr:c.searchAttr || "id",
 						autoComplete:true
 					},cc);
 				break;
@@ -620,7 +619,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				function addSelect(optional){
 					var props = {
 						store: new Memory({
-							idProperty:"name",
 							data:optional
 						}),
 						searchAttr:"name",
