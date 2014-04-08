@@ -416,7 +416,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				controller = co;
 				self.controllerWidget = controller;
 			}
-			if(controls[i]) controls[i].widget = co;
 			if(c.type=="list") {
 				parent.addChild(co);
 				cc.subform.parentform = co;
@@ -585,6 +584,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					co.editButton.onClick();
 				}
 			}
+			return co;
 		};
 		// end render
 		controls = array.map(controls,function(c,i){
@@ -611,8 +611,12 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		},this);
 		optionalSort();
 		preload(controls).then(lang.hitch(this,function(){
-			controls.forEach(function(c){
-				if(optional.indexOf(c)==-1) render(c);
+			var widgets = {};
+			controls.forEach(function(c,i){
+				if(optional.indexOf(c)==-1) {
+					var widget = render(c);
+					if(widget) widgets[c.name] = widget;
+				}
 			});		
 			this.layout && this.layout();
 			if((hideOptional && optional.length) || this.allowFreeKey) {
@@ -687,8 +691,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					}
 				});
 				self.addChild(add);
-				dd.resolve();
 			}
+			dd.resolve(widgets);
 		}));
 		this.submitButton.destroy();
 		if(this.cancellable) this.cancelButton.destroy();
@@ -711,7 +715,11 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		this.submitButton = new Button();
 		if(this.cancellable) this.cancelButton = new Button();
 		this.inherited(arguments);
-		if(this.data) this.rebuild();
+		if(this.data) {
+			return this.rebuild();
+		} else {
+			return new Deferred().resolve();
+		}
 	}
 });
 return Builder;
