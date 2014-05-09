@@ -54,10 +54,20 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	focus: function(){
 		// no matter
 	},
-	_addEditForm:function(c,controller){
+	_removeProperty:function(c,controller){
 		var item = controller.item;
 		var props = item.properties;
+		delete props[c.name];
+		if(this.store) {
+			return this.store.put({id:item.id,properties:props},{incremental:true});
+		} else {
+			return new Deferred().resolve();
+		}
+	},
+	_addEditForm:function(c,controller){
 		var self = this;
+		var item = controller.item;
+		var props = item.properties;
 		var id = item.id;
 		var bools = [];
 		for(var k in props) {
@@ -93,7 +103,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							if(lang.isArray(data[k])) {
 								if(array.indexOf(bools,k)>-1) {
 									array.forEach(data[k],function(v,i){
-										data[k][i] = (v=="on" ? true : false);
+										data[k][i] = (v=="on");
 									});
 									if(data[k].length===0) {
 										data[k] = false;
@@ -207,7 +217,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						req = "dijit/form/VerticalSlider";
 					break;
 					case "colorpicker":
-						req = "dojox/widget/ColorPicker";
+						req = "dforma/ColorPickerBox";
 					break;
 					case "color":
 						req = "dforma/ColorPaletteBox";
@@ -538,7 +548,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 								if(_sh) _sh.remove();
 								if(_ch) _ch.remove();
 								this.target.widget.editButton.destroyRecursive();
-								if(this.target.widget.delButton) this.target.widget.delButton.destroyRecursive();
+								if(this.target.widget.deleteButton) this.target.widget.deleteButton.destroyRecursive();
 								if(this.target.control.add && add) {
 									// try destroying add button
 									if(optional.length || self.allowFreeKey) {
@@ -555,7 +565,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					l.addChild(co.editButton);
 				}
 				if(c["delete"]) {
-					co.delButton = new Button({
+					co.deleteButton = new Button({
 						label:"Delete",
 						showLabel:false,
 						target:{
@@ -566,19 +576,24 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						iconClass:"dijitEditorIcon dformaDeleteIcon",
 						onClick:function(){
 							this.target.widget.set("value",null);
-							// if in controls push back up stack
-							var control = this.target.control;
-							console.log(controls)
-							controls.forEach(function(c){
-								if(control.name===c.name) {
-									optional.push(control);
-									optionalSort();
-								}
-							});
 							this.target.label.destroyRecursive();
+							var control = this.target.control;
+							// edit means typeStore must be modified
+							if(control.edit) {
+								self._removeProperty(control, controller);
+							} else {
+								// if in controls push back up stack
+								console.log(controls)
+								controls.forEach(function(c){
+									if(control.name===c.name) {
+										optional.push(control);
+										optionalSort();
+									}
+								});
+							}
 						}
 					});
-					l.addChild(co.delButton);
+					l.addChild(co.deleteButton);
 				}
 				if(c.edit && c.add) {
 					co.editButton.onClick();
