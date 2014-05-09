@@ -52,10 +52,10 @@
 .dformaSubmit {
 	float:right;
 }
-.dijitTextArea {
+.dformaBuilderForm .dijitTextArea {
 	width:400px;
 }
-.dgrid {
+.dformaBuilderForm .dgrid {
 	max-width:500px;
 	max-height:200px;
 }
