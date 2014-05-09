@@ -13,14 +13,9 @@ return declare("dforma.Label",[_Widget,_TemplatedMixin,_Container,_Contained],{
 	position: "left",
 	child: null,
 	baseClass: "dformaLabel",
-	destroyRecursive:function(preserveDom) {
-		if(this.child) this.child.destroyRecursive(preserveDom);
-		this.inherited(arguments);
-	},
  	startup: function(){
  		if(this._started){ return; } // prevent double-triggering
 		this.inherited(arguments);
-		this._started = true;
 		domClass.remove(this.id+"_label_"+this.position,"dijitHidden");
 		if(this.child) {
 			if(this.child.required) domClass.add(this.id+"_label_"+this.position,"dformaRequired");
