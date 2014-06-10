@@ -489,7 +489,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		 			}).placeAt(l["labelNode_"+l.position],"before")
 				}
 		 		parent.addChild(l);
-				/*
+				
 				if(c.type=="multiselect_freekey") {
 					l.child = null;
 					l.addChild(co);
@@ -508,7 +508,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						}
 					}));
 				}
-				*/
+				
 			}
 			if(c.edit===true || c["delete"]===true) {
 				if(!l) {
@@ -579,12 +579,11 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							this.target.label.destroyRecursive();
 							var control = this.target.control;
 							// edit means typeStore must be modified
-							if(control.edit) {
+							if(control.edit || (control["delete"] && !self.allowOptionalDeletion)) {
 								self._removeProperty(control, controller);
 							} else {
 								// if in controls push back up stack
-								console.log(controls)
-								controls.forEach(function(c){
+								controls.forEach(function(c,i){
 									if(control.name===c.name) {
 										optional.push(control);
 										optionalSort();
@@ -609,6 +608,18 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					if(this.type=="checkbox") val = this.value = (this.checked === true);
 					// update data controls for 
 					self.data.controls.forEach(function(c){
+						if(c.controller && c.options) {
+							c.options.forEach(function(op){
+								if(op.controls) {
+									op.controls.forEach(function(c){
+										if(c.name===name) c.value = val;
+									});
+								}
+							});
+						}
+						if(c.name===name) c.value = val;
+					});
+					controls.forEach(function(c){
 						if(c.name===name) c.value = val;
 					});
 					if(this.controller) {
