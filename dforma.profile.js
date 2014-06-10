@@ -18,9 +18,6 @@ var profile = (function(){
             amd: function(filename, mid){
                 return !copyOnly(filename, mid) && /\.js$/.test(filename);
             }
-        },
-        trees:[
-            [".", ".", /(\/\.)|(~$)/]
-        ]
+        }
     };
 })();
