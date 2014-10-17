@@ -32,7 +32,7 @@ define([
 ],function(require,declare,lang,array,aspect,Deferred,when,all,keys,number,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
 
 var common = i18n.load("dforma","common");
-	
+
 var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	baseClass:"dformaBuilder",
 	templateString: "<div aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden ${baseClass}Label\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div class=\"dijitReset dijitHidden ${baseClass}Hint\" data-dojo-attach-point=\"hintNode\"></div><div class=\"dijitReset dijitHidden ${baseClass}Message\" data-dojo-attach-point=\"messageNode\"></div><div class=\"dijitReset ${baseClass}ButtonNode\" data-dojo-attach-point=\"buttonNode\"></div></div>",
@@ -41,10 +41,11 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	data:null,
 	store:null,
 	cancellable:false,
+	submittable:true,
 	hideOptional:false,
 	allowFreeKey:false, // schema editor: set true for add
 	allowOptionalDeletion:false, // schema editor: set false for edit/delete
-	addControls:null, // schema editor: set as controls for the editor 
+	addControls:null, // schema editor: set as controls for the editor
 	submit:function(){},
 	cancel:function(){},
 	onSubmit:function(e) {
@@ -489,7 +490,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		 			}).placeAt(l["labelNode_"+l.position],"before")
 				}
 		 		parent.addChild(l);
-				
+
 				if(c.type=="multiselect_freekey") {
 					l.child = null;
 					l.addChild(co);
@@ -508,7 +509,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						}
 					}));
 				}
-				
+
 			}
 			if(c.edit===true || c["delete"]===true) {
 				if(!l) {
@@ -606,7 +607,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				onChange:function(val){
 					var name = this.name;
 					if(this.type=="checkbox") val = this.value = (this.checked === true);
-					// update data controls for 
+					// update data controls for
 					self.data.controls.forEach(function(c){
 						if(c.controller && c.options) {
 							c.options.forEach(function(op){
@@ -643,7 +644,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					var widget = render(c);
 					if(widget) widgets[c.name] = widget;
 				}
-			});		
+			});
 			this.layout && this.layout();
 			if((hideOptional && optional.length) || this.allowFreeKey) {
 				function addSelect(optional){
@@ -671,7 +672,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 									render(cs[0]);
 								});
 							} else if(self.allowFreeKey) {
-								// in case there are no optionals, just create new 
+								// in case there are no optionals, just create new
 								// textbox control with entered val as its name
 								// force edit/delete so it will be rendered as editable
 								var c = {
@@ -720,13 +721,15 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			}
 			dd.resolve(widgets);
 		}));
-		this.submitButton.destroy();
+		if(this.submittable) this.submitButton.destroy();
 		if(this.cancellable) this.cancelButton.destroy();
-		this.submitButton = new Button(lang.mixin({
-			label:common.buttonSubmit,
-			"class":"dformaSubmit",
-			onClick:lang.hitch(this,this.submit)
-		},this.data.submit)).placeAt(this.buttonNode);
+		if(this.submittable) {
+			this.submitButton = new Button(lang.mixin({
+				label:common.buttonSubmit,
+				"class":"dformaSubmit",
+				onClick:lang.hitch(this,this.submit)
+			},this.data.submit)).placeAt(this.buttonNode);
+		}
 		if(this.cancellable) {
 			this.cancelButton = new Button(lang.mixin({
 				label:common.buttonCancel,
