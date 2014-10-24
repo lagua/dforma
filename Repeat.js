@@ -19,6 +19,7 @@ return declare("dforma.Repeat",[Group],{
 	_rows:null,
 	_controls:null,
 	_addButton:null,
+	label:"",
 	value:null,
 	startup:function(){
 		this.inherited(arguments);
@@ -31,7 +32,7 @@ return declare("dforma.Repeat",[Group],{
 		this.value = [];
 		var common = i18n.load("dforma","common");
 		this._addButton = new Button({
-			label:common.buttonAdd,
+			label:common.buttonAdd+(this.label ? " "+this.label : ""),
 			onClick:function(){
 				self.cloneRow();
 			}
@@ -172,7 +173,7 @@ return declare("dforma.Repeat",[Group],{
  		});
  		if(this._controls.length==this.options[0].controls.length) {
  			// add first row
- 			this.cloneRow();
+ 			if(!this.schema.hasOwnProperty("minItems") || this.schema.minItems>0) this.cloneRow();
  		}
  	},
  	addChild:function(widget,insertIndex){
