@@ -239,7 +239,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					case "switch":
 					break;
 					default:
-						if(c.required || c.type=="email" || c.type=="phone") {
+						if(c.required || c.type=="email" || c.type=="phone" || c.readonly) {
 							req = "dijit/form/ValidationTextBox";
 						} else {
 							req = "dijit/form/TextBox";
@@ -270,6 +270,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			var Widget = c.Widget;
 			delete c.Widget;
 			var cc = lang.mixin({},c);
+			if(c.readonly) cc.readOnly = true;
 			switch(c.type) {
 				case "checkbox":
 					cc.checked = (c.value===true);
