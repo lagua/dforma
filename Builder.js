@@ -722,8 +722,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			}
 			dd.resolve(widgets);
 		}));
-		if(this.submittable) this.submitButton.destroy();
-		if(this.cancellable) this.cancelButton.destroy();
+		if(this.submitButton) this.submitButton.destroy();
+		if(this.cancelButton) this.cancelButton.destroy();
 		if(this.submittable) {
 			this.submitButton = new Button(lang.mixin({
 				label:common.buttonSubmit,
