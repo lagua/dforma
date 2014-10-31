@@ -160,7 +160,7 @@ return declare("dforma.Repeat",[Group],{
  			_.destroyRecursive();
  		});
  		this.repeatNode.removeChild(this._rows[row].node);
- 		this._rows[row] = null;
+ 		this._rows.splice(row,1);
  	},
  	addControl:function(Widget,params){
  		domConstruct.create("th",{
