@@ -12,6 +12,7 @@ define([
 				required:true,
 				controller:true,
 				name: name,
+				title: options.controllerTitle,
 				options:[]
 			};
 			if(options.add) {

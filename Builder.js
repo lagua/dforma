@@ -380,7 +380,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							// TODO: create type for items instanceof array
 							controls:[jsonschema.schemasToControl(c.controller.name,c.schema.items,data,{
 								selectFirst:true,
-								controllerType:c.controller.type
+								controllerType:c.controller.type,
+								controllerTitle:c.controller.title
 							})],
 							submit:{
 								label:common.buttonSave
