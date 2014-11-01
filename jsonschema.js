@@ -12,9 +12,9 @@ define([
 				required:true,
 				controller:true,
 				name: name,
-				title: options.controllerTitle,
 				options:[]
 			};
+			if(options.controllerTitle) control.title = options.controllerTitle; 
 			if(options.add) {
 				options.edit = true;
 				options["delete"] = true;
