@@ -180,6 +180,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					case "repeat":
 						req = "dforma/Repeat";
 					break;
+					case "lookuplist":
+						req = "dforma/LookupList";
+					break;
 					case "checkbox":
 						req = "dijit/form/CheckBox";
 					break;
