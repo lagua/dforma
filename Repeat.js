@@ -31,12 +31,14 @@ return declare("dforma.Repeat",[Group],{
 		var self = this;
 		this.value = [];
 		var common = i18n.load("dforma","common");
-		this._addButton = new Button({
-			label:common.buttonAdd+(this.label ? " "+this.label : ""),
-			onClick:function(){
-				self.cloneRow();
-			}
-		}).placeAt(this.buttonNode);
+		if(!this.schema.hasOwnProperty("add") || this.schema.add) {
+			this._addButton = new Button({
+				label:common.buttonAdd+(this.label ? " "+this.label : ""),
+				onClick:function(){
+					self.cloneRow();
+				}
+			}).placeAt(this.buttonNode);
+		}
 	},
  	cloneRow:function(){
  		// add new row
@@ -56,14 +58,16 @@ return declare("dforma.Repeat",[Group],{
 		var removeNode = domConstruct.create("td",{
  			"class":"dformaRepeatCol"
  		},this._rows[row].node);
-		var removeBtn = new Button({
-			row:row,
-			label:common.buttonRemove,
-			onClick:function(){
-				self.removeRow(this.row);
-			}
-		}).placeAt(removeNode);
-		this._rows[row].controls.push(removeBtn);
+		if(!this.schema.hasOwnProperty("delete") || this.schema["delete"]) {
+			var removeBtn = new Button({
+				row:row,
+				label:common.buttonRemove,
+				onClick:function(){
+					self.removeRow(this.row);
+				}
+			}).placeAt(removeNode);
+			this._rows[row].controls.push(removeBtn);
+		}
  	},
  	_getValueAttr: function(){
 		// summary:
