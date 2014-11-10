@@ -121,7 +121,7 @@ return declare("dforma.Repeat",[Group],{
 		// summary:
 		//		Fill in form values from according to an Object (in the format returned by get('value'))
  		array.forEach(arr,function(obj,i){
- 			if(i>0) this.cloneRow();
+ 			if(i>0 || !this._rows.length) this.cloneRow();
  			// generate map from name --> [list of widgets with that name]
  			var map = { };
  			array.forEach(this._getDescendantFormWidgets(), function(widget){
