@@ -674,7 +674,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							if(index>-1) {
 								var cs = optional.splice(index,1);
 								preload(cs).then(function(){
-									render(cs[0]);
+									render(cs[0]).focus();
+									
 								});
 							} else if(self.allowFreeKey) {
 								// in case there are no optionals, just create new
