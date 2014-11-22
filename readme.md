@@ -181,7 +181,7 @@ Property | Description
 `columns` | Array of column names for format `list`.
 `currency` | The currency to use for format `currency`.
 `controller` | Object providing the current form with a controller (typically in type `array`).
-`target` | The object to unhide for format `boolean`. The default is the parent object.
+`target` | The object to unhide for format `unhidebutton`. The default is the parent object.
 `invalidMessage` | Tooltip text that appears when the value of the control is invalid.
 `dialog` | Boolean. Presents a button. When the button is clicked, the control is displayed in a dialog.
 
