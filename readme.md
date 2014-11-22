@@ -192,3 +192,9 @@ Property | Details
 `query` | An rql query.
 `links` | An array containing references to (local) store(s) that contain the harvested data to query. When this is not available, the standard JSON Schema `links` property may be used instead. 
 `message` | A message to show when the query returns a result.
+
+## BIG TODO:
+
+* Testing
+* Adding more control /schema types
+* Creating mixins for too specific parts
