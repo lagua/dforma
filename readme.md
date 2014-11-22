@@ -14,7 +14,7 @@ To create a form builder, declare a new instance of the widget:
 		var builder = new Builder();
 	});
 ```
-The properties typically consist of submit method, that is called when the submit button is pushed, and the data. Optionally there is a cancel method. The first property of data is an array of controls.
+The properties typically consist of a submit method, that is called when the submit button is pushed, and the initialization data. Optionally there is a cancel method. The first property of the `data` object is an array of controls.
 
 NOTE: if the form builder is placed in the DOM, it’s startup method should be called.
 
@@ -29,9 +29,9 @@ Property | Description
 `cancellable` | Boolean indicating a cancel button should be displayed under the form (default = false)
 `submittable` | Boolean indicating a submit button should be displayed under the form (default = true)
 `hideOptional` | Don't display optional controls, but present an add button that will allow optional controls to be added from a dropdown list (default = false)
-`allowOptionalDeletion` |  Allows for optional controls to be removed from the form. They will be added to the dropdown list (default = false)
-`allowFreeKey` | Instead of a select, a combobox is presented, that allows for new properties (optional, type = text) to be added to the form (default = false)
-`store | Option required to turn a form into a schema editor (see below)
+`allowOptionalDeletion` |  Allows for optional controls to be removed from the form. They will be added to the dropdown list containing optional controls (default = false)
+`allowFreeKey` | For the dropdown list containing optional controls, a combobox is presented that allows for new properties (optional, type = text) to be added to the form (default = false)
+`store` | Option required to turn a form into a schema editor (see below)
 `addControls` | Option required to turn a form into a schema editor (see below)
 
 The `data` object is used to convey the following:
