@@ -76,7 +76,7 @@ All data in the configuration object will be passed down to the control, so any 
 
 Dijit Form controls are used for most common types. The default control is a dijit/form/TextBox. Currently the following mapping exists between types and widgets:
 
-Type | Widget | Details
+Type | Widget | Description
 ---- | ------ | -------
 text | dijit/form/TextBox
 text (required / read-only) | dijit/form/ValidationTextBox
@@ -145,15 +145,17 @@ When the `hideOptional` property is `true`, the form builder will present option
 
 A form builder may be turned into a JSON Schema editor. This feature is mostly left to the implementation, and requires setting `hideOptional`, `allowOptionalDeletion` and `allowFreeKey` correctly. The following properties are also used:
 
+Property | Description
+-------- | -----------
 `store` | Store containing the schemata to edit
 `addControls` | Controls that will be used to edit the schema properties
 
 
 ## JSON Schema Utility:
 
-With this utilitiy control configurations can be generated from JSON Schema. At the moment only draft version 03 can be used. The `format` property of a schema entry can be used to generate a number of controls. A distinction is made between simple values (string, number, boolean) and complex values (array, object). Currently the set is limited to:
+With this utilitiy control configurations can be generated from JSON Schema. At the moment only [draft version 03](https://tools.ietf.org/html/draft-zyp-json-schema-03) can be used. The `format` property of a schema entry can be used to generate a number of controls. A distinction is made between simple values (string, number, boolean) and complex values (array, object). Currently the set is limited to:
 
-Type | Format | Details
+Type | Format | Description
 ---- | ------ | -------
 `string` | | Text input.
 `boolean` | | Checkbox.
@@ -174,11 +176,11 @@ any* | `hidden` | A readonly value, hidden from the user. In case the type is `o
 
 All schema properties are taken into account when generating controls. However, to generate the full stack of the form components above, JSON Schema has to be extended with the following:
 
-Property | Details
+Property | Description
 -------- | -------
 `columns` | Array of column names for format `list`.
 `currency` | The currency to use for format `currency`.
-`controller` | Object providing the current form with a controller.
+`controller` | Object providing the current form with a controller (typically in type `array`).
 `target` | The object to unhide for format `boolean`. The default is the parent object.
 `invalidMessage` | Tooltip text that appears when the value of the control is invalid.
 `dialog` | Boolean. Presents a button. When the button is clicked, the control is displayed in a dialog.
@@ -187,7 +189,7 @@ Property | Details
 
 Whenever an implementation of a form builder requires it, JSON Schema may be extended with a `condition` property. This object may be provided to make decisions about how to process or render the form based on the data that was harvested. This property is purely formal and is not implemented in the form builder itself. A `condition` object has the following properties:
 
-Property | Details
+Property | Description
 -------- | -------
 `query` | An rql query.
 `links` | An array containing references to (local) store(s) that contain the harvested data to query. When this is not available, the standard JSON Schema `links` property may be used instead. 
