@@ -1,13 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
-
+	<meta charset="utf-8">
 	<title>dforma from schema</title>
-<!--[if lt IE 9]>
-<script src="/js_shared/html5shiv.js"></script>
-<![endif]-->
 	<link rel="stylesheet" type="text/css" href="../../dijit/themes/claro/claro.css" />
 	<link rel="stylesheet" type="text/css" href="../resources/Builder.css" />
 	<style>
@@ -63,6 +58,7 @@
 			"dojo/text!./nl.json",
 			"dojo/text!./en.json"
 		], function(lang,array,Builder,jsonschema,JSON,Memory,domConstruct,dom,ready,hash,topic,lang_nl,lang_en){
+			// helper functions
 			function traverse(obj,func, parent) {
 				for (i in obj){
 					func.apply(obj,[i,obj[i],parent]);
@@ -79,11 +75,8 @@
 				});
 				return obj;
 			};
-			var fb = new dforma.Builder({
+			var fb = new Builder({
 				store:new Memory(),
-				hideOptional:false,
-				allowOptionalDeletion:false,
-				allowFreeKey:false,
 				cancel: function(){
 					myDialog.hide();
 				},
@@ -91,20 +84,12 @@
 					if(!this.validate()) return;
 					var data = this.get("value");
 					var schema = this.get("controllerWidget").item.schema;
-					//var jsonvalid = jsonschema.validate(data,schema);
-					//var valid = jsonvalid.errors.length == 0;
-					//console.log(jsonvalid)
-					//var validtext = valid ? "This data is valid" : jsonvalid.errors.map(function(_){return _.message});
-					//if(!valid) {
-					//	alert(validtext);
-					//	return;
-					//}
-					// submit data
+					// submit data to local store
 					var valid = true;
 					this.store.put(data);
 					domConstruct.create("div",{
 						innerHTML:JSON.stringify(data,null,2),
-						style:"color:"+(valid ?"green" : "red")
+						style:"color:"+(valid ? "green" : "red")
 					},"data");
 				}
 			}).placeAt("form");
@@ -271,10 +256,12 @@
 						}
 					}
 				}];
+				// localize schema
 				schemas = array.map(schemas,function(schema){
 					return replaceNlsRecursive(schema,JSON.parse(nls[locale]));
 				});
 				dom.byId("schema").innerHTML = "<pre>"+JSON.stringify(schemas,null,2)+"</pre>";
+				// transform schema to controls
 				var control = jsonschema.schemasToControl("type",schemas,data,{
 					selectFirst:true
 				});
