@@ -263,17 +263,41 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		}
 		function render(c,parent) {
 			if(!parent) parent = self;
-			var lbl = c.title ? c.title : c.name.toProperCase();
-			c = lang.mixin({
-				placeHolder:lbl,
-				label:lbl,
-				"class": "dformaElementName-"+c.name
-			},c);
 			var co,l;
 			var Widget = c.Widget;
 			delete c.Widget;
-			var cc = lang.mixin({},c);
-			if(c.readonly) cc.readOnly = true;
+			var lbl = c.title ? c.title : c.name.toProperCase();
+			var cc = lang.mixin({
+				placeHolder:lbl,
+				label:lbl,
+				"class": "dformaElementName-"+c.name,
+				onChange:function(val){
+					//var name = this.name;
+					if(this.type=="checkbox") val = this.value = (this.checked === true);
+					// update data controls for
+					/*self.data.controls.forEach(function(c){
+						if(c.controller && c.options) {
+							c.options.forEach(function(op){
+								if(op.controls) {
+									op.controls.forEach(function(c){
+										if(c.name===name) c.value = val;
+									});
+								}
+							});
+						}
+						if(c.name===name) c.value = val;
+					});
+					controls.forEach(function(c){
+						if(c.name===name) c.value = val;
+					});
+					*/
+					this._config.value = val;
+					if(this.controller) {
+						this._form.rebuild();
+					}
+				}
+			},c);
+			if(c.hasOwnProperty("readonly")) cc.readOnly = c.readonly;
 			switch(c.type) {
 				case "checkbox":
 					cc.checked = (c.value===true);
@@ -427,10 +451,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				default:
 				break;
 			}
+			if(c.controller) {
+				cc._form = parent;
+			}
+			cc._config = c;
 			co = new Widget(cc);
 			if(c.controller) {
-				controller = co;
-				self.controllerWidget = controller;
+				controller = parent.controllerWidget = co;
 			}
 			if(c.type=="list") {
 				parent.addChild(co);
@@ -608,31 +635,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		};
 		// end render
 		controls = array.map(controls,function(c,i){
-			c = lang.mixin({
-				onChange:function(val){
-					var name = this.name;
-					if(this.type=="checkbox") val = this.value = (this.checked === true);
-					// update data controls for
-					self.data.controls.forEach(function(c){
-						if(c.controller && c.options) {
-							c.options.forEach(function(op){
-								if(op.controls) {
-									op.controls.forEach(function(c){
-										if(c.name===name) c.value = val;
-									});
-								}
-							});
-						}
-						if(c.name===name) c.value = val;
-					});
-					controls.forEach(function(c){
-						if(c.name===name) c.value = val;
-					});
-					if(this.controller) {
-						self.rebuild();
-					}
-				}
-			},c);
 			if(c.required || !hideOptional || c.hasOwnProperty("value") || c.hasOwnProperty("checked")) {
 				if(!c.required && self.allowOptionalDeletion) c["delete"] = true;
 			} else {
