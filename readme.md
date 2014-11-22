@@ -74,7 +74,7 @@ Property | Description
 
 All data in the configuration object will be passed down to the control, so any properties or methods specific to each widget can be overridden via this object (e.g. "checked" for a checkbox).
 
-Dijit Form controls are used for most common types. The default control is a dijit/form/TextBox. Currently this mapping exists between types and widgets:
+Dijit Form controls are used for most common types. The default control is a dijit/form/TextBox. Currently the following mapping exists between types and widgets:
 
 Type | Widget | Details
 ---- | ------ | -------
@@ -116,7 +116,7 @@ TODO: Currently a form builder instance can only have a single controller. A new
 
 ## Control onChange override:
 
-Note that when the onChange method of a control is overridden, the function must at least update the value property of the configuration object that was responsible for creating the widget. The object is referenced by the `_config` property. This is because that value will be used when the form is rebuilt.
+Note that when the onChange method of a control is overridden, the function must at least update the value property of the configuration object that was responsible for creating the widget. This is because that value will be used when the form is rebuilt. The configuration object is referenced by the `_config` property.
 
 Also, if the control is the controller itself, the onChange function also needs to rebuild the sub-form:
 
