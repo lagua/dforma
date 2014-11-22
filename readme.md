@@ -139,7 +139,7 @@ Hidden groups can be revealed with an `unhidebutton` type. When the button is cl
 
 ## Hiding optional controls:
 
-When the `hideOptional` property is `true`, the form builder will present optional properties in a select... (add button)
+When the `hideOptional` property is `true`, the form builder will present optional properties in a dropdown. An add button is displayed at the bottom of the form. When clicked, the dropdown list is shown and the user may select an optional control.
 
 ## Creating a JSON Schema editor
 
