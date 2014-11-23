@@ -46,6 +46,7 @@ Property | Description
 
 Method | Description
 ------ | -----------
+`startup` | Start the builder and render the form if controls are provided
 `submit` | Called when the submit button is clicked
 `cancel`  | Called when the cancel button is clicked
 `rebuild` | Rebuild the form with the current initialization data, or provide a new instance as the first argument
