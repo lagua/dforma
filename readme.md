@@ -18,7 +18,7 @@ The parameters typically consist of a submit method, that is called when the sub
 
 NOTE: if the form builder is placed in the DOM, it’s startup method should be called.
 
-## API:
+## API
 
 ### Properties:
 
@@ -51,7 +51,7 @@ Method | Description
 `rebuild` | Rebuild the form with the current initialization data, or provide a new instance as the first argument
 
 
-## Controls:
+## Controls
 
 A control is expressed using a simple configuration object that describes how it will be rendered once the form builder is started.
 
@@ -106,7 +106,7 @@ group (hidden) | dforma/HiddenGroup | This widget has a specific function (see b
 unhidebutton | dijit/form/ToggleButton | This widget has a specific function (see below)
 
 
-## Controller control:
+## Controller control
 
 A control may have a `controller` property set to `true`, indicating that it will be used to update the form controls. The controller must have type `select` and a list of options. Each option should in turn have the set of `controls` to create.
 
@@ -114,7 +114,7 @@ Whenever the value of the controller changes, it will rebuild the form with the 
 
 TODO: Currently a form builder instance can only have a single controller. A new controller is in the making that allows for a more fine-grained sub-form structure, where any control in the controller's options can be another controller. On top of that, more controller types will be added (e.g. a tab container).
 
-## Control onChange override:
+## Control onChange override
 
 Note that when the onChange method of a control is overridden, the function must at least update the value property of the configuration object that was responsible for creating the widget. This is because that value will be used when the form is rebuilt. The configuration object is referenced by the `_config` property.
 
@@ -134,10 +134,11 @@ var control = {
 ```
 
 
-## Hidden subforms:
+## Hidden subforms
+
 Hidden groups can be revealed with an `unhidebutton` type. When the button is clicked, the subform is displayed. This can be used for example to present an alternative address when the user requests it.
 
-## Hiding optional controls:
+## Hiding optional controls
 
 When the `hideOptional` property is `true`, the form builder will present optional properties in a dropdown. An add button is displayed at the bottom of the form. When clicked, the dropdown list is shown and the user may select an optional control.
 
@@ -151,7 +152,7 @@ Property | Description
 `addControls` | Controls that will be used to edit the schema properties
 
 
-## JSON Schema Utility:
+## JSON Schema Utility
 
 With this utilitiy control configurations can be generated from JSON Schema. At the moment only [draft version 03](https://tools.ietf.org/html/draft-zyp-json-schema-03) can be used. The `format` property of a schema entry can be used to generate a number of controls. A distinction is made between simple values (string, number, boolean) and complex values (array, object). Currently the set is limited to:
 
@@ -172,7 +173,7 @@ Type | Format | Description
 `object` | |  Group (i.e. subform). Values in this subform will be stored as an object.
 any* | `hidden` | A readonly value, hidden from the user. In case the type is `object`, the hidden group may be revealed using an `unhidebutton`.
 
-## JSON Schema extension:
+## JSON Schema extension
 
 All schema properties are taken into account when generating controls. However, to generate the full stack of the form components above, JSON Schema has to be extended with the following:
 
@@ -185,7 +186,7 @@ Property | Description
 `invalidMessage` | Tooltip text that appears when the value of the control is invalid.
 `dialog` | Boolean. Presents a button. When the button is clicked, the control is displayed in a dialog.
 
-### Condition:
+### Condition
 
 Whenever an implementation of a form builder requires it, JSON Schema may be extended with a `condition` property. This object may be provided to make decisions about how to process or render the form based on the data that was harvested. This property is purely formal and is not implemented in the form builder itself. A `condition` object has the following properties:
 
@@ -195,7 +196,7 @@ Property | Description
 `links` | An array containing references to (local) store(s) that contain the harvested data to query. When this is not available, the standard JSON Schema `links` property may be used instead. 
 `message` | A message to show when the query returns a result.
 
-## BIG TODO:
+## BIG TODO
 
 * Testing
 * Adding more control /schema types
