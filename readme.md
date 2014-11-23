@@ -174,6 +174,13 @@ Type | Format | Description
 `object` | |  Group (i.e. subform). Values in this subform will be stored as an object.
 any* | `hidden` | A readonly value, hidden from the user. In case the type is `object`, the hidden group may be revealed using an `unhidebutton`.
 
+There are two methods to transform schemas to controls:
+
+Method | Description
+------ | -------
+schemasToControl(name,schemaList,data,options) | Returns a top controller control with name `name`, and add an option with controls for each schema. If `data` is provided, it will be used to initialize the controls with a value. When `data` holds a value for the controller, the (controls from the) schema with that name will be selected. If not, no option will be selected in the controller, unless in `options` the parameter `selectFirst` is true. Other parameters are `controllerTitle`, `titleProperty`, 
+schemaToControls(schema,data,options) | Returns an array of controls from `schema`. If `data` is provided, it will be used to initialize the controls with a value. The `description` in the `options` sets the property to be used to indicate which property from the schema to use for the description property of the controls.
+
 ## JSON Schema extension
 
 All schema properties are taken into account when generating controls. However, to generate the full stack of the form components above, JSON Schema has to be extended with the following:
