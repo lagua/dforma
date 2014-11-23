@@ -11,10 +11,10 @@ Require dforma/Builder and attach the CSS file (dforma/resources/Builder.css).
 To create a form builder, declare a new instance of the widget:
 ```javascript
 	require(["dforma/Builder"], function(Builder){
-		var builder = new Builder();
+		var builder = new Builder(parameters);
 	});
 ```
-The properties typically consist of a submit method, that is called when the submit button is pushed, and the initialization data. Optionally there is a cancel method. The first property of the `data` object is an array of controls.
+The parameters typically consist of a submit method, that is called when the submit button is pushed, and the initialization data. Optionally there is a cancel method. The first property of the `data` object is an array of controls.
 
 NOTE: if the form builder is placed in the DOM, it’s startup method should be called.
 
