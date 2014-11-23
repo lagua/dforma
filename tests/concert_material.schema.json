@@ -1,0 +1,130 @@
+{
+	"type" : "{concert_material}",
+	"title" : "{concert_material}",
+	"properties":{
+		"componist" : {
+			"title": "{composer}",
+			"required" : true,
+			"type" : "string"
+		},
+		"titel" : {
+			"title": "{title}",
+			"required" : true,
+			"type" : "string"
+		},
+		"uitgever" : {
+			"title": "{publisher}",
+			"type" : "string"
+		},
+		"materialen" : {
+			"title": "{material_type}",
+			"type" : "object",
+			"properties":{
+				"pianouittreksel":{
+					"type":"integer",
+					"default":0
+				},
+				"koormateriaal":{
+					"type":"integer",
+					"default":0
+				}
+			}
+		},
+		"strijkers" : {
+			"title": "{string_set}",
+			"description":"{no_strings_info}",
+			"type" : "object",
+			"properties":{
+				"viool1":{
+					"title": "{violin1}",
+					"type":"integer",
+					"default":0
+				},
+				"viool2":{
+					"title": "{violin2}",
+					"type":"integer",
+					"default":0
+				},
+				"altviool":{
+					"title": "{viola}",
+					"type":"integer",
+					"default":0
+				},
+				"cello":{
+					"title": "{violoncello}",
+					"type":"integer",
+					"default":0
+				},
+				"contrabas":{
+					"title": "{double_bass}",
+					"type":"integer",
+					"default":0
+				}
+			}
+		},
+		"uitvoeringen":{
+			"title": "{performances}",
+			"description":"{performance_info}",
+			"type":"array",
+			"minItems":1,
+			"items":{
+				"datum" : {
+					"title": "{date}",
+					"required" : true,
+					"type" : "date"
+				},
+				"plaats" : {
+					"title": "{place}",
+					"required" : true,
+					"type" : "string"
+				},
+				"zaal" : {
+					"title": "{location}",
+					"required" : true,
+					"type" : "string"
+				}
+			}
+		},
+		"dirigent":{
+			"title": "{conductor}",
+			"type":"string"
+		},
+		"solisten":{
+			"title": "{soloists}",
+			"type":"string"
+		},
+		"eersterepetitie":{
+			"title": "{first_rehearsal}",
+			"type":"date"
+		},
+		"opnames":{
+			"title":"{recording}",
+			"description":"{add_recording_info}",
+			"type":"object",
+			"properties":{
+				"radio":{
+					"type":"boolean"
+				},
+				"tv":{
+					"type":"boolean"
+				},
+				"cd-dvd":{
+					"title":"{cd_dvd}",
+					"type":"boolean"
+				},
+				"internet":{
+					"type":"boolean"
+				},
+				"overig":{
+					"title":"{other}",
+					"type":"boolean"
+				}
+			}
+		},
+		"opmerkingen" : {
+			"title": "{remarks}",
+			"type" : "string",
+			"format" : "text"
+		}
+	}
+}

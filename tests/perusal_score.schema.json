@@ -1,0 +1,25 @@
+{
+	"type" : "{perusal_score}",
+	"title" : "{perusal_score}",
+	"properties":{
+		"componist" : {
+			"title": "{composer}",
+			"required" : true,
+			"type" : "string"
+		},
+		"titel" : {
+			"title": "{title}",
+			"required" : true,
+			"type" : "string"
+		},
+		"uitgever" : {
+			"title": "{publisher}",
+			"type" : "string"
+		},
+		"opmerkingen" : {
+			"title": "{remarks}",
+			"type" : "string",
+			"format" : "text"
+		}
+	}
+}
