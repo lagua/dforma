@@ -73,18 +73,18 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		var bools = [];
 		for(var k in props) {
 			if(c.name==k) {
-				array.forEach(c.controls,function(ctrl,i){
+				array.forEach(c.editControls,function(ctrl,i){
 					if(ctrl.type=="checkbox") {
 						bools.push(ctrl.name);
-						c.controls[i].checked = props[k][ctrl.name];
+						c.editControls[i].checked = props[k][ctrl.name];
 					} else if(ctrl.type=="multiselect_freekey") {
 						var ops = [];
 						array.forEach(props[k][ctrl.name],function(op){
 							ops.push({value:op,label:op,selected:true});
 						});
-						c.controls[i].options = ops;
+						c.editControls[i].options = ops;
 					} else {
-						c.controls[i].value = props[k][ctrl.name];
+						c.editControls[i].value = props[k][ctrl.name];
 					}
 				});
 				// TODO: insert a subform
@@ -128,7 +128,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						self.rebuild();
 					},
 					data:{
-						controls:c.controls,
+						controls:c.editControls,
 						cancel: {
 							label:common.buttonCancel
 						},
@@ -695,7 +695,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 								if(self.editControls || controller.editControls) {
 									c["delete"] = c.edit = c.add = true;
 									// TODO: set editControls on data
-									c.controls = self.editControls || controller.editControls;
+									c.editControls = self.editControls || controller.editControls;
 									// instantiate properties if undef
 									if(!controller.item.properties) controller.item.properties = {};
 									controller.item.properties[val] = {};
