@@ -128,7 +128,7 @@ var control = {
 		if(this.type=="checkbox") newValue = this.value = (this.checked === true);
 		// update the value of the configuration object:
 		this._config.value = newValue;
-		// if this is a controller, make sure the subform is rebuilt
+		// if this is a controller, make sure the form it controls is rebuilt
 		if(this.controller) this.form.rebuild();
 	}
 };
