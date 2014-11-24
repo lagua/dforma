@@ -16,7 +16,7 @@ To create a form builder, declare a new instance of the widget:
 ```
 The parameters typically consist of a submit method, that is called when the submit button is pushed, and the initialization data. Optionally there is a cancel method. The first property of the `data` object is an array of controls.
 
-NOTE: if the form builder is placed in the DOM, it�s startup method should be called.
+NOTE: if the form builder is placed in the DOM, it's startup method should be called.
 
 ## API
 
