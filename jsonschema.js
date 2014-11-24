@@ -5,30 +5,26 @@ define([
 ],function(lang,array){
 	var jsonschema = lang.getObject("dforma.jsonschema", true);
 	lang.mixin(jsonschema,{
-		schemasToControl:function(name,schemaList,data,options){
+		schemasToController:function(schemaList,data,options){
 			if(!options) options = {};
-			var control = {
-				type:options.controllerType || "select",
+			var control = lang.mixin({
+				type:"select",
 				required:true,
 				controller:true,
-				name: name,
+				searchAttr:"label",
 				options:[]
-			};
-			if(options.controllerTitle) control.title = options.controllerTitle; 
+			},options.controller ? options.controller : {});
 			if(options.add) {
 				options.edit = true;
 				options["delete"] = true;
-				control.addControls = options.controls;
-			}
-			if(control.type=="select") {
-				control.searchAttr = options.searchAttr || "label";
+				control.editControls = options.editControls;
 			}
 			array.forEach(schemaList,function(schema,sindex){
-				if(schema["default"]) control["default"] = schema[name];
+				if(schema["default"]) control["default"] = schema["default"];
 				var titleProp = options.titleProperty || "title";
 				var idProp = options.idProperty || "id";
 				var id = schema[idProp] ? schema[idProp] : sindex;
-				var title = schema[titleProp] ? schema[titleProp] : (schema.id ? id.toProperCase() : "item"+id);
+				var title = schema[titleProp] ? schema[titleProp] : (schema[idProp] ? id.toProperCase() : "item"+sindex);
 				var option = {
 					id:id,
 					label:title,
@@ -37,14 +33,14 @@ define([
 				};
 				// FIXME what's this?
 				if(options.edit===true || options["delete"]===true) {
-					option.name = schema[name];
-					option.id = schema.id;
+					option.name = schema[control.name];
+					option.id = schema[idProp];
 					option.properties = schema.properties;
 				}
 				control.options.push(option);
 			});
-			if(data && data[name]) {
-				control.value = data[name];
+			if(data && data[control.name]) {
+				control.value = data[control.name];
 			} else if(options.selectFirst) {
 				control.value = control.options[0].id;
 			}
@@ -135,10 +131,13 @@ define([
 					c.isValid = prop["enum"];
 				}
 				if(type=="repeat" || type=="group"){
-					var items = jsonschema.schemasToControl(c.name,[{
+					var items = jsonschema.schemasToController([{
 						properties:type=="repeat"? prop.items : prop.properties
 					}],null,{
-						controllerType:type
+						controller:{
+							type:type,
+							name:c.name
+						}
 					});
 					c = lang.mixin(c,items);
 				}
@@ -157,8 +156,8 @@ define([
 					c.controls = options.controls;
 				}
 				if(options.hasOwnProperty("delete") && options["delete"]===true) c["delete"] = true;
-				if(options.hasOwnProperty("description")) {
-					c.description = prop[options.description];
+				if(options.hasOwnProperty("descriptionProperty")) {
+					c.description = prop[options.descriptionProperty];
 				}
 				if(data && data.hasOwnProperty(k)) {
 					c.value = data[k];
