@@ -179,7 +179,7 @@ There are two methods to transform schemas to controls:
 Method | Description
 ------ | -------
 schemasToController(schemaList,data,options) | Returns a controller control and adds an option with controls for each schema in the list. When `data` is provided, it will be used to initialize the controls with a value. When `data` holds a value for the controller, that option in the controller will be selected. If not, no option will be selected, unless `selectFirst` is `true` in the `options`. For more `options`, see below.
-schemaToControls(schema,data,options) | Returns an array of controls from `schema`. If `data` is provided, it will be used to initialize the controls with a value. The `description` in the `options` determines which property in the schema to use for the controls' description property.
+schemaToControls(schema,data,options) | Returns an array of controls from `schema`. If `data` is provided, it will be used to initialize the controls with a value. The `descriptionProperty` in the `options` determines which property in the schema to use for the controls' description property.
 
 Both functions in dforma/jsonschema can expect to take the same `options` argument, because they pass their `options` back and forth until all schemata are traversed and transformed to controls.
 
