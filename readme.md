@@ -66,7 +66,7 @@ Property | Description
 `title` | Used for the label or placeholder of the control. If not present, name is used.
 `description` | Used for additional information about the control, or a hint.
 `hidden` | Boolean indicating that the control must be hidden
-`options` | Array with options used for select type controls and some sub-form controls.
+`options` | Array with options used for select type controls and some subform controls.
 `controller` | Boolean indicating this control is a controller (see below).
 `dialog` | Boolean. Presents a button. When the button is clicked, the control is displayed in a dialog.
 `edit` | Boolean indicating the schema for this control may be edited (requires specific form builder configuration, see below).
@@ -111,15 +111,15 @@ unhidebutton | dijit/form/ToggleButton | This widget has a specific function (se
 
 A control may have a `controller` property set to `true`, indicating that it will be used to update the form controls. The controller must have type `select` and a list of options. Each option should in turn have the set of `controls` to create.
 
-Whenever the value of the controller changes, it will rebuild the form with the controls in the selection.
+Whenever the value of the controller changes, it will rebuild the form with the controls in the selection. Note that a controller does not create a subform, it merely presents a subselection of controls on the same level! 
 
-TODO: Currently a form builder instance can only have a single controller. A new controller is in the making that allows for a more fine-grained sub-form structure, where any control in the controller's options can be another controller. On top of that, more controller types will be added (e.g. a tab container).
+TODO: Currently a form builder instance can only have a single controller. A new controller is in the making that allows for a more fine-grained subform structure, where any control in the controller's options can be another controller. On top of that, more controller types will be added (e.g. a tab container).
 
 ## Control onChange override
 
 Note that when the onChange method of a control is overridden, the function must at least update the value property of the configuration object that was responsible for creating the widget. This is because that value will be used when the form is rebuilt. The configuration object is referenced by the `_config` property.
 
-Also, if the control is the controller itself, the onChange function also needs to rebuild the sub-form:
+Also, if the control is the controller itself, the onChange function also needs to rebuild the current form:
 
 ```javascript
 var control = {
