@@ -111,7 +111,10 @@
 				});
 				dom.byId("schema").innerHTML = "<pre>"+JSON.stringify(schemas,null,2)+"</pre>";
 				// transform schema to controls
-				var control = jsonschema.schemasToControl("type",schemas,data,{
+				var control = jsonschema.schemasToController(schemas,data,{
+					controller{
+						name:"type"
+					},
 					selectFirst:true
 				});
 				fb.rebuild({
