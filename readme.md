@@ -155,7 +155,7 @@ Property | Description
 
 ## JSON Schema Utility
 
-With this utilitiy control configurations can be generated from JSON Schema. At the moment only [draft version 03](https://tools.ietf.org/html/draft-zyp-json-schema-03) can be used. The `format` property of a schema entry can be used to generate a number of controls. A distinction is made between simple values (string, number, boolean) and complex values (array, object). Currently the set is limited to:
+With the dforma/jsonschema utilitiy control configurations can be generated from JSON Schema. At the moment only [draft version 03](https://tools.ietf.org/html/draft-zyp-json-schema-03) can be used. The `format` property of a schema entry can be used to generate a number of controls. A distinction is made between simple values (string, number, boolean) and complex values (array, object). Currently the set is limited to:
 
 Type | Format | Description
 ---- | ------ | -------
@@ -181,12 +181,15 @@ Method | Description
 schemasToController(schemaList,data,options) | Returns a controller control and adds an option with controls for each schema in the list. When `data` is provided, it will be used to initialize the controls with a value. When `data` holds a value for the controller, that option in the controller will be selected. If not, no option will be selected, unless `selectFirst` is `true` in the `options`. For more `options`, see below.
 schemaToControls(schema,data,options) | Returns an array of controls from `schema`. If `data` is provided, it will be used to initialize the controls with a value. The `description` in the `options` determines which property in the schema to use for the controls' description property.
 
-### SchemasToController `options`:
+Both functions in dforma/jsonschema can expect to take the same `options` argument, because they pass their `options` back and forth until all schemata are traversed and transformed to controls.
+
+### dforma/jsonschema `options`:
 Property | Description
 -------- | -----------
 `selectFirst` | When no data is provided, or the controller has no value, select the first option in the controller.
 `idProperty` | Determines which property in the schema to use for the controller options' id.
 `titleProperty` | Determines which property in the schema to use for the controller options' title property.
+`descriptionProperty` | Determines which property in the schema to use for the controller options' title property.
 `controller` | Object that overrides the generated controller control configuration. Primarily used to set the `name` of the controller. Can also be used to set `title` and `searchAttr`.
 `editControls` | Array of controls that will be used to edit the schema properties.
 
