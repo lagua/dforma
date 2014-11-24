@@ -153,7 +153,7 @@ define([
 				}
 				if(options.hasOwnProperty("edit") && options.edit===true) {
 					c.edit = true;
-					c.controls = options.controls;
+					c.editControls = options.editControls;
 				}
 				if(options.hasOwnProperty("delete") && options["delete"]===true) c["delete"] = true;
 				if(options.hasOwnProperty("descriptionProperty")) {
