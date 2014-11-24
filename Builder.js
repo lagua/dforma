@@ -45,7 +45,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	hideOptional:false,
 	allowFreeKey:false, // schema editor: set true for add
 	allowOptionalDeletion:false, // schema editor: set false for edit/delete
-	addControls:null, // schema editor: set as controls for the editor
+	editControls:null, // schema editor: set as controls for the editor
 	submit:function(){},
 	cancel:function(){},
 	onSubmit:function(e) {
@@ -405,10 +405,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							id:id,
 							options:options,
 							// TODO: create type for items instanceof array
-							controls:[jsonschema.schemasToControl(c.controller.name,c.schema.items,data,{
+							controls:[jsonschema.schemasToController(c.schema.items,data,{
 								selectFirst:true,
-								controllerType:c.controller.type,
-								controllerTitle:c.controller.title
+								controller:{
+									name:c.controller.name,
+									type:c.controller.type,
+									title:c.controller.title
+								}
 							})],
 							submit:{
 								label:common.buttonSave
@@ -427,7 +430,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					cc.validator = dojox.validate.us.isPhoneNumber;
 				break;
 				case "unhidebutton":
-					var label = c.label.split("|");
+					var label = cc.label.split("|");
 					cc.label = label[0];
 					cc.splitLabel = label;
 					cc.onClick = function(){
@@ -499,10 +502,10 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				}
 			} else {
 		 		l = new Label({
-					label:c.label,
+					label:cc.label,
 					"class":"dformaLabelFor"+c.type.toProperCase(),
 					child:co,
-					title:c.description /*&& !c.schema.dialog*/ ? c.description : c.label
+					title:c.description /*&& !c.schema.dialog*/ ? c.description : cc.label
 				});
 		 		if(c.type=="checkbox") {
 		 			l.on("click", function(evt){
@@ -546,10 +549,10 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			if(c.edit===true || c["delete"]===true) {
 				if(!l) {
 					l = new Label({
-						label:c.title ? c.title : c.label,
+						label: cc.label,
 						"class":"dformaLabelFor"+c.type.toProperCase(),
 						child:co,
-						title:c.description ? c.description : c.label
+						title:c.description ? c.description : cc.label
 					});
 					parent.addChild(l);
 				}
@@ -689,10 +692,10 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 									placeHolder:val.toProperCase(),
 									label:val.toProperCase()
 								};
-								if(self.addControls || controller.addControls) {
+								if(self.editControls || controller.editControls) {
 									c["delete"] = c.edit = c.add = true;
-									// TODO: set addControls on data
-									c.controls = self.addControls || controller.addControls;
+									// TODO: set editControls on data
+									c.controls = self.editControls || controller.editControls;
 									// instantiate properties if undef
 									if(!controller.item.properties) controller.item.properties = {};
 									controller.item.properties[val] = {};
