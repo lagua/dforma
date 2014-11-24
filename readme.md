@@ -16,7 +16,7 @@ To create a form builder, declare a new instance of the widget:
 ```
 The parameters typically consist of a submit method, that is called when the submit button is pushed, and the initialization data. Optionally there is a cancel method. The first property of the `data` object is an array of controls.
 
-NOTE: if the form builder is placed in the DOM, it’s startup method should be called.
+NOTE: if the form builder is placed in the DOM, itï¿½s startup method should be called.
 
 ## API
 
@@ -32,7 +32,7 @@ Property | Description
 `allowOptionalDeletion` |  Allows for optional controls to be removed from the form. They will be added to the dropdown list containing optional controls (default = false)
 `allowFreeKey` | For the dropdown list containing optional controls, a combobox is presented that allows for new properties (optional, type = text) to be added to the form (default = false)
 `store` | Option required to turn a form into a schema editor (see below)
-`addControls` | Option required to turn a form into a schema editor (see below)
+`editControls` | Option required to turn a form into a schema editor (see below)
 
 The `data` object is used to convey the following:
 
@@ -150,7 +150,7 @@ A form builder may be turned into a JSON Schema editor. This feature is mostly l
 Property | Description
 -------- | -----------
 `store` | Store containing the schemata to edit
-`addControls` | Controls that will be used to edit the schema properties
+`editControls` | Array of ontrols that will be used to edit the schema properties
 
 
 ## JSON Schema Utility
@@ -178,8 +178,17 @@ There are two methods to transform schemas to controls:
 
 Method | Description
 ------ | -------
-schemasToControl(name,schemaList,data,options) | Returns a top controller control with name `name`, and add an option with controls for each schema. If `data` is provided, it will be used to initialize the controls with a value. When `data` holds a value for the controller, the (controls from the) schema with that name will be selected. If not, no option will be selected in the controller, unless in `options` the parameter `selectFirst` is true. Other parameters are `controllerTitle`, `titleProperty`, 
-schemaToControls(schema,data,options) | Returns an array of controls from `schema`. If `data` is provided, it will be used to initialize the controls with a value. The `description` in the `options` sets the property to be used to indicate which property from the schema to use for the description property of the controls.
+schemasToController(schemaList,data,options) | Returns a controller control and adds an option with controls for each schema in the list. When `data` is provided, it will be used to initialize the controls with a value. When `data` holds a value for the controller, that option in the controller will be selected. If not, no option will be selected, unless `selectFirst` is `true` in the `options`. For more `options`, see below.
+schemaToControls(schema,data,options) | Returns an array of controls from `schema`. If `data` is provided, it will be used to initialize the controls with a value. The `description` in the `options` determines which property in the schema to use for the controls' description property.
+
+### SchemasToController `options`:
+Property | Description
+-------- | -----------
+`selectFirst` | When no data is provided, or the controller has no value, select the first option in the controller.
+`idProperty` | Determines which property in the schema to use for the controller options' id.
+`titleProperty` | Determines which property in the schema to use for the controller options' title property.
+`controller` | Object that overrides the generated controller control configuration. Primarily used to set the `name` of the controller. Can also be used to set `title` and `searchAttr`.
+`editControls` | Array of controls that will be used to edit the schema properties.
 
 ## JSON Schema extension
 
