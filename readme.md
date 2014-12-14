@@ -96,7 +96,7 @@ vslider | dijit/form/VerticalSlider
 repeat | dforma/Repeat
 lookuplist | dforma/LookupList | An array of values, chosen from a `select` 
 radiogroup | dforma/RadioGroup
-list | dforma/List | An (editable) grid (requires dgrid, needs a store)
+grid | dforma/Grid | An (editable) grid (requires dgrid and dstore, needs a store)
 multiselect | dforma/MultiSelect
 multiselect_freekey | dforma/MultiSelect | A multiselect that allows new (text) values to be added
 colorpicker | dforma/ColorPickerBox
@@ -170,7 +170,7 @@ Type | Format | Description
 `string` | `text` | Textarea.
 `string` | `radiogroup` | Group of radio buttons to select a value from a number of choices. The `enum` property will be used for the options.
 `string` | `select` | Select. The `enum` property will be used for the options.
-`array` | `list` | List (grid). Each entry can be edited, either directly in the grid itself (for simple values), or by opening a separate form (for complex values). See below for additional properties.
+`array` | `grid` | Grid (dgrid). Each entry can be edited, either directly in the grid itself (for simple values), or by opening a separate form (for complex values). See below for additional properties.
 `object` | |  Group (i.e. subform). Values in this subform will be stored as an object.
 any* | `hidden` | A readonly value, hidden from the user. In case the type is `object`, the hidden group may be revealed using an `unhidebutton`.
 
@@ -199,7 +199,7 @@ All schema properties are taken into account when generating controls. However, 
 
 Property | Description
 -------- | -------
-`columns` | Array of column names for format `list`.
+`columns` | Array of column names for format `grid`.
 `currency` | The currency to use for format `currency`.
 `controller` | Object providing the current form with a controller (typically in type `array`).
 `target` | The object to unhide for format `unhidebutton`. The default is the parent object.
