@@ -22,6 +22,9 @@ define([
 		store:null,
 		newdata:false,
 		defaultInstance:{},
+		add:true,
+		edit:true,
+		remove:true,
 		_setHintAttr: function(/*String*/ content){
 			// summary:
 			//		Hook for set('label', ...) to work.
@@ -52,34 +55,40 @@ define([
 			var Widget = declare([OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry],{
 				collection:this.store,
 				selectionMode:"single",
-				showFooter:true
+				showFooter:(this.add || this.edit || this.remove)
 	 		});
 			this.grid = new Widget(this.params);
 			this.addChild(this.grid);
-			this.addButton = new Button({
-				label:common.buttonAdd,
-				disabled:this.readonly,
-				"class": "dformaListEditButton",
-				onClick:function(){
-					self.add();
-				}
-			}).placeAt(this.grid.footerNode);
-			this.editButton = new Button({
-				label:common.buttonEditSelected,
-				disabled:true,
-				"class": "dformaListEditButton",
-				onClick:function(){
-					self.editSelected();
-				}
-			}).placeAt(this.grid.footerNode);
-			this.removeButton = new Button({
-				label:common.buttonRemoveSelected,
-				disabled:true,
-				"class": "dformaListRemoveButton",
-				onClick:function(){
-					self.removeSelected();
-				}
-			}).placeAt(this.grid.footerNode);
+			if(this.add){
+				this.addButton = new Button({
+					label:common.buttonAdd,
+					disabled:this.readonly,
+					"class": "dformaListEditButton",
+					onClick:function(){
+						self.add();
+					}
+				}).placeAt(this.grid.footerNode);
+			}
+			if(this.edit){
+				this.editButton = new Button({
+					label:common.buttonEditSelected,
+					disabled:true,
+					"class": "dformaListEditButton",
+					onClick:function(){
+						self.editSelected();
+					}
+				}).placeAt(this.grid.footerNode);
+			}
+			if(this.remove){
+				this.removeButton = new Button({
+					label:common.buttonRemoveSelected,
+					disabled:true,
+					"class": "dformaListRemoveButton",
+					onClick:function(){
+						self.removeSelected();
+					}
+				}).placeAt(this.grid.footerNode);
+			}
 			this.inherited(arguments);
 	 	},
 		startup:function(){
