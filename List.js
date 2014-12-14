@@ -10,10 +10,12 @@ define([
 	"dijit/_TemplatedMixin",
 	"dijit/form/Button",
 	"dgrid/OnDemandGrid",
+	"dgrid/Editor",
+	"dgrid/Keyboard",
 	"dgrid/Selection",
 	"dgrid/extensions/DijitRegistry",
 	"dojox/mobile/i18n"
-],function(declare,lang,array,domConstruct,domClass,_WidgetBase,_Contained,_Container,_TemplatedMixin,Button,OnDemandGrid,Selection,DijitRegistry,i18n){
+],function(declare,lang,array,domConstruct,domClass,_WidgetBase,_Contained,_Container,_TemplatedMixin,Button,OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry,i18n){
 	
 	return declare("dforma.List",[_WidgetBase,_Contained,_Container,_TemplatedMixin],{
 		templateString: "<div class=\"dijit dijitReset\" data-dojo-attach-point=\"focusNode\" aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden dformaListLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><div class=\"dijitReset dijitHidden dformaListHint\" data-dojo-attach-point=\"hintNode\"></div><div data-dojo-attach-point=\"containerNode\"></div><div class=\"dijitReset dijitHidden dformaListMessage\" data-dojo-attach-point=\"messageNode\"></div></div>",
@@ -47,7 +49,8 @@ define([
 	 	postCreate:function(){
 			var common = i18n.load("dforma","common");
 			var self = this;
-			var Widget = declare([OnDemandGrid,Selection,DijitRegistry],{
+			var Widget = declare([OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry],{
+				collection:this.store,
 				selectionMode:"single",
 				showFooter:true
 	 		});
