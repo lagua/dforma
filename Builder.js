@@ -24,12 +24,11 @@ define([
 	"dijit/form/FilteringSelect",
 	"dijit/form/ComboBox",
 	"dijit/form/TextBox",
-	"dlagua/x/dtl/filter/strings",
-	"dlagua/c/string/toProperCase",
+	"dforma/util/string/toProperCase",
 	"dojox/validate/web",
 	"dojox/validate/us",
 	"dojo/i18n!./nls/common"
-],function(require,declare,lang,array,aspect,Deferred,when,all,keys,number,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,strings,toProperCase){
+],function(require,declare,lang,array,aspect,Deferred,when,all,keys,number,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,toProperCase){
 
 var common = i18n.load("dforma","common");
 

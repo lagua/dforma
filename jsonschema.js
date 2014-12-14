@@ -1,7 +1,7 @@
 define([
 	"dojo/_base/lang",
 	"dojo/_base/array",
-	"dlagua/c/string/toProperCase"
+	"dforma/util/string/toProperCase"
 ],function(lang,array){
 	var jsonschema = lang.getObject("dforma.jsonschema", true);
 	lang.mixin(jsonschema,{
