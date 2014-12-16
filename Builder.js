@@ -269,7 +269,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			var cc = lang.mixin({
 				placeHolder:lbl,
 				label:lbl,
-				"class": "dformaElementName-"+c.name,
+				"class": "dforma"+c.type.toProperCase()+" dforma"+c.type.toProperCase()+"-"+c.name,
 				onChange:function(val){
 					//var name = this.name;
 					if(this.type=="checkbox") val = this.value = (this.checked === true);
