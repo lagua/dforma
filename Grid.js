@@ -8,6 +8,7 @@ define([
 	"dijit/_Contained",
 	"dijit/_Container",
 	"dijit/_TemplatedMixin",
+	"dijit/form/_FormValueMixin",
 	"dijit/form/Button",
 	"dstore/Memory",
 	"dgrid/OnDemandGrid",
@@ -17,17 +18,20 @@ define([
 	"dgrid/extensions/DijitRegistry",
 	"dojox/mobile/i18n"
 ],function(declare,lang,array,domConstruct,domClass,
-		_WidgetBase,_Contained,_Container,_TemplatedMixin, Button, Memory,
+		_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin, Button, Memory,
 		OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry,i18n){
 	
-	return declare("dforma.List",[_WidgetBase,_Contained,_Container,_TemplatedMixin],{
-		templateString: "<div class=\"dijit dijitReset\" data-dojo-attach-point=\"focusNode\" aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden dformaListLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><div class=\"dijitReset dijitHidden dformaListHint\" data-dojo-attach-point=\"hintNode\"></div><div data-dojo-attach-point=\"containerNode\"></div><div class=\"dijitReset dijitHidden dformaListMessage\" data-dojo-attach-point=\"messageNode\"></div></div>",
+	return declare("dforma.Grid",[_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin],{
+		templateString: "<div class=\"dijit dijitReset\" data-dojo-attach-point=\"focusNode\" aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden dformaGridLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><div class=\"dijitReset dijitHidden dformaGridHint\" data-dojo-attach-point=\"hintNode\"></div><div class=\"dformaGridContainer\" data-dojo-attach-point=\"containerNode\"></div><div class=\"dijitReset dijitHidden dformaGridMessage\" data-dojo-attach-point=\"messageNode\"></div></div>",
 		store:null,
 		newdata:false,
 		defaultInstance:{},
 		add:true,
 		edit:true,
 		remove:true,
+		readOnly:false,
+		baseClass:"dformaGrid",
+		multiple:true, // needed for setValueAttr array value
 		_setHintAttr: function(/*String*/ content){
 			// summary:
 			//		Hook for set('label', ...) to work.
@@ -45,6 +49,16 @@ define([
 			this._set("label", content);
 			this["labelNode"].innerHTML = content;
 			domClass.toggle(this.labelNode,"dijitHidden",!this.label);
+	 	},
+	 	_getValueAttr:function(){
+	 		this.grid.save();
+	 		return this.store.fetchSync();
+	 	},
+	 	_setValueAttr:function(data){
+	 		data = data || [];
+	 		// TODO means we have a Memory type store?
+	 		this.store.setData(data);
+	 		this.grid.refresh();
 	 	},
 	 	destroyRecursive:function(){
 	 		this.inherited(arguments);
@@ -66,10 +80,10 @@ define([
 			if(this.add){
 				this.addButton = new Button({
 					label:common.buttonAdd,
-					disabled:this.readonly,
-					"class": "dformaListEditButton",
+					disabled:this.readOnly,
+					"class": "dformaGridAddButton",
 					onClick:function(){
-						self.add();
+						self._add();
 					}
 				}).placeAt(this.grid.footerNode);
 			}
@@ -77,7 +91,7 @@ define([
 				this.editButton = new Button({
 					label:common.buttonEditSelected,
 					disabled:true,
-					"class": "dformaListEditButton",
+					"class": "dformaGridEditButton",
 					onClick:function(){
 						self.editSelected();
 					}
@@ -87,7 +101,7 @@ define([
 				this.removeButton = new Button({
 					label:common.buttonRemoveSelected,
 					disabled:true,
-					"class": "dformaListRemoveButton",
+					"class": "dformaGridRemoveButton",
 					onClick:function(){
 						self.removeSelected();
 					}
@@ -102,18 +116,21 @@ define([
 			this.own(
 				this.grid.on("dgrid-select", function(e){
 					selected += e.rows.length;
-					if(!self.readonly) self.editButton.set("disabled", !selected);
-					self.removeButton.set("disabled", !selected);
+					if(self.edit && !self.readonly) self.editButton.set("disabled", !selected);
+					if(self.remove) self.removeButton.set("disabled", !selected);
 				}),
 				this.grid.on("dgrid-deselect", function(e){
 					selected -= e.rows.length;
-					if(!self.readonly) self.editButton.set("disabled", !selected);
-					self.removeButton.set("disabled", !selected);
+					if(self.edit && !self.readonly) self.editButton.set("disabled", !selected);
+					if(self.remove) self.removeButton.set("disabled", !selected);
 				})
 			);
 		},
-		add:function(){
+		onAdd:function(id){
 			// override to set initial data
+		},
+		_add:function(){
+			this.onAdd(id);
 			var id = this.store.add(lang.clone(this.defaultInstance));
 			this.newdata = true;
 			this.grid.select(id);
