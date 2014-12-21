@@ -6,7 +6,7 @@ define([
 	"dojo/dom-class",
 	"dojo/store/Memory",
 	"dojo/store/Observable",
-	"dojox/mobile/i18n",
+	"dforma/util/i18n",
 	"dijit/form/_FormValueWidget",
 	"dijit/_Contained",
 	"dijit/_Container",

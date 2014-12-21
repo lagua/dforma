@@ -8,7 +8,7 @@ define([
 	"dojo/dom-construct",
 	"dojo/dom-class",
 	"./Group",
-	"dojox/mobile/i18n",
+	"dforma/util/i18n",
 	"dijit/form/Button"
 ],function(declare,lang,array,domConstruct,domClass,Group,i18n,Button){
 return declare("dforma.Repeat",[Group],{

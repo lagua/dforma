@@ -16,7 +16,7 @@ define([
 	"./Group",
 	"./Label",
 	"./jsonschema",
-	"dojox/mobile/i18n",
+	"dforma/util/i18n",
 	"dijit/Dialog",
 	"dijit/form/Form",
 	"dijit/form/_FormValueWidget",
@@ -25,8 +25,8 @@ define([
 	"dijit/form/ComboBox",
 	"dijit/form/TextBox",
 	"dforma/util/string/toProperCase",
-	"dojox/validate/web",
-	"dojox/validate/us",
+	"dforma/validate/web",
+	"dforma/validate/us",
 	"dojo/i18n!./nls/common"
 ],function(require,declare,lang,array,aspect,Deferred,when,all,keys,number,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,toProperCase){
 
@@ -423,10 +423,10 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					cc.hint = c.description || "";
 				break;
 				case "email":
-					cc.validator = dojox.validate.isEmailAddress;
+					cc.validator = dforma.validate.isEmailAddress;
 				break;
 				case "phone":
-					cc.validator = dojox.validate.us.isPhoneNumber;
+					cc.validator = dforma.validate.us.isPhoneNumber;
 				break;
 				case "unhidebutton":
 					var label = cc.label.split("|");

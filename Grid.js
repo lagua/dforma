@@ -16,7 +16,7 @@ define([
 	"dgrid/Keyboard",
 	"dgrid/Selection",
 	"dgrid/extensions/DijitRegistry",
-	"dojox/mobile/i18n"
+	"dforma/util/i18n"
 ],function(declare,lang,array,domConstruct,domClass,
 		_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin, Button, Memory,
 		OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry,i18n){

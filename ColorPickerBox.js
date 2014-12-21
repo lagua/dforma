@@ -1,16 +1,23 @@
 define([
+	"require",
 	"dojo/_base/declare",
 	"dojo/on",
 	"dojo/dom-geometry",
 	"dojo/dom-style",
 	"dijit/form/TextBox",
-	"colorpicker/ColorPicker"
-], function(declare, on, domGeom, domStyle, TextBox, ColorPicker) {
-
+], function(req,declare, on, domGeom, domStyle, TextBox) {
+var ColorPicker;
 return declare("dforma.ColorPickerBox",	TextBox,{
 	baseClass: "dijitTextBox dformaColorPickerBox",
 	cp:null,
 	value: "#ffffff",
+	postMixInProperties:function(){
+		var self = this, args = arguments;
+		req(["colorpicker/ColorPicker"],function(CP){
+			ColorPicker = CP;
+			self.inherited(args);
+		});
+	},
 	destroy:function(){
 		if(this.cp && this.cp.domNode.parentNode) this.cp.domNode.parentNode.removeChild(this.cp.domNode);
 		delete this.cp;
