@@ -364,6 +364,14 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							domClass.toggle(this.domNode,"dijitHidden",true);
 							parent.layout();
 							var data = this.get("value");
+							// checkboxes
+							var columns=c.columns ? c.columns : [];
+							array.forEach(columns,function(c){
+								var k = c.field;
+								if(c.editor=="checkbox" && data[k] instanceof Array) {
+									data[k] = data[k][0];
+								}
+							});
 							this.parentform.save(data,{
 								id:this.data.id,
 								overwrite:true
@@ -395,27 +403,28 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					});
 					cc.onEdit = function(id,options){
 						options = options || {};
-						var data = this.store.get(id);
-						domClass.toggle(this.domNode,"dijitHidden",true);
-						domClass.toggle(parent.buttonNode,"dijitHidden",true);
-						domClass.toggle(parent.hintNode,"dijitHidden",true);
-						domClass.toggle(this.subform.domNode,"dijitHidden",false);
-						this.subform.rebuild({
-							id:id,
-							options:options,
-							// TODO: create type for items instanceof array
-							controls:[jsonschema.schemasToController(c.schema.items,data,{
-								selectFirst:true,
-								controller:{
-									name:c.controller.name,
-									type:c.controller.type,
-									title:c.controller.title
+						this.store.get(id).then(lang.hitch(this,function(data){
+							domClass.toggle(this.domNode,"dijitHidden",true);
+							domClass.toggle(parent.buttonNode,"dijitHidden",true);
+							domClass.toggle(parent.hintNode,"dijitHidden",true);
+							domClass.toggle(this.subform.domNode,"dijitHidden",false);
+							this.subform.rebuild({
+								id:id,
+								options:options,
+								// TODO: create type for items instanceof array
+								controls:[jsonschema.schemasToController(c.schema.items,data,{
+									selectFirst:true,
+									controller:{
+										name:c.controller.name,
+										type:c.controller.type,
+										title:c.controller.title
+									}
+								})],
+								submit:{
+									label:common.buttonSave
 								}
-							})],
-							submit:{
-								label:common.buttonSave
-							}
-						});
+							});
+						}));
 					};
 				break;
 				case "group":
