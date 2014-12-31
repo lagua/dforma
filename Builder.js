@@ -310,7 +310,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					}
 				break;
 				case "radiogroup":
-					cc.labelAttr = "title";
+					if(!cc.labelAttr) cc.labelAttr = "title";
 				break;
 				case "currency":
 					cc.value = parseInt(c.value,10);
