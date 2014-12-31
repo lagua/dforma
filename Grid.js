@@ -130,11 +130,13 @@ define([
 			// override to set initial data
 		},
 		_add:function(){
-			this.onAdd(id);
-			var id = this.store.add(lang.clone(this.defaultInstance));
-			this.newdata = true;
-			this.grid.select(id);
-			this.onEdit(id);
+			this.store.add(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(data){
+				var id = data.id;
+				this.onAdd(id);
+				this.newdata = true;
+				this.grid.select(id);
+				this.onEdit(id);
+			}));
 		},
 		onEdit:function(id,options){
 			// override to edit
@@ -142,18 +144,23 @@ define([
 		save:function(id,options){
 			this.newdata = false;
 			this.store.put(id,options);
+			this.grid.refresh();
 		},
 		editSelected:function(){
+			if(this.grid.selection.length>1) return; 
 			for(var id in this.grid.selection) {
-				if(this.grid.selection[id]) this.onEdit(id,{
-					overwrite:true
-				});
+				if(this.grid.selection[id]) {
+					this.onEdit(id,{
+						overwrite:true
+					});
+				}
 			}
 		},
 		removeSelected:function(){
 			for(var id in this.grid.selection) {
 				if(this.grid.selection[id]) this.store.remove(id);
 			}
+			this.grid.refresh();
 		}
 	});
 });
