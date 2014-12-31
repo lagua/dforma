@@ -14,9 +14,9 @@ define([
     	templateString:"<div data-dojo-attach-point=\"containerNode,focusNode\"></div>",
     	buildRendering:function(){
     		this.inherited(arguments);
-    		array.forEach(this.options,function(_){
+    		array.forEach(this.options,function(_,i){
     			new RadioButton(lang.mixin(_,{
-    				checked:_.value==this.value
+    				checked:this.value ? _.id==this.value : i===0
     			})).placeAt(this.containerNode);
     			domConstruct.create("label",{
     				"for":_.id,
@@ -24,11 +24,22 @@ define([
     			},this.containerNode);
     		},this);
     	},
+    	validate:function(){
+    		// TODO signal empty selection?
+    		if(this.required) {
+	    		var selectedRadio = this.getChildren().filter(function(w){
+	                return w.get("checked");
+	            });
+	    		return selectedRadio.length>0;
+    		} else {
+    			return true;
+    		}
+		},
         _getValueAttr : function() {
             var selectedRadio = this.getChildren().filter(function(w){
                 return w.get("checked");
             }).pop();
-            return selectedRadio.get("value");
+            return selectedRadio ? selectedRadio.id : null;
         }
     });
 });
