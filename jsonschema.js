@@ -119,6 +119,7 @@ define([
 				}
 				if(type=="select" || type=="radiogroup") {
 					c.options = [];
+					c.labelAttr = "id";
 					if(prop.hasOwnProperty("enum")) {
 						array.forEach(prop["enum"],function(op) {
 							c.options.push({id:op});
