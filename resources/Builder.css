@@ -23,6 +23,8 @@
 }
 
 .dformaBuilderLabel {
+	font-weight:bold;
+	margin:5px;
 }
 .dformaGrid {
 	margin:6px;
