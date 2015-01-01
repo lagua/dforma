@@ -349,6 +349,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					// create bound subform
 					if(!cc.store) cc.store = parent.store;
 					cc.subform = new Builder({
+						label:cc.label,
 						cancellable:true,
 						cancel: function(){
 							domClass.toggle(this.parentform.domNode,"dijitHidden",false);
@@ -383,6 +384,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							});
 						}
 					});
+					domClass.toggle(cc.subform.domNode,"dijitHidden",true);
 					var validate = lang.hitch(cc.subform,cc.subform.validate);
 					cc.subform.validate = function(){
 						if(!this.data) return true;
