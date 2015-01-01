@@ -12,6 +12,7 @@ define([
 	"dojo/dom-construct",
 	"dojo/dom-class",
 	"dojo/store/Memory",
+	"dojo/store/JsonRest",
 	"./_GroupMixin",
 	"./Group",
 	"./Label",
@@ -28,7 +29,7 @@ define([
 	"dforma/validate/web",
 	"dforma/validate/us",
 	"dojo/i18n!./nls/common"
-],function(require,declare,lang,array,aspect,Deferred,when,all,keys,number,domConstruct,domClass,Memory,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,toProperCase){
+],function(require,declare,lang,array,aspect,Deferred,when,all,keys,number,domConstruct,domClass,Memory,JsonRest,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,toProperCase){
 
 var common = i18n.load("dforma","common");
 
@@ -39,6 +40,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	controllerWidget:null,
 	data:null,
 	store:null,
+	refProperty:"$ref",
 	cancellable:false,
 	submittable:true,
 	hideOptional:false,
@@ -175,6 +177,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				switch(c.type) {
 					case "date":
 						req = "dijit/form/DateTextBox";
+					break;
+					case "datetime":
+						req = "dforma/DateTimeTextBox";
 					break;
 					case "repeat":
 						req = "dforma/Repeat";
@@ -450,12 +455,20 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				case "select":
 				case "combo":
 					cc = lang.mixin({
-						store: new Memory({
-							data:c.options
-						}),
 						searchAttr:c.searchAttr || "id",
 						autoComplete:true
 					},cc);
+					if(!cc.store) {
+						if(cc.options && c.options.length) {
+							cc.store = new Memory({
+								data:c.options
+							});
+						} else if(cc.schema.items && cc.schema.items.hasOwnProperty(self.refProperty)) {
+							cc.store = new JsonRest({
+								target:cc.schema.items[self.refProperty]
+							});
+						}
+					}
 				break;
 				case "switch":
 				break;
