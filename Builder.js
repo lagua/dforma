@@ -212,6 +212,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						req = "dijit/form/ComboBox";
 					break;
 					case "grid":
+					case "list":
 						req = "dforma/Grid";
 					break;
 					case "multiselect":
@@ -333,6 +334,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				case "textarea":
 					cc.block = true;
 				break;
+				case "list":
 				case "grid":
 					cc.hint = c.description || "";
 					if(c.columns) {
@@ -485,7 +487,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			if(c.controller) {
 				controller = parent.controllerWidget = co;
 			}
-			if(c.type=="grid") {
+			if(c.type=="grid" || c.type=="list") {
 				parent.addChild(co);
 				cc.subform.parentform = co;
 				parent.addChild(cc.subform);

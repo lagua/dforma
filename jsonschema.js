@@ -69,6 +69,8 @@ define([
 				} else if(prop.type=="array" || prop.hasOwnProperty("enum") || prop.hasOwnProperty("oneOf")) {
 					if(prop.format == "list") {
 						type = "list";
+					} else if(prop.format == "grid") {
+						type = "grid";
 					} else if(prop.format == "select") {
 						type = "select";
 					} else if(prop.format == "radiogroup") {
@@ -113,7 +115,7 @@ define([
 				if(prop.hasOwnProperty("description")) {
 					c.description = prop.description;
 				}
-				if(type=="list") {
+				if(type=="list" || type=="grid") {
 					c.columns = prop.columns;
 					c.controller = prop.controller;
 				}
