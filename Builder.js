@@ -351,7 +351,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					// create bound subform
 					if(!cc.store) cc.store = parent.store;
 					cc.subform = new Builder({
-						label:cc.label,
+						//label:cc.label,
 						cancellable:true,
 						cancel: function(){
 							domClass.toggle(this.parentform.domNode,"dijitHidden",false);
