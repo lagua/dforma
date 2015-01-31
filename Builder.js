@@ -463,11 +463,11 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						autoComplete:true
 					},cc);
 					if(!cc.store) {
-						if(cc.options && c.options.length) {
+						if(c.options && c.options instanceof Array) {
 							cc.store = new Memory({
 								data:c.options
 							});
-						} else if(cc.schema.items && cc.schema.items.hasOwnProperty(self.refProperty)) {
+						} else if(cc.schema && cc.schema.items && cc.schema.items.hasOwnProperty(self.refProperty)) {
 							cc.store = new JsonRest({
 								target:cc.schema.items[self.refProperty]
 							});
