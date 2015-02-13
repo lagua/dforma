@@ -25,13 +25,19 @@ define([
 	"dijit/form/FilteringSelect",
 	"dijit/form/ComboBox",
 	"dijit/form/TextBox",
+	"dijit/registry",
 	"dforma/util/string/toProperCase",
 	"dforma/validate/web",
 	"dforma/validate/us",
 	"dojo/i18n!./nls/common"
-],function(require,declare,lang,array,aspect,Deferred,when,all,keys,number,domConstruct,domClass,Memory,JsonRest,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,toProperCase){
+],function(require,declare,lang,array,aspect,Deferred,when,all,
+		keys,number,domConstruct,domClass,Memory,JsonRest,
+		_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,
+		_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,registry){
 
 var common = i18n.load("dforma","common");
+
+var config = "data";
 
 var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	baseClass:"dformaBuilder",
@@ -40,6 +46,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	controllerWidget:null,
 	data:null,
 	store:null,
+	configProperty:"data",
 	refProperty:"$ref",
 	cancellable:false,
 	submittable:true,
@@ -142,16 +149,283 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			}
 		}
 	},
+	controlModuleMapper:function(c){
+		var req;
+		switch(c.type) {
+			case "date":
+				req = "dijit/form/DateTextBox";
+			break;
+			case "datetime":
+				req = "dforma/DateTimeTextBox";
+			break;
+			case "repeat":
+				req = "dforma/Repeat";
+			break;
+			case "lookuplist":
+				req = "dforma/LookupList";
+			break;
+			case "checkbox":
+				req = "dijit/form/CheckBox";
+			break;
+			case "radiogroup":
+				req = "dforma/RadioGroup";
+			break;
+			case "select":
+				req = "dijit/form/FilteringSelect";
+			break;
+			case "textarea":
+				req = "dijit/form/Textarea";
+			break;
+			case "spinner":
+				req = "dijit/form/NumberSpinner";
+			break;
+			case "number":
+				req = "dijit/form/NumberTextBox";
+			break;
+			case "currency":
+				req = "dijit/form/CurrencyTextBox";
+			break;
+			case "combo":
+				req = "dijit/form/ComboBox";
+			break;
+			case "grid":
+			case "list":
+				req = "dforma/Grid";
+			break;
+			case "multiselect":
+			case "multiselect_freekey":
+				req = "dforma/MultiSelect";
+			break;
+			case "hslider":
+				req = "dijit/form/HorizontalSlider";
+			break;
+			case "vslider":
+				req = "dijit/form/VerticalSlider";
+			break;
+			case "colorpicker":
+				req = "dforma/ColorPickerBox";
+			break;
+			case "color":
+				req = "dforma/ColorPaletteBox";
+			break;
+			case "colorpalette":
+				req = "dlagua/w/ColorPalette";
+			break;
+			case "group":
+				if(c.hidden) {
+					req = "dforma/HiddenGroup";
+				} else {
+					req = "dforma/Group";
+				}
+			break;
+			case "unhidebutton":
+				req = "dijit/form/ToggleButton";
+			break;
+			case "switch":
+			break;
+			default:
+				if(c.required || c.type=="email" || c.type=="phone" || c.readonly) {
+					req = "dijit/form/ValidationTextBox";
+				} else {
+					req = "dijit/form/TextBox";
+				}
+			break;
+		}
+		return req;
+	},
+	controlWidgetMapper:function(cc,Widget,parent){
+		var co;
+		// prepares widget parameters and returns the actual control widget
+		var c = cc._config;
+		switch(cc.type) {
+			case "checkbox":
+				cc.checked = (c.value===true);
+				cc.validate = function(){
+					if(this.hasOwnProperty("isValid") && this.checked!=this.isValid) {
+						alert(this.invalidMessage);
+						return false;
+					} else {
+						return true;
+					}
+				}
+			break;
+			case "radiogroup":
+				if(!cc.labelAttr) cc.labelAttr = "title";
+			break;
+			case "currency":
+				cc.value = parseInt(c.value,10);
+			break;
+			case "date":
+				cc.constraints = {
+					selector:"date"
+				}
+			break;
+			case "repeat":
+				cc.cols = c.options[0].controls.length;
+				cc.item = c.options[0];
+				cc.hint = c.description || "";
+			break;
+			case "textarea":
+				cc.block = true;
+			break;
+			case "list":
+			case "grid":
+				cc.hint = c.description || "";
+				if(c.columns) {
+					for(var k in c.columns) {
+						if(c.columns[k].format=="currency") {
+							cc.columns[k].get = function(object){
+				                return number.format(object[k], {
+				                	places: 2
+				                });
+				            }
+						}
+					}
+				}
+				// create bound subform
+				if(!cc.store) cc.store = parent.store;
+				cc.subform = new Builder({
+					//label:cc.label,
+					cancellable:true,
+					cancel: function(){
+						domClass.toggle(this.parentform.domNode,"dijitHidden",false);
+						domClass.toggle(parent.buttonNode,"dijitHidden",false);
+						domClass.toggle(parent.hintNode,"dijitHidden",false);
+						domClass.toggle(this.domNode,"dijitHidden",true);
+						parent.layout();
+						// cancelled new?
+						if(this[config] && this[config].id && this.parentform.newdata) this.parentform.store.remove(this[config].id);
+						this[config] = null;
+						this.parentform.newdata = false;
+					},
+					submit: function(){
+						if(!this.validate()) return;
+						domClass.toggle(this.parentform.domNode,"dijitHidden",false);
+						domClass.toggle(parent.buttonNode,"dijitHidden",false);
+						domClass.toggle(parent.hintNode,"dijitHidden",false);
+						domClass.toggle(this.domNode,"dijitHidden",true);
+						parent.layout();
+						var data = this.get("value");
+						// checkboxes
+						var columns=c.columns ? c.columns : [];
+						array.forEach(columns,function(c){
+							var k = c.field;
+							if(c.editor=="checkbox" && data[k] instanceof Array) {
+								data[k] = data[k][0];
+							}
+						});
+						this.parentform.save(data,{
+							id:this[config].id,
+							overwrite:true
+						});
+					}
+				});
+				domClass.toggle(cc.subform.domNode,"dijitHidden",true);
+				var validate = lang.hitch(cc.subform,cc.subform.validate);
+				cc.subform.validate = function(){
+					if(!this[config]) return true;
+					return validate();
+				};
+				parent.own(
+					aspect.after(cc.subform,"layout",function(){
+						parent.layout();
+					}),
+					aspect.after(parent,"cancel",function(){
+						cc.subform.cancel();
+					})
+				);
+				var _lh = aspect.after(parent,"layout",function(){
+					_lh.remove();
+					if(co.store && co.store.selectedId) {
+						var id = co.store.selectedId;
+						co.newdata = co.store.newdata;
+						delete co.store.newdata;
+						co.store.selectedId = null;
+						co.onEdit && co.onEdit(id);
+					}
+				});
+				cc.onEdit = function(id,options){
+					options = options || {};
+					this.store.get(id).then(lang.hitch(this,function(data){
+						domClass.toggle(this.domNode,"dijitHidden",true);
+						domClass.toggle(parent.buttonNode,"dijitHidden",true);
+						domClass.toggle(parent.hintNode,"dijitHidden",true);
+						domClass.toggle(this.subform.domNode,"dijitHidden",false);
+						this.subform.rebuild({
+							id:id,
+							options:options,
+							// TODO: create type for items instanceof array
+							controls:[jsonschema.schemasToController(c.schema.items,data,{
+								selectFirst:true,
+								controller:{
+									name:c.controller.name,
+									type:c.controller.type,
+									title:c.controller.title
+								}
+							})],
+							submit:{
+								label:common.buttonSave
+							}
+						});
+					}));
+				};
+			break;
+			case "group":
+				cc.item = c.options[0];
+				cc.hint = c.description || "";
+			break;
+			case "email":
+				cc.validator = dforma.validate.isEmailAddress;
+			break;
+			case "phone":
+				cc.validator = dforma.validate.us.isPhoneNumber;
+			break;
+			case "unhidebutton":
+				var label = cc.label.split("|");
+				cc.label = label[0];
+				cc.splitLabel = label;
+				cc.onClick = function(){
+					domClass.toggle(this.getParent().containerNode,"dijitHidden",!this.checked);
+					this.value = this.checked ? "on" : "";
+					this.set("label",this.splitLabel[(this.checked ? 1 : 0)]);
+				};
+			break;
+			case "select":
+			case "combo":
+				cc = lang.mixin({
+					searchAttr:c.searchAttr || "id",
+					autoComplete:true
+				},cc);
+				if(!cc.store) {
+					if(c.options && c.options instanceof Array) {
+						cc.store = new Memory({
+							data:c.options
+						});
+					} else if(cc.schema && cc.schema.items && cc.schema.items.hasOwnProperty(self.refProperty)) {
+						cc.store = new JsonRest({
+							target:cc.schema.items[self.refProperty]
+						});
+					}
+				}
+			break;
+			case "switch":
+			break;
+			default:
+			break;
+		}
+		co = new Widget(cc);
+		return co;
+	},
 	rebuild:function(data){
 		var dd = new Deferred();
 		if(data) {
-			this.data = data;
+			this[config] = data;
 		} else {
-			data = this.data;
+			data = this[config];
 		}
 		var dj = dojo;
 		this.destroyDescendants();
-		var controls = this.data.controls;
+		var controls = this[config].controls;
 		var controller;
 		var self = this;
 		// get the controls of the current controller selection
@@ -172,90 +446,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			});
 		}
 		function preload(controls) {
-			var reqs = controls.map(function(c){
-				var req;
-				switch(c.type) {
-					case "date":
-						req = "dijit/form/DateTextBox";
-					break;
-					case "datetime":
-						req = "dforma/DateTimeTextBox";
-					break;
-					case "repeat":
-						req = "dforma/Repeat";
-					break;
-					case "lookuplist":
-						req = "dforma/LookupList";
-					break;
-					case "checkbox":
-						req = "dijit/form/CheckBox";
-					break;
-					case "radiogroup":
-						req = "dforma/RadioGroup";
-					break;
-					case "select":
-						req = "dijit/form/FilteringSelect";
-					break;
-					case "textarea":
-						req = "dijit/form/Textarea";
-					break;
-					case "spinner":
-						req = "dijit/form/NumberSpinner";
-					break;
-					case "number":
-						req = "dijit/form/NumberTextBox";
-					break;
-					case "currency":
-						req = "dijit/form/CurrencyTextBox";
-					break;
-					case "combo":
-						req = "dijit/form/ComboBox";
-					break;
-					case "grid":
-					case "list":
-						req = "dforma/Grid";
-					break;
-					case "multiselect":
-					case "multiselect_freekey":
-						req = "dforma/MultiSelect";
-					break;
-					case "hslider":
-						req = "dijit/form/HorizontalSlider";
-					break;
-					case "vslider":
-						req = "dijit/form/VerticalSlider";
-					break;
-					case "colorpicker":
-						req = "dforma/ColorPickerBox";
-					break;
-					case "color":
-						req = "dforma/ColorPaletteBox";
-					break;
-					case "colorpalette":
-						req = "dlagua/w/ColorPalette";
-					break;
-					case "group":
-						if(c.hidden) {
-							req = "dforma/HiddenGroup";
-						} else {
-							req = "dforma/Group";
-						}
-					break;
-					case "unhidebutton":
-						req = "dijit/form/ToggleButton";
-					break;
-					case "switch":
-					break;
-					default:
-						if(c.required || c.type=="email" || c.type=="phone" || c.readonly) {
-							req = "dijit/form/ValidationTextBox";
-						} else {
-							req = "dijit/form/TextBox";
-						}
-					break;
-				}
-				return req;
-			});
+			var reqs = controls.map(lang.hitch(self,"controlModuleMapper"));
 			var d = new Deferred();
 			require(reqs,function(){
 				var args = arguments;
@@ -277,213 +468,34 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				label:lbl,
 				"class": "dforma"+c.type.toProperCase()+" dforma"+c.type.toProperCase()+"-"+c.name,
 				onChange:function(val){
-					//var name = this.name;
 					if(this.type=="checkbox") val = this.value = (this.checked === true);
-					// update data controls for
-					/*self.data.controls.forEach(function(c){
-						if(c.controller && c.options) {
-							c.options.forEach(function(op){
-								if(op.controls) {
-									op.controls.forEach(function(c){
-										if(c.name===name) c.value = val;
-									});
-								}
-							});
-						}
-						if(c.name===name) c.value = val;
-					});
-					controls.forEach(function(c){
-						if(c.name===name) c.value = val;
-					});
-					*/
 					this._config.value = val;
 					if(this.controller) {
-						this._form.rebuild();
+						var parent = this.getParent();
+						if(parent && typeof parent.rebuild=="function") parent.rebuild();
 					}
-				}
+				},
+				getParent:function(){
+					var parent = registry.getEnclosingWidget(this.domNode.parentNode);
+					if(parent instanceof Label){
+						parent = parent.getParent();
+					}
+					return parent;
+				},
+				_config:c
 			},c);
+			// default param mapping
 			if(c.hasOwnProperty("readonly")) cc.readOnly = c.readonly;
-			switch(c.type) {
-				case "checkbox":
-					cc.checked = (c.value===true);
-					cc.validate = function(){
-						if(this.hasOwnProperty("isValid") && this.checked!=this.isValid) {
-							alert(this.invalidMessage);
-							return false;
-						} else {
-							return true;
-						}
-					}
-				break;
-				case "radiogroup":
-					if(!cc.labelAttr) cc.labelAttr = "title";
-				break;
-				case "currency":
-					cc.value = parseInt(c.value,10);
-				break;
-				case "date":
-					cc.constraints = {
-						selector:"date"
-					}
-				break;
-				case "repeat":
-					cc.cols = c.options[0].controls.length;
-					cc.item = c.options[0];
-					cc.hint = c.description || "";
-				break;
-				case "textarea":
-					cc.block = true;
-				break;
-				case "list":
-				case "grid":
-					cc.hint = c.description || "";
-					if(c.columns) {
-						for(var k in c.columns) {
-							if(c.columns[k].format=="currency") {
-								cc.columns[k].get = function(object){
-					                return number.format(object[k], {
-					                	places: 2
-					                });
-					            }
-							}
-						}
-					}
-					// create bound subform
-					if(!cc.store) cc.store = parent.store;
-					cc.subform = new Builder({
-						//label:cc.label,
-						cancellable:true,
-						cancel: function(){
-							domClass.toggle(this.parentform.domNode,"dijitHidden",false);
-							domClass.toggle(parent.buttonNode,"dijitHidden",false);
-							domClass.toggle(parent.hintNode,"dijitHidden",false);
-							domClass.toggle(this.domNode,"dijitHidden",true);
-							parent.layout();
-							// cancelled new?
-							if(this.data && this.data.id && this.parentform.newdata) this.parentform.store.remove(this.data.id);
-							this.data = null;
-							this.parentform.newdata = false;
-						},
-						submit: function(){
-							if(!this.validate()) return;
-							domClass.toggle(this.parentform.domNode,"dijitHidden",false);
-							domClass.toggle(parent.buttonNode,"dijitHidden",false);
-							domClass.toggle(parent.hintNode,"dijitHidden",false);
-							domClass.toggle(this.domNode,"dijitHidden",true);
-							parent.layout();
-							var data = this.get("value");
-							// checkboxes
-							var columns=c.columns ? c.columns : [];
-							array.forEach(columns,function(c){
-								var k = c.field;
-								if(c.editor=="checkbox" && data[k] instanceof Array) {
-									data[k] = data[k][0];
-								}
-							});
-							this.parentform.save(data,{
-								id:this.data.id,
-								overwrite:true
-							});
-						}
-					});
-					domClass.toggle(cc.subform.domNode,"dijitHidden",true);
-					var validate = lang.hitch(cc.subform,cc.subform.validate);
-					cc.subform.validate = function(){
-						if(!this.data) return true;
-						return validate();
-					};
-					parent.own(
-						aspect.after(cc.subform,"layout",function(){
-							parent.layout();
-						}),
-						aspect.after(parent,"cancel",function(){
-							cc.subform.cancel();
-						})
-					);
-					var _lh = aspect.after(parent,"layout",function(){
-						_lh.remove();
-						if(co.store && co.store.selectedId) {
-							var id = co.store.selectedId;
-							co.newdata = co.store.newdata;
-							delete co.store.newdata;
-							co.store.selectedId = null;
-							co.onEdit && co.onEdit(id);
-						}
-					});
-					cc.onEdit = function(id,options){
-						options = options || {};
-						this.store.get(id).then(lang.hitch(this,function(data){
-							domClass.toggle(this.domNode,"dijitHidden",true);
-							domClass.toggle(parent.buttonNode,"dijitHidden",true);
-							domClass.toggle(parent.hintNode,"dijitHidden",true);
-							domClass.toggle(this.subform.domNode,"dijitHidden",false);
-							this.subform.rebuild({
-								id:id,
-								options:options,
-								// TODO: create type for items instanceof array
-								controls:[jsonschema.schemasToController(c.schema.items,data,{
-									selectFirst:true,
-									controller:{
-										name:c.controller.name,
-										type:c.controller.type,
-										title:c.controller.title
-									}
-								})],
-								submit:{
-									label:common.buttonSave
-								}
-							});
-						}));
-					};
-				break;
-				case "group":
-					cc.item = c.options[0];
-					cc.hint = c.description || "";
-				break;
-				case "email":
-					cc.validator = dforma.validate.isEmailAddress;
-				break;
-				case "phone":
-					cc.validator = dforma.validate.us.isPhoneNumber;
-				break;
-				case "unhidebutton":
-					var label = cc.label.split("|");
-					cc.label = label[0];
-					cc.splitLabel = label;
-					cc.onClick = function(){
-						domClass.toggle(this.getParent().containerNode,"dijitHidden",!this.checked);
-						this.value = this.checked ? "on" : "";
-						this.set("label",this.splitLabel[(this.checked ? 1 : 0)]);
-					};
-				break;
-				case "select":
-				case "combo":
-					cc = lang.mixin({
-						searchAttr:c.searchAttr || "id",
-						autoComplete:true
-					},cc);
-					if(!cc.store) {
-						if(c.options && c.options instanceof Array) {
-							cc.store = new Memory({
-								data:c.options
-							});
-						} else if(cc.schema && cc.schema.items && cc.schema.items.hasOwnProperty(self.refProperty)) {
-							cc.store = new JsonRest({
-								target:cc.schema.items[self.refProperty]
-							});
-						}
-					}
-				break;
-				case "switch":
-				break;
-				default:
-				break;
+			if(c.hasOwnProperty("storeParams")) {
+				if(c.storeParams.target) {
+					cc.store = new JsonRest(c.storeParams);
+				} else {
+					cc.store = new Memory(c.storeParams);
+				}
 			}
-			if(c.controller) {
-				cc._form = parent;
-			}
-			cc._config = c;
-			co = new Widget(cc);
+			// widget param mapping
+			co = self.controlWidgetMapper(cc,Widget,parent);
+			// widget placement
 			if(c.controller) {
 				controller = parent.controllerWidget = co;
 			}
@@ -569,7 +581,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						}
 					}));
 				}
-
 			}
 			if(c.edit===true || c["delete"]===true) {
 				if(!l) {
@@ -764,23 +775,24 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				label:common.buttonSubmit,
 				"class":"dformaSubmit",
 				onClick:lang.hitch(this,this.submit)
-			},this.data.submit)).placeAt(this.buttonNode);
+			},this[config].submit)).placeAt(this.buttonNode);
 		}
 		if(this.cancellable) {
 			this.cancelButton = new Button(lang.mixin({
 				label:common.buttonCancel,
 				"class":"dformaCancel",
 				onClick:lang.hitch(this,this.cancel)
-			},this.data.cancel)).placeAt(this.buttonNode);
+			},this[config].cancel)).placeAt(this.buttonNode);
 		}
 		return dd;
 	},
 	startup:function(){
 		if(this._started) return;
+		config = this.configProperty;
 		this.submitButton = new Button();
 		if(this.cancellable) this.cancelButton = new Button();
 		this.inherited(arguments);
-		if(this.data) {
+		if(this[config]) {
 			return this.rebuild();
 		} else {
 			return new Deferred().resolve();
