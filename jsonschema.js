@@ -1,9 +1,12 @@
 define([
 	"dojo/_base/lang",
 	"dojo/_base/array",
+	"dojo/json",
+	"dojo/text!./resources/controlmap.json",
 	"dforma/util/string/toProperCase"
-],function(lang,array){
+],function(lang,array,JSON,controlmapjson){
 	var jsonschema = lang.getObject("dforma.jsonschema", true);
+	var controlmap = JSON.parse(controlmapjson);
 	lang.mixin(jsonschema,{
 		schemasToController:function(schemaList,data,options){
 			if(!options) options = {};
@@ -48,13 +51,15 @@ define([
 		},
 		schemaToControls:function(schema,data,options){
 			options = options || {};
+			var cmap = options.controlmap || controlmap;
 			var properties = schema.properties;
 			var controls = [];
 			for(var k in properties) {
 				var prop = properties[k];
 				// TODO: add more types
-				var type;
-				if(prop.type=="boolean") {
+				var entry = cmap[prop.type || "string"];
+				var type = prop.format && entry[prop.format] ? entry[prop.format] : entry["*"];
+				/*if(prop.type=="boolean") {
 					type = "checkbox";
 				} else if(prop.type=="integer") {
 					type = "spinner";
@@ -90,7 +95,7 @@ define([
 					} else {
 						type = "input";
 					}
-				}
+				}*/
 				var c = {
 					name:k,
 					type:type,
@@ -119,17 +124,20 @@ define([
 					c.columns = prop.columns;
 					c.controller = prop.controller;
 				}
-				if(type=="select" || type=="radiogroup") {
+				//if(type=="select" || type=="radiogroup") {
+				if(prop.hasOwnProperty("enum")) {
 					c.options = [];
 					c.labelAttr = "id";
-					if(prop.hasOwnProperty("enum")) {
-						array.forEach(prop["enum"],function(op) {
-							c.options.push({id:op});
-						});
-					} else if(prop.hasOwnProperty("oneOf")) {
-						c.options = prop.oneOf;
-					}
+					array.forEach(prop["enum"],function(op) {
+						c.options.push({id:op});
+					});
 				}
+				if(prop.hasOwnProperty("oneOf")) {
+					c.options = [];
+					c.labelAttr = "id";
+					c.options = prop.oneOf;
+				}
+				//}
 				if(type=="checkbox" && prop.hasOwnProperty("enum")) {
 					c.isValid = prop["enum"];
 				}
@@ -143,6 +151,38 @@ define([
 						}
 					});
 					c = lang.mixin(c,items);
+				}
+				if(prop.rel) {
+					var key = prop.rel;
+					// try to find a link
+					var link;
+					if(schema.links && schema.links instanceof Array){
+						for(var i=0;i<schema.links.length;i++) {
+							if(schema.links[i].rel==key) {
+								link = schema.links[i];
+								break;
+							}
+						}
+					}
+					// if it is in the schema, either internally linked or generated
+					if(link){
+						var foreignKey = link.key;
+						var idProperty = link.idProperty || "id";
+						if(link.resolution=="eager") {
+							foreignKey = k;
+							c.storeParams = {
+								idProperty:idProperty,
+								labelProperty:foreignKey,
+								data:data ? data[key] : []
+							};
+						} else {
+							c.storeParams = {
+								target:link.href,
+								idProperty:idProperty,
+								labelProperty:foreignKey
+							};
+						}
+					}
 				}
 				if(prop.format=="hidden") {
 					c.hidden = true;
