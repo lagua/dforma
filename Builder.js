@@ -50,10 +50,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	refProperty:"$ref",
 	cancellable:false,
 	submittable:true,
+	templatePath:"",
 	hideOptional:false,
 	allowFreeKey:false, // schema editor: set true for add
 	allowOptionalDeletion:false, // schema editor: set false for edit/delete
 	editControls:null, // schema editor: set as controls for the editor
+	controlmap:null, // controlmap for internal jsonschema
+	BuilderClass:Builder,
 	submit:function(){},
 	cancel:function(){},
 	onSubmit:function(e) {
@@ -96,7 +99,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					}
 				});
 				// TODO: insert a subform
-				var fb = new Builder({
+				var fb = new parent.BuilderClass({
 					style:"height:100%;border:1px solid gray",
 					cancel:function(){
 						self.rebuild();
@@ -284,7 +287,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				}
 				// create bound subform
 				if(!cc.store) cc.store = parent.store;
-				cc.subform = new Builder({
+				cc.subform = new parent.BuilderClass({
 					//label:cc.label,
 					cancellable:true,
 					cancel: function(){
@@ -351,18 +354,22 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						domClass.toggle(parent.buttonNode,"dijitHidden",true);
 						domClass.toggle(parent.hintNode,"dijitHidden",true);
 						domClass.toggle(this.subform.domNode,"dijitHidden",false);
+						var items = c.schema.items;
+						if(!items || !(items instanceof Array) || !items.length) {
+							throw new Error("Items where not found on the schema for "+c.name);
+						}
+						var controls = c.controller ? [jsonschema.schemasToController(items,data,{
+							selectFirst:true,
+							controller:c.controller,
+							controlmap:parent.controlmap
+						})] : jsonschema.schemaToControls(items[0],data,{
+							controlmap:parent.controlmap
+						});
 						this.subform.rebuild({
 							id:id,
 							options:options,
 							// TODO: create type for items instanceof array
-							controls:[jsonschema.schemasToController(c.schema.items,data,{
-								selectFirst:true,
-								controller:{
-									name:c.controller.name,
-									type:c.controller.type,
-									title:c.controller.title
-								}
-							})],
+							controls:controls,
 							submit:{
 								label:common.buttonSave
 							}
@@ -413,7 +420,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			default:
 			break;
 		}
-		co = new Widget(cc);
+		co = new Widget(cc,cc.refNode);
 		return co;
 	},
 	rebuild:function(data){
@@ -482,6 +489,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					}
 					return parent;
 				},
+				templatePath:parent.templatePath ? parent.templatePath+"/"+c.name+".html" : "",
 				_config:c
 			},c);
 			// default param mapping
