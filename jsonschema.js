@@ -202,7 +202,7 @@ define([
 				if(options.hasOwnProperty("descriptionProperty")) {
 					c.description = prop[options.descriptionProperty];
 				}
-				if(data && data.hasOwnProperty(k)) {
+				if(data && data.hasOwnProperty(k) && data[k]!==undefined) {
 					c.value = data[k];
 				} else if(prop.hasOwnProperty("default")) {
 					c.value = prop["default"];
