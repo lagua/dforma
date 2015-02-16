@@ -102,12 +102,12 @@ return declare("dforma.Repeat",[Group],{
 				}
 			}else{
 				var prev=lang.getObject(name, false, obj);
-				if(typeof prev != "undefined"){
+				//if(typeof prev != "undefined"){
 					if(lang.isArray(prev)){
 						prev.push(value);
-					}else{
-						lang.setObject(name, [prev, value], obj);
-					}
+					//}else{
+					//	lang.setObject(name, [prev, value], obj);
+					//}
 				}else{
 					// unique name
 					lang.setObject(name, value, obj);
