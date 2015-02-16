@@ -29,7 +29,7 @@ return declare("dforma.Repeat",[Group],{
 		this._rows = [];
 		this._controls = [];
 		var self = this;
-		this.value = [];
+		if(!this.value) this.value = [];
 		var common = i18n.load("dforma","common");
 		if(!this.schema.hasOwnProperty("add") || this.schema.add) {
 			this._addButton = new Button({
@@ -72,7 +72,7 @@ return declare("dforma.Repeat",[Group],{
  	_getValueAttr: function(){
 		// summary:
 		//		Returns array of objects representing form values.   See description of `value` for details.
-		var arr = [];
+		var arr = this.value;
 		array.forEach(this._getDescendantFormWidgets(), function(widget){
 			var name = widget.name;
 			var row = widget.row;
