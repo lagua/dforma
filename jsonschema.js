@@ -176,8 +176,10 @@ define([
 								data:data ? data[key] : []
 							};
 						} else {
+							var refar = link.href.split("?");
 							c.storeParams = {
-								target:link.href,
+								target:refar.shift(),
+								queryString:refar.shift(),
 								idProperty:idProperty,
 								labelProperty:foreignKey
 							};
