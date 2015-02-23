@@ -177,8 +177,10 @@ define([
 							};
 						} else {
 							var refar = link.href.split("?");
+							var target = refar.shift();
+							if(options.uri) target = options.uri+target;
 							c.storeParams = {
-								target:refar.shift(),
+								target:target,
 								queryString:refar.shift(),
 								idProperty:idProperty,
 								labelProperty:foreignKey
