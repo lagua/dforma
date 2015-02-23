@@ -26,6 +26,7 @@ define([
 	"dijit/form/ComboBox",
 	"dijit/form/TextBox",
 	"dijit/registry",
+	"./Input",
 	"dforma/util/string/toProperCase",
 	"dforma/validate/web",
 	"dforma/validate/us",
@@ -33,11 +34,10 @@ define([
 ],function(require,declare,lang,array,aspect,Deferred,when,all,
 		keys,number,domConstruct,domClass,Memory,JsonRest,
 		_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,
-		_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,registry){
+		_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,registry,
+		Input){
 
 var common = i18n.load("dforma","common");
-
-var config = "data";
 
 var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	baseClass:"dformaBuilder",
@@ -174,7 +174,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				req = "dforma/RadioGroup";
 			break;
 			case "select":
+				req = "dijit/form/Select";
+			break;
+			case "filteringSelect":
 				req = "dijit/form/FilteringSelect";
+			break;
+			case "combo":
+				req = "dijit/form/ComboBox";
 			break;
 			case "textarea":
 				req = "dijit/form/Textarea";
@@ -183,13 +189,14 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				req = "dijit/form/NumberSpinner";
 			break;
 			case "number":
-				req = "dijit/form/NumberTextBox";
+				if(c.hidden) {
+					req = "./Input";
+				} else {
+					req = "dijit/form/NumberTextBox";
+				}
 			break;
 			case "currency":
 				req = "dijit/form/CurrencyTextBox";
-			break;
-			case "combo":
-				req = "dijit/form/ComboBox";
 			break;
 			case "grid":
 			case "list":
@@ -237,7 +244,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		return req;
 	},
 	controlWidgetMapper:function(cc,Widget,parent){
-		var co;
+		var co = null;
 		// prepares widget parameters and returns the actual control widget
 		var c = cc._config;
 		switch(cc.type) {
@@ -291,21 +298,21 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					//label:cc.label,
 					cancellable:true,
 					cancel: function(){
-						domClass.toggle(this.parentform.domNode,"dijitHidden",false);
-						domClass.toggle(parent.buttonNode,"dijitHidden",false);
-						domClass.toggle(parent.hintNode,"dijitHidden",false);
+						domClass.toggle(this.parentform.domNode,"dformaSubformActive",false);
+						domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
+						domClass.toggle(parent.hintNode,"dformaSubformActive",false);
 						domClass.toggle(this.domNode,"dijitHidden",true);
 						parent.layout();
 						// cancelled new?
-						if(this[config] && this[config].id && this.parentform.newdata) this.parentform.store.remove(this[config].id);
-						this[config] = null;
+						if(this.data && this.data.id && this.parentform.newdata) this.parentform.store.remove(this.data.id);
+						this.data.id = null;
 						this.parentform.newdata = false;
 					},
 					submit: function(){
 						if(!this.validate()) return;
-						domClass.toggle(this.parentform.domNode,"dijitHidden",false);
-						domClass.toggle(parent.buttonNode,"dijitHidden",false);
-						domClass.toggle(parent.hintNode,"dijitHidden",false);
+						domClass.toggle(this.parentform.domNode,"dformaSubformActive",false);
+						domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
+						domClass.toggle(parent.hintNode,"dformaSubformActive",false);
 						domClass.toggle(this.domNode,"dijitHidden",true);
 						parent.layout();
 						var data = this.get("value");
@@ -318,41 +325,31 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							}
 						});
 						this.parentform.save(data,{
-							id:this[config].id,
 							overwrite:true
 						});
+						return true;
 					}
 				});
 				domClass.toggle(cc.subform.domNode,"dijitHidden",true);
-				var validate = lang.hitch(cc.subform,cc.subform.validate);
+				/*var validate = lang.hitch(cc.subform,cc.subform.validate);
 				cc.subform.validate = function(){
 					if(!this[config]) return true;
 					return validate();
-				};
-				parent.own(
-					aspect.after(cc.subform,"layout",function(){
-						parent.layout();
-					}),
-					aspect.after(parent,"cancel",function(){
-						cc.subform.cancel();
-					})
+				};*/
+				cc.subform.own(
+					aspect.after(cc.subform,"layout",lang.hitch(parent,function(){
+						this.layout();
+					})),
+					aspect.after(parent,"cancel",lang.hitch(cc.subform,function(){
+						this.cancel();
+					}))
 				);
-				var _lh = aspect.after(parent,"layout",function(){
-					_lh.remove();
-					if(co.store && co.store.selectedId) {
-						var id = co.store.selectedId;
-						co.newdata = co.store.newdata;
-						delete co.store.newdata;
-						co.store.selectedId = null;
-						co.onEdit && co.onEdit(id);
-					}
-				});
 				cc.onEdit = function(id,options){
 					options = options || {};
 					this.store.get(id).then(lang.hitch(this,function(data){
-						domClass.toggle(this.domNode,"dijitHidden",true);
-						domClass.toggle(parent.buttonNode,"dijitHidden",true);
-						domClass.toggle(parent.hintNode,"dijitHidden",true);
+						domClass.toggle(this.domNode,"dformaSubformActive",true);
+						domClass.toggle(parent.buttonNode,"dformaSubformActive",true);
+						domClass.toggle(parent.hintNode,"dformaSubformActive",true);
 						domClass.toggle(this.subform.domNode,"dijitHidden",false);
 						var items = c.schema.items;
 						if(!items || !(items instanceof Array) || !items.length) {
@@ -363,7 +360,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 							controller:c.controller,
 							controlmap:parent.controlmap
 						})] : jsonschema.schemaToControls(items[0],data,{
-							controlmap:parent.controlmap
+							controlmap:parent.controlmap,
+							uri:this.store.target
 						});
 						this.subform.rebuild({
 							id:id,
@@ -398,6 +396,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				};
 			break;
 			case "select":
+			case "filteringSelect":
 			case "combo":
 				cc = lang.mixin({
 					searchAttr:c.searchAttr || "id",
@@ -421,18 +420,33 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			break;
 		}
 		co = new Widget(cc,cc.refNode);
+		if(cc.type=="list" || cc.type=="grid"){
+			var _lh = aspect.after(parent,"layout",lang.hitch(co,function(){
+				_lh.remove();
+				if(this.store && this.store.selectedId) {
+					var id = this.store.selectedId;
+					this.newdata = this.store.newdata;
+					delete this.store.newdata;
+					this.store.selectedId = null;
+					this.onEdit && this.onEdit(id);
+				}
+			}));
+		} else if(cc.type=="select") {
+			// TODO set value after startup, remove option on first select
+			if(cc.placeHolder) {
+				//co.addOption({label:cc.placeHolder,value:"",selected:true});
+				//if(!cc.value) co.set("value","");
+			}
+		}
 		return co;
 	},
-	rebuild:function(data){
+	rebuild:function(config){
 		var dd = new Deferred();
-		if(data) {
-			this[config] = data;
-		} else {
-			data = this[config];
-		}
+		config = config || this[this.configProperty];
+		this[this.configProperty] = config;
 		var dj = dojo;
 		this.destroyDescendants();
-		var controls = this[config].controls;
+		var controls = config.controls;
 		var controller;
 		var self = this;
 		// get the controls of the current controller selection
@@ -783,24 +797,24 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				label:common.buttonSubmit,
 				"class":"dformaSubmit",
 				onClick:lang.hitch(this,this.submit)
-			},this[config].submit)).placeAt(this.buttonNode);
+			},config.submit)).placeAt(this.buttonNode);
 		}
 		if(this.cancellable) {
 			this.cancelButton = new Button(lang.mixin({
 				label:common.buttonCancel,
 				"class":"dformaCancel",
 				onClick:lang.hitch(this,this.cancel)
-			},this[config].cancel)).placeAt(this.buttonNode);
+			},config.cancel)).placeAt(this.buttonNode);
 		}
 		return dd;
 	},
 	startup:function(){
 		if(this._started) return;
-		config = this.configProperty;
+		config = this[this.configProperty];
 		this.submitButton = new Button();
 		if(this.cancellable) this.cancelButton = new Button();
 		this.inherited(arguments);
-		if(this[config]) {
+		if(config) {
 			return this.rebuild();
 		} else {
 			return new Deferred().resolve();
