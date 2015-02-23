@@ -21,6 +21,7 @@ return declare("dforma.Repeat",[Group],{
 	_addButton:null,
 	label:"",
 	value:null,
+	multiple:true,
 	startup:function(){
 		this.inherited(arguments);
 		domClass.remove(this.buttonNode,"dijitHidden");
