@@ -26,7 +26,8 @@ define([
     	buildRendering:function(){
     		this.inherited(arguments);
     		if(this.store && !this.options) {
-				this.store.query({},{
+				this.store.query(null,{
+					start:0,
 					count:50
 				}).then(lang.hitch(this,function(res){
 					this.options = res;
