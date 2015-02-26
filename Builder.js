@@ -11,8 +11,8 @@ define([
 	"dojo/number",
 	"dojo/dom-construct",
 	"dojo/dom-class",
-	"dojo/store/Memory",
-	"dojo/store/JsonRest",
+	"dojo/on",
+	"./store/FormData",
 	"./_GroupMixin",
 	"./Group",
 	"./Label",
@@ -32,8 +32,8 @@ define([
 	"dforma/validate/us",
 	"dojo/i18n!./nls/common"
 ],function(require,declare,lang,array,aspect,Deferred,when,all,
-		keys,number,domConstruct,domClass,Memory,JsonRest,
-		_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,
+		keys,number,domConstruct,domClass,on,
+		FormData,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,
 		_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,registry,
 		Input){
 
@@ -174,8 +174,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				req = "dforma/RadioGroup";
 			break;
 			case "select":
-				req = "dijit/form/Select";
-			break;
+			//	req = "dijit/form/Select";
+			//break;
 			case "filteringSelect":
 				req = "dijit/form/FilteringSelect";
 			break;
@@ -404,11 +404,12 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				},cc);
 				if(!cc.store) {
 					if(c.options && c.options instanceof Array) {
-						cc.store = new Memory({
+						cc.store = new FormData({
+							local:true,
 							data:c.options
 						});
 					} else if(cc.schema && cc.schema.items && cc.schema.items.hasOwnProperty(self.refProperty)) {
-						cc.store = new JsonRest({
+						cc.store = new FormData({
 							target:cc.schema.items[self.refProperty]
 						});
 					}
@@ -432,11 +433,19 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				}
 			}));
 		} else if(cc.type=="select") {
-			// TODO set value after startup, remove option on first select
-			if(cc.placeHolder) {
-				//co.addOption({label:cc.placeHolder,value:"",selected:true});
-				//if(!cc.value) co.set("value","");
-			}
+			// this is to disable user input, so it looks more like a select
+			co.focusNode.setAttribute("readonly","readonly");
+			co.own(
+				on(co.domNode, "click", lang.hitch(co,function(evt){
+					this._onDropDownMouseDown(evt);
+				})),
+				aspect.before(co._focusManager,"_onTouchNode",lang.hitch(this,function(){
+					this._scrollTop = window.scrollY;  
+				})),
+				aspect.after(co,"onFocus",lang.hitch(this,function(){
+					window.scrollTo(0,this._scrollTop);
+				}))
+			);
 		}
 		return co;
 	},
@@ -509,11 +518,10 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			// default param mapping
 			if(c.hasOwnProperty("readonly")) cc.readOnly = c.readonly;
 			if(c.hasOwnProperty("storeParams")) {
-				if(c.storeParams.target) {
-					cc.store = new JsonRest(c.storeParams);
-				} else {
-					cc.store = new Memory(c.storeParams);
+				if(!c.storeParams.target) {
+					cc.storeParams.local = true;
 				}
+				cc.store = new FormData(cc.storeParams);
 			}
 			// widget param mapping
 			co = self.controlWidgetMapper(cc,Widget,parent);
