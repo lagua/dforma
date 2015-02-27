@@ -399,7 +399,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			case "filteringSelect":
 			case "combo":
 				cc = lang.mixin({
-					searchAttr:c.searchAttr || "id",
+					searchAttr:c.searchAttr ? c.searchAttr : 
+						cc.storeParams && cc.storeParams.labelProperty ? cc.storeParams.labelProperty : "id",
 					autoComplete:true
 				},cc);
 				if(!cc.store) {
