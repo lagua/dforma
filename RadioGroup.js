@@ -2,10 +2,11 @@ define([
         "dojo/_base/declare",
         "dojo/_base/lang",
         "dojo/_base/array",
+        "dojo/aspect",
         "dojo/dom-construct",
         "dijit/form/_FormValueWidget",
         "dijit/form/RadioButton"
-    ], function (declare, lang, array, domConstruct, _FormValueWidget,RadioButton) {
+    ], function (declare, lang, array, aspect, domConstruct, _FormValueWidget,RadioButton) {
 
     return declare("dforma.RadioGroup",[_FormValueWidget], {
     	options:null,
@@ -14,14 +15,27 @@ define([
     	templateString:"<div data-dojo-attach-point=\"containerNode,focusNode\"></div>",
 		_renderOptions:function(){
 			array.forEach(this.options,function(_,i){
-    			new RadioButton(lang.mixin(_,{
+    			var rb = new RadioButton(lang.mixin(_,{
     				checked:this.value ? _.id==this.value : i===0
     			})).placeAt(this.containerNode);
+    			var self = this;
+    			this.own(
+    				aspect.after(rb,"onClick",lang.hitch(rb,function(){
+    					self._set("value",this.id);
+    				}))
+    			);
     			domConstruct.create("label",{
     				"for":_.id,
     				innerHTML:_[this.labelAttr]
     			},this.containerNode);
     		},this);
+		},
+		_handleOnChange: function(/*anything*/ newValue, /*Boolean?*/ priorityChange){
+			array.forEach(this.getChildren(),function(_,i){
+    			if(_.checked) _.checked = false;
+    			if(_.id==newValue) _.checked = true;
+    		});
+			this.inherited(arguments);
 		},
     	buildRendering:function(){
     		this.inherited(arguments);
@@ -47,12 +61,6 @@ define([
     		} else {
     			return true;
     		}
-		},
-        _getValueAttr : function() {
-            var selectedRadio = this.getChildren().filter(function(w){
-                return w.get("checked");
-            }).pop();
-            return selectedRadio ? selectedRadio.id : null;
-        }
+		}
     });
 });
