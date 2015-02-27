@@ -176,7 +176,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			case "select":
 			//	req = "dijit/form/Select";
 			//break;
-			case "filteringSelect":
+			case "lookup":
 				req = "dijit/form/FilteringSelect";
 			break;
 			case "combo":
@@ -396,7 +396,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				};
 			break;
 			case "select":
-			case "filteringSelect":
+			case "lookup":
 			case "combo":
 				cc = lang.mixin({
 					searchAttr:c.searchAttr ? c.searchAttr : 
