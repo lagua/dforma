@@ -51,6 +51,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	cancellable:false,
 	submittable:true,
 	templatePath:"",
+	templateExtension:".html",
 	hideOptional:false,
 	allowFreeKey:false, // schema editor: set true for add
 	allowOptionalDeletion:false, // schema editor: set false for edit/delete
@@ -298,11 +299,16 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					//label:cc.label,
 					cancellable:true,
 					cancel: function(){
-						domClass.toggle(this.parentform.domNode,"dformaSubformActive",false);
-						domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
-						domClass.toggle(parent.hintNode,"dformaSubformActive",false);
-						domClass.toggle(this.domNode,"dijitHidden",true);
-						parent.layout();
+						try {
+							domClass.toggle(this.parentform.domNode,"dformaSubformActive",false);
+							domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
+							domClass.toggle(parent.hintNode,"dformaSubformActive",false);
+							domClass.toggle(this.domNode,"dijitHidden",true);
+							parent.layout();
+						} catch(err) {
+							console.error("Subform domClass Error: "+err.description);
+						}
+						if(!this.data) return;
 						// cancelled new?
 						if(this.data && this.data.id && this.parentform.newdata) this.parentform.store.remove(this.data.id);
 						this.data.id = null;
@@ -513,7 +519,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					}
 					return parent;
 				},
-				templatePath:parent.templatePath ? parent.templatePath+"/"+c.name+".html" : "",
+				templatePath:parent.templatePath ? parent.templatePath+"/"+c.name : "",
+				templateExtension:parent.templateExtension,
 				_config:c
 			},c);
 			// default param mapping
