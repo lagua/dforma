@@ -4,6 +4,7 @@ define([
 	"dojo/_base/array",
 	"dojo/dom-construct",
 	"dojo/dom-class",
+	"dojo/request",
 	"dijit/_WidgetBase",
 	"dijit/_Contained",
 	"dijit/_Container",
@@ -16,10 +17,14 @@ define([
 	"dgrid/Keyboard",
 	"dgrid/Selection",
 	"dgrid/extensions/DijitRegistry",
-	"dforma/util/i18n"
-],function(declare,lang,array,domConstruct,domClass,
-		_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin, Button, Memory,
-		OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry,i18n){
+	"dforma/util/i18n",
+	"mustache/mustache",
+	"rql/js-array"
+],function(declare,lang,array,domConstruct,domClass,request,
+		_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin, Button, 
+		Memory,
+		OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry,
+		i18n,mustache,rql){
 	
 	return declare("dforma.Grid",[_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin],{
 		templateString: "<div class=\"dijit dijitReset\" data-dojo-attach-point=\"focusNode\" aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden dformaGridLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><div class=\"dijitReset dijitHidden dformaGridHint\" data-dojo-attach-point=\"hintNode\"></div><div class=\"dformaGridContainer\" data-dojo-attach-point=\"containerNode\"></div><div class=\"dijitReset dijitHidden dformaGridMessage\" data-dojo-attach-point=\"messageNode\"></div></div>",
@@ -51,10 +56,12 @@ define([
 			domClass.toggle(this.labelNode,"dijitHidden",!this.label);
 	 	},
 	 	_getValueAttr:function(){
+	 		if(!this.grid) return;
 	 		this.grid.save();
 	 		return this.store.fetchSync();
 	 	},
 	 	_setValueAttr:function(data){
+	 		if(!this.grid) return;
 	 		data = data || [];
 	 		// TODO means we have a Memory type store?
 	 		this.store.setData(data);
@@ -66,6 +73,30 @@ define([
 	 		this.editButton && this.editButton.destroyRecursive();
 	 		this.removeButton && this.removeButton.destroyRecursive();
 	 	},
+	 	_parseColumns:function(columns) {
+	 		var self = this;
+			for(k in columns){
+				columns[k].key = k;
+				if(columns[k].template){
+					columns[k].renderCell = lang.hitch(columns[k],function(obj,value,node,options) {
+						if(this.select){
+							obj = rql.query("select("+this.select+")",{},[obj]).pop();
+						}
+						var div = document.createElement("div");
+						if(this.tpl){
+							div.innerHTML = mustache.render(this.template,obj);
+						} else if(this.template) {
+							request(self.templatePath+"_column_"+this.key+self.templateExtension).then(lang.hitch(this,function(tpl){
+								this.tpl = tpl;
+								div.innerHTML = mustache.render(tpl,obj);
+							}));
+						}
+						return div;
+					})
+				}
+			}
+			return columns;
+		},
 	 	postCreate:function(){
 			var common = i18n.load("dforma","common");
 			var self = this;
@@ -75,6 +106,8 @@ define([
 				selectionMode:"single",
 				showFooter:(this.add || this.edit || this.remove)
 	 		});
+			// parse column expressions:
+			this.params.columns = this._parseColumns(lang.mixin({},this.params.columns));
 			this.grid = new Widget(this.params);
 			this.addChild(this.grid);
 			if(this.add){
