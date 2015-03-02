@@ -1,10 +1,13 @@
 define([
+    "require",
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/_base/array",
+	"dojo/_base/json",
 	"dojo/dom-construct",
 	"dojo/dom-class",
 	"dojo/request",
+	"dojo/currency",
 	"dijit/_WidgetBase",
 	"dijit/_Contained",
 	"dijit/_Container",
@@ -20,7 +23,7 @@ define([
 	"dforma/util/i18n",
 	"mustache/mustache",
 	"rql/js-array"
-],function(declare,lang,array,domConstruct,domClass,request,
+],function(req,declare,lang,array,djson,domConstruct,domClass,request,currency,
 		_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin, Button, 
 		Memory,
 		OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry,
@@ -77,20 +80,51 @@ define([
 	 		var self = this;
 			for(k in columns){
 				columns[k].key = k;
-				if(columns[k].template){
+				if(columns[k].template || columns[k].calc || columns[k].widget || columns[k].currency){
 					columns[k].renderCell = lang.hitch(columns[k],function(obj,value,node,options) {
+						var div = document.createElement("div");
 						if(this.select){
 							obj = rql.query("select("+this.select+")",{},[obj]).pop();
 						}
-						var div = document.createElement("div");
-						if(this.tpl){
-							div.innerHTML = mustache.render(this.template,obj);
+						if(this.calc) {
+							var keys = Object.keys(obj);
+							var values = [];
+							for(var k in obj) {
+							    values.push(obj[k]);
+							}
+							var f = new Function(keys,"return "+this.calc);
+							value = f.apply(obj,values);
+						}
+						if(this.widget){
+							var parts = this.widget.split("|");
+							var mid = parts.shift().replace(/\./g,"/");
+							var props = parts.length ? djson.fromJson(parts.shift()) : {};
+							props = lang.mixin(props,{
+								value:value,
+								onChange:lang.hitch(this,function(val){
+									obj[this.key] = val;
+									self.store.put(obj);
+								})
+							});
+							req([mid],function(Widget){
+								var widget = new Widget(props);
+								setTimeout(function(){
+									div.innerHTML = "";
+									widget.placeAt(div);
+									widget.startup();
+								},10)
+							});
+						} else if(this.tpl){
+							value = mustache.render(this.template,obj);
 						} else if(this.template) {
 							request(self.templatePath+"_column_"+this.key+self.templateExtension).then(lang.hitch(this,function(tpl){
 								this.tpl = tpl;
 								div.innerHTML = mustache.render(tpl,obj);
 							}));
+						} else if(this.currency) {
+							value = currency.format(value,this);
 						}
+						div.innerHTML = value;
 						return div;
 					})
 				}
