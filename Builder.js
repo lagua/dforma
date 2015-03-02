@@ -12,6 +12,7 @@ define([
 	"dojo/dom-construct",
 	"dojo/dom-class",
 	"dojo/on",
+	"dojo/request",
 	"./store/FormData",
 	"./_GroupMixin",
 	"./Group",
@@ -32,12 +33,27 @@ define([
 	"dforma/validate/us",
 	"dojo/i18n!./nls/common"
 ],function(require,declare,lang,array,aspect,Deferred,when,all,
-		keys,number,domConstruct,domClass,on,
+		keys,number,domConstruct,domClass,on,request,
 		FormData,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,
 		_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,registry,
 		Input){
 
 var common = i18n.load("dforma","common");
+
+// from https://github.com/kriszyp/json-schema/blob/master/lib/links.js#L41
+function substitute(linkTemplate, instance, exclude){
+	exclude = exclude || [];
+	return linkTemplate.replace(/\{([^\}]*)\}/g, function(t, property){
+		var value = exclude.indexOf(property)>-1 ? "*" : instance[decodeURIComponent(property)];
+		if(value instanceof Array){
+			// the value is an array, it should produce a URI like /Table/(4,5,8) and store.get() should handle that as an array of values
+			return '(' + value.join(',') + ')';
+		}
+		return value;
+	});
+};
+
+var resolveCache = {};
 
 var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	baseClass:"dformaBuilder",
@@ -109,7 +125,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					submit:function(){
 						if(!this.validate()) return;
 						var data = this.get("value");
-						console.log(data);
 						for(var k in data) {
 							// it may be a group
 							// make all booleans explicit
@@ -541,7 +556,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				parent.addChild(co);
 				cc.subform.parentform = co;
 				parent.addChild(cc.subform);
-				console.warn("subform added")
 			} else if(c.type=="repeat" || c.type=="group"){
 				parent.addChild(co);
 				array.forEach(c.options,function(o){
@@ -824,12 +838,148 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		}
 		return dd;
 	},
+	_processChildren:function(oldVal,newVal){
+		var d = new Deferred();
+		// FIXME should we getChildren every time?
+		// it means we have to track what was rendered async...
+		var children = this.getChildren();
+		// map for labels
+		var toResolve = {};
+		children = children.map(function(_){
+			return (_ instanceof Label) ? _.child : _;
+		});
+		children.forEach(function(_){
+			if(_._config && _._config.storeParams && _._config.storeParams.target){
+				toResolve[_.name] = _._config;
+			}
+		});
+		var resolved = {};
+		for(var k in toResolve){
+			if(!oldVal || oldVal[k]!=newVal[k]) {
+				var config = toResolve[k];
+				var query = substitute(config.storeParams.queryString,newVal,[]);
+				var href = config.storeParams.target + "?" + query;
+				var req = {
+					handleAs:"json",
+					headers:{
+						accept:"application/json"
+					}
+				};
+				var p = config.schema;
+				if(p.type=="string" && p.format=="xhtml") {
+					// shouldn't we try to resolve XML?
+					req = {
+						handleAs:"text",
+						failOk:true
+					};
+				}
+				console.log("Link "+href+" for "+k+" will be resolved.");
+				toResolve[p.rel] = href;
+				resolved[p.rel] = resolveCache[href] ? 
+					new Deferred().resolve(resolveCache[href]) : request(href,req);
+			}
+		}
+		all(resolved).then(function(res){
+			for(var k in res){
+				resolveCache[toResolve[k]] = res[k];
+				newVal[k]=res[k];
+			}
+			d.resolve(newVal);
+			children.forEach(function(widget){
+				// force set child value to retain it
+				if(widget.name in res){
+					widget.set("value",res[widget.name]);
+				}
+				var config = widget._config;
+				if(!config) return;
+				if(config.storeParams && config.storeParams.queryString){
+					// each component with a store with queryString
+					// should be updated when parent changes
+					// dirty hack: only if type=string
+					if(typeof widget.query == "string") {
+						widget.set("query", substitute(config.storeParams.queryString,newVal,[widget.name]));
+					}
+				}
+				if(config.triggers){
+					// each component with trigger should be updated
+					// when the target property changes
+					config.triggers.forEach(function(trigger){
+						var val = trigger.select ? newVal[trigger.select] : newVal;
+						if(val){
+							trigger.value = val;
+							if(trigger.rel){
+								var rel = trigger.rel;
+								var relProp = trigger.foreignKey || "id";
+								var relValue = newVal[rel];
+								// rql: Color/?id={color}&values(code)
+								// if trigger has rel, use it
+								// and assume that it's resolved
+								if(relValue && relValue instanceof Array) {
+									var obj = relValue.filter(function(_){
+										return _.id==trigger.value;
+									}).pop();
+									val = obj ? obj[relProp] : null;
+								} else {
+									// don't update
+									val = null;
+								}
+							}
+							if(val){
+								// default to value
+								var prop = trigger.property || "value";
+								var target = trigger.target ? 
+									lang.getObject(trigger.target,false,this) : this;
+								try {
+									if(trigger.setter){
+										target[trigger.setter](prop,val);
+									} else {
+										target[prop] = val;
+									}
+								} catch(err){
+									console.error("trigger error",err);
+								}
+							}
+						}
+					},widget);
+				}
+			});
+		});
+		return d;
+	},
+	_onChildChange: function(/*String*/ attr){
+		// summary:
+		//		Called when child's value or disabled state changes
+
+		// The unit tests expect state update to be synchronous, so update it immediately.
+		if(!attr || attr == "state" || attr == "disabled"){
+			this._set("state", this._getState());
+		}
+
+		// Use defer() to collapse value changes in multiple children into a single
+		// update to my value.   Multiple updates will occur on:
+		//	1. Form.set()
+		//	2. Form.reset()
+		//	3. user selecting a radio button (which will de-select another radio button,
+		//		 causing two onChange events)
+		if(!attr || attr == "value" || attr == "disabled" || attr == "checked"){
+			if(this._onChangeDelayTimer){
+				this._onChangeDelayTimer.remove();
+			}
+			this._onChangeDelayTimer = this.defer(function(){
+				delete this._onChangeDelayTimer;
+				this._processChildren(this.value,this.get("value")).then(lang.hitch(this,function(newVal){
+					this._set("value", newVal);
+				}));
+			}, 20);
+		}
+	},
 	startup:function(){
 		if(this._started) return;
 		config = this[this.configProperty];
 		this.submitButton = new Button();
 		if(this.cancellable) this.cancelButton = new Button();
 		this.inherited(arguments);
+		// add default watcher for some child properties
 		if(config) {
 			return this.rebuild();
 		} else {
