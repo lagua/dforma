@@ -103,22 +103,28 @@ define([
 					required:(prop.required === true),
 					readonly:(prop.readonly === true)
 				};
+				// more or less copied literally
+				if(prop.hasOwnProperty("title")) {
+					c.title = prop.title;
+				}
+				if(prop.hasOwnProperty("description")) {
+					c.description = prop.description;
+				}
+				// not very clean, but much needed
+				if(prop.hasOwnProperty("triggers") && prop.triggers instanceof Array){
+					c.triggers = prop.triggers;
+				}
 				if(type=="currency") {
 					c.currency = prop.currency || "EUR";
 				}
 				if(prop.hasOwnProperty("invalidMessage")) {
 					c.invalidMessage = prop.invalidMessage;
 				}
+				// widget-type-specific
 				if(prop.hasOwnProperty("minimum") || prop.hasOwnProperty("maximum")) {
 					c.constraints = {};
 					if(prop.hasOwnProperty("minimum")) c.constraints.min = prop.minimum;
 					if(prop.hasOwnProperty("maximum")) c.constraints.max = prop.maximum;
-				}
-				if(prop.hasOwnProperty("title")) {
-					c.title = prop.title;
-				}
-				if(prop.hasOwnProperty("description")) {
-					c.description = prop.description;
 				}
 				if(type=="list" || type=="grid") {
 					c.columns = prop.columns;
