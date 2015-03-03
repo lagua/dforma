@@ -27,7 +27,8 @@ define([
 			// for converting it to the appropriate type for storing on the object.
 			for(var k in schema.properties) {
 				var type = schema.properties[k].type;
-				var value = data[k];
+				var deft = schema.properties[k]["default"];
+				var value = data[k]!==undefined ? data[k] : deft ? deft : undefined;
 				if(type) {
 					if (type === 'string') {
 						data[k] = '' + value;
