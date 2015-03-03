@@ -8,7 +8,7 @@ define([
 	"dijit/_Contained"
 ],function(declare,lang,domClass,_Widget,_TemplatedMixin,_Container,_Contained){
 return declare("dforma.Label",[_Widget,_TemplatedMixin,_Container,_Contained],{
-	templateString: "<span class=\"dijit dijitReset dijitInline\" aria-labelledby=\"${id}_label_${position}\"><span class=\"dijitReset dijitInline dijitHidden dformaLabelNode\" data-dojo-attach-point=\"labelNode_left\" id=\"${id}_label_left\"></span><span id=\"${id}_containerNode\" data-dojo-attach-point=\"containerNode\"></span><span data-dojo-attach-point=\"labelNode_right\" class=\"dijitReset dijitInline dijitHidden dformaLabelNode\" id=\"${id}_label_right\"></span></span>",
+	templateString: "<span class=\"dijit dijitReset dijitInline\" aria-labelledby=\"${id}_label_${position}\"><span class=\"dijitReset dijitInline dijitHidden dformaLabelNode\" data-dojo-attach-point=\"labelNode_left\" id=\"${id}_label_left\"></span><span id=\"${id}_containerNode\" class=\"dformaLabelContainer\" data-dojo-attach-point=\"containerNode\"></span><span data-dojo-attach-point=\"labelNode_right\" class=\"dijitReset dijitInline dijitHidden dformaLabelNode\" id=\"${id}_label_right\"></span></span>",
 	label: "",
 	position: "left",
 	child: null,
