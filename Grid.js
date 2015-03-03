@@ -103,7 +103,7 @@ define([
 								value:value,
 								onChange:lang.hitch(this,function(val){
 									obj[this.key] = val;
-									self.store.put(obj);
+									self.store.put(obj,{id:obj.id});
 								})
 							});
 							req([mid],function(Widget){
@@ -115,7 +115,7 @@ define([
 								},10)
 							});
 						} else if(this.tpl){
-							value = mustache.render(this.template,obj);
+							value = mustache.render(this.tpl,obj);
 						} else if(this.template) {
 							request(self.templatePath+"_column_"+this.key+self.templateExtension).then(lang.hitch(this,function(tpl){
 								this.tpl = tpl;
