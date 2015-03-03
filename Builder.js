@@ -747,7 +747,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			if((hideOptional && optional.length) || this.allowFreeKey) {
 				function addSelect(optional){
 					var props = {
-						store: new Memory({
+						store: new FormData({
+							local:true,
 							data:optional
 						}),
 						searchAttr:"name",
