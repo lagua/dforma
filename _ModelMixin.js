@@ -15,7 +15,7 @@ define([
 					fetch:true
 				}).then(lang.hitch(this,function(){
 					this.inherited([value]);
-				});
+				}));
 			} else {
 				this.inherited([value]);
 			}
