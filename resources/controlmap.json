@@ -19,12 +19,14 @@
 			"email":"email",
 			"phone":"phone",
 			"radiogroup":"radiogroup",
-			"text":"textarea"
+			"text":"textarea",
+			"lookup":"lookup",
+			"select":"select",
+			"combo":"combo"
 		},
 		"array":{
 			"*":"repeat",
 			"grid":"grid",
-			"select":"select",
 			"list":"list"
 		},
 		"object":{
