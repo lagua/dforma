@@ -80,6 +80,7 @@ define([
 	 		var self = this;
 			for(k in columns){
 				columns[k].key = k;
+				if(columns[k].summary) this.summary = true;
 				if(columns[k].template || columns[k].calc || columns[k].widget || columns[k].currency){
 					columns[k].renderCell = lang.hitch(columns[k],function(obj,value,node,options) {
 						var div = document.createElement("div");
@@ -93,7 +94,10 @@ define([
 							    values.push(obj[k]);
 							}
 							var f = new Function(keys,"return "+this.calc);
-							value = f.apply(obj,values);
+							// update the property
+							// FIXME: how to put?
+							obj[this.key] = value = f.apply(obj,values);
+							//self.store.put(obj);
 						}
 						if(this.widget){
 							var parts = this.widget.split("|");
@@ -103,7 +107,7 @@ define([
 								value:value,
 								onChange:lang.hitch(this,function(val){
 									obj[this.key] = val;
-									self.store.put(obj,{id:obj.id});
+									self.store.put(obj);
 								})
 							});
 							req([mid],function(Widget){
@@ -124,6 +128,10 @@ define([
 						} else if(this.currency) {
 							value = currency.format(value,this);
 						}
+						if(this.summary){
+							var totals = self.getTotals();
+							self.grid.set("summary",totals);
+						}
 						div.innerHTML = value;
 						return div;
 					})
@@ -131,18 +139,116 @@ define([
 			}
 			return columns;
 		},
+		getTotals:function () {
+			var totals = {};
+			var data = this.store.fetchSync();
+			var k;
+			for(k in this.columns){
+				if(this.columns[k].summary) totals[k] = 0;
+			}
+			for(var i = data.length; i--;) {
+				for(k in totals){
+					totals[k] += data[i][k];
+				}
+			}
+			for(k in this.columns){
+				if(this.columns[k].summary && this.columns[k].currency){
+					totals[k] = currency.format(totals[k],this.columns[k]);
+				} else if(this.columns[k].summaryTitle){
+					totals[k] = "Totaal";
+				}
+			}
+			return totals;
+		},
 	 	postCreate:function(){
 			var common = i18n.load("dforma","common");
 			var self = this;
 			if(!this.store) this.store = new Memory();
 			var Widget = declare([OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry],{
-				collection:this.store,
-				selectionMode:"single",
-				showFooter:(this.add || this.edit || this.remove)
+	            buildRendering: function () {
+	                this.inherited(arguments);
+	     
+	                var areaNode = this.summaryAreaNode =
+	                    domConstruct.create('div', {
+	                        className: 'summary-row',
+	                        role: 'row',
+	                        style: { overflow: 'hidden' }
+	                    }, this.footerNode);
+	     
+	                // Keep horizontal alignment in sync
+	                this.on('scroll', lang.hitch(this, function () {
+	                    areaNode.scrollLeft = this.getScrollPosition().x;
+	                }));
+	     
+	                // Process any initially-passed summary data
+	                if (this.summary) {
+	                    this._setSummary(this.summary);
+	                }
+	            },
+	     
+	            _updateColumns: function () {
+	                this.inherited(arguments);
+	                if (this.summary) {
+	                    // Re-render summary row for existing data,
+	                    // based on new structure
+	                    this._setSummary(this.summary);
+	                }
+	            },
+	     
+	            _renderSummaryCell: function (item, cell, column) {
+	                // summary:
+	                //      Simple method which outputs data for each
+	                //      requested column into a text node in the
+	                //      passed cell element.  Honors columns'
+	                //      get, formatter, and renderCell functions.
+	                //      renderCell is called with an extra flag,
+	                //      so custom implementations can react to it.
+	     
+	                var value = item[column.field] || '';
+	                cell.appendChild(document.createTextNode(value));
+	            },
+	     
+	            _setSummary: function (data) {
+	                // summary:
+	                //      Given an object whose keys map to column IDs,
+	                //      updates the cells in the footer row with the
+	                //      provided data.
+	     
+	                var tableNode = this.summaryTableNode;
+	     
+	                this.summary = data;
+	     
+	                // Remove any previously-rendered summary row
+	                if (tableNode) {
+	                    domConstruct.destroy(tableNode);
+	                }
+	     
+	                // Render summary row
+	                // Call _renderSummaryCell for each cell
+	                tableNode = this.summaryTableNode =
+	                    this.createRowCells('td',
+	                        lang.hitch(this, '_renderSummaryCell', data));
+	                this.summaryAreaNode.appendChild(tableNode);
+	     
+	                // Force resize processing,
+	                // in case summary row's height changed
+	                if (this._started) {
+	                    this.resize();
+	                }
+	            }
 	 		});
 			// parse column expressions:
-			this.params.columns = this._parseColumns(lang.mixin({},this.params.columns));
-			this.grid = new Widget(this.params);
+			var gridColumns = this._parseColumns(lang.mixin({},this.params.columns));
+			if(this.summary) this.add = this.edit = this.remove = false;
+			var totals = this.getTotals();
+			var gridParams = {
+				columns:gridColumns,
+				showFooter:(this.add || this.edit || this.remove || this.summary),
+				collection:this.store,
+				selectionMode:"single",
+				summary:totals
+			};
+			this.grid = new Widget(gridParams);
 			this.addChild(this.grid);
 			if(this.add){
 				this.addButton = new Button({
