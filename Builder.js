@@ -840,16 +840,19 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		return dd;
 	},
 	_processChildren:function(oldVal,newVal){
-		var d = new Deferred();
-		// FIXME should we getChildren every time?
+		//var d = new Deferred();
+		// FIXME 
+		// - builder should always have a store
+		// - set/get value should reflect what's in the store, either local or remote
+		// - if it's not feasible to do a remote update, set dirty and sync eventually
 		// it means we have to track what was rendered async...
 		var children = this.getChildren();
 		// map for labels
-		var toResolve = {};
+		//var toResolve = {};
 		children = children.map(function(_){
 			return (_ instanceof Label) ? _.child : _;
 		});
-		children.forEach(function(_){
+		/*children.forEach(function(_){
 			if(_._config && _._config.storeParams && _._config.storeParams.target){
 				toResolve[_.name] = _._config;
 			}
@@ -879,13 +882,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				resolved[p.rel] = resolveCache[href] ? 
 					new Deferred().resolve(resolveCache[href]) : request(href,req);
 			}
-		}
-		all(resolved).then(function(res){
-			for(var k in res){
+		}*/
+		//all(resolved).then(function(res){
+			/*for(var k in res){
 				resolveCache[toResolve[k]] = res[k];
 				newVal[k]=res[k];
 			}
-			d.resolve(newVal);
+			d.resolve(newVal);*/
 			children.forEach(function(widget){
 				// force set child value to retain it
 				if(widget.name in res){
@@ -944,8 +947,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					},widget);
 				}
 			});
-		});
-		return d;
+		//});
+		//return d;
 	},
 	_onChildChange: function(/*String*/ attr){
 		// summary:
@@ -982,7 +985,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		this.inherited(arguments);
 		// add default watcher for some child properties
 		if(config) {
-			return this.rebuild();
+			return this.rebuild(config);
 		} else {
 			return new Deferred().resolve();
 		}
