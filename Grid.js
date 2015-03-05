@@ -14,20 +14,19 @@ define([
 	"dijit/_TemplatedMixin",
 	"dijit/form/_FormValueMixin",
 	"dijit/form/Button",
-	"dstore/Memory",
 	"dgrid/OnDemandGrid",
 	"dgrid/Editor",
 	"dgrid/Keyboard",
 	"dgrid/Selection",
 	"dgrid/extensions/DijitRegistry",
+	"dforma/store/FormData",
 	"dforma/util/i18n",
 	"mustache/mustache",
 	"rql/js-array"
 ],function(req,declare,lang,array,djson,domConstruct,domClass,request,currency,
 		_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin, Button, 
-		Memory,
 		OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry,
-		i18n,mustache,rql){
+		FormData,i18n,mustache,rql){
 	
 	return declare("dforma.Grid",[_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin],{
 		templateString: "<div class=\"dijit dijitReset\" data-dojo-attach-point=\"focusNode\" aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden dformaGridLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><div class=\"dijitReset dijitHidden dformaGridHint\" data-dojo-attach-point=\"hintNode\"></div><div class=\"dformaGridContainer\" data-dojo-attach-point=\"containerNode\"></div><div class=\"dijitReset dijitHidden dformaGridMessage\" data-dojo-attach-point=\"messageNode\"></div></div>",
@@ -63,7 +62,8 @@ define([
 	 		this.grid.save();
 	 		return this.store.fetchSync();
 	 	},
-	 	_setValueAttr:function(data){
+	 	_handleOnChange:function(data){
+	 		this.inherited(arguments);
 	 		if(!this.grid) return;
 	 		data = data || [];
 	 		// TODO means we have a Memory type store?
@@ -163,7 +163,13 @@ define([
 	 	postCreate:function(){
 			var common = i18n.load("dforma","common");
 			var self = this;
-			if(!this.store) this.store = new Memory();
+			if(!this.store) this.store = new FormData({
+				local:true
+			});
+			var tracked = this.store.track();
+			tracked.on("add, update, delete", function(event){
+				self._set("value",this.store.fetchSync());
+			});
 			var Widget = declare([OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry],{
 	            buildRendering: function () {
 	                this.inherited(arguments);
