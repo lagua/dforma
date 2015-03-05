@@ -2,11 +2,14 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/_base/array",
+	"dojo/when",
 	"dojo/store/util/QueryResults",
+	"dstore/Memory",
 	"dstore/Rest",
+	"dstore/SimpleQuery",
 	"dstore/Trackable",
-	"dstore/Memory"
-], function(declare,lang,arrayUtil,QueryResults,Rest,Trackable,Memory) {
+	"dforma/util/model"
+], function(declare,lang,arrayUtil,when,QueryResults,Memory,Rest,SimpleQuery,Trackable,modelUtil) {
 	
 	return declare("dlagua.c.store.FormData",[],{
 		idProperty: "id",
@@ -15,6 +18,26 @@ define([
 		service:"/model/",
 		local:false,
 		persistent:false,
+		refAttribute:"$ref",
+		getSchema:function(){
+			return request(this.schemaUri,{
+				handleAs:"json",
+				headers:{
+					accept:"application/json"
+				}
+    		});
+		},
+		put:function(obj,options){
+			return when(this.inherited(arguments),lang.hitch(this,function(obj){
+				var fn = this.local ? "coerce" : "fetch";
+				return modelUtil[fn](object,schema,{
+					resolve:true,
+					fetch:true,
+					refAttribute:this.refAttribute,
+					target:this.target
+				});
+			}));
+		},
 		constructor: function(options) {
 			this.headers = {};
 			lang.mixin(this, options);
@@ -27,18 +50,14 @@ define([
 				Store = declare([Memory,Trackable]);
 				store = new Store({
 					idProperty: this.idProperty,
-					persistent:this.persistent,
-					target:this.target,
-					data:this.data,
-					schemaUri:this.schemaUri
+					data:this.data
 				});
 			} else {
-				Store = declare([Rest,Trackable]);
+				Store = declare([Rest,SimpleQuery,Trackable]);
 				store = new Store({
 					useRangeHeaders:true,
 					idProperty: this.idProperty,
-					target:this.target,
-					schemaUri:this.schemaUri
+					target:this.target
 				});
 			}
 			// also mixin constructor!
