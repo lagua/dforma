@@ -8,8 +8,6 @@ define([
     ],function(declare,lang,domAttr,domClass,registry,Group){
 
 	return declare("dforma.HiddenGroup",[Group],{
-		_setLabelAttr:function(){
-		},
 		isHidden:function(){
 			return domClass.contains(this.containerNode,"dijitHidden");
 		},
@@ -24,12 +22,15 @@ define([
 			}
 			return children;
 		},
-		postCreate:function(){
+		toggle:function(hidden){
+			domClass.toggle(this.labelNode,"dijitHidden",hidden);
+			domClass.toggle(this.containerNode,"dijitHidden",hidden);
+		},
+		startup:function(){
 			this.inherited(arguments);
 			domAttr.set(this.domNode,"hidden",false);
-			domClass.toggle(this.labelNode,"dijitHidden",true);
 			domClass.toggle(this.buttonNode,"dijitHidden",false);
-			domClass.toggle(this.containerNode,"dijitHidden",true);
+			this.toggle(true);
 		}
 	});
 });
