@@ -18,7 +18,7 @@ define([
 		service:"/model/",
 		local:false,
 		persistent:false,
-		refAttribute:"$ref",
+		refAttribute:"_ref",
 		getSchema:function(){
 			return request(this.schemaUri,{
 				handleAs:"json",
@@ -53,7 +53,7 @@ define([
 					data:this.data
 				});
 			} else {
-				Store = declare([Rest,SimpleQuery,Trackable]);
+				Store = declare([Rest,Trackable]);
 				store = new Store({
 					useRangeHeaders:true,
 					idProperty: this.idProperty,
