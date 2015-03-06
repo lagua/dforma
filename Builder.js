@@ -309,7 +309,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					}
 				}
 				// create bound subform
-				if(!cc.store) cc.store = parent.store;
+				//if(!cc.store) cc.store = parent.store;
 				cc.subform = new parent.BuilderClass({
 					//label:cc.label,
 					cancellable:true,
@@ -411,7 +411,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				cc.label = label[0];
 				cc.splitLabel = label;
 				cc.onClick = function(){
-					domClass.toggle(this.getParent().containerNode,"dijitHidden",!this.checked);
+					this.getParent().toggle(!this.checked);
 					this.value = this.checked ? "on" : "";
 					this.set("label",this.splitLabel[(this.checked ? 1 : 0)]);
 				};
@@ -891,9 +891,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			d.resolve(newVal);*/
 			children.forEach(function(widget){
 				// force set child value to retain it
-				if(widget.name in res){
-					widget.set("value",res[widget.name]);
-				}
+				//if(widget.name in res){
+				//	widget.set("value",res[widget.name]);
+				//}
 				var config = widget._config;
 				if(!config) return;
 				if(config.storeParams && config.storeParams.queryString){
@@ -971,8 +971,14 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			}
 			this._onChangeDelayTimer = this.defer(function(){
 				delete this._onChangeDelayTimer;
-				this._processChildren(this.value,this.get("value")).then(lang.hitch(this,function(newVal){
-					this._set("value", newVal);
+				var newVal = this.get("value");
+				this.store.put(newVal).then(lang.hitch(this,function(obj){
+					console.warn(obj)
+					this.selectedId = obj.id;
+					this._processChildren(this.value,obj);
+					//.then(lang.hitch(this,function(newVal){
+						this._set("value", obj);
+					//}));
 				}));
 			}, 20);
 		}
@@ -980,6 +986,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	startup:function(){
 		if(this._started) return;
 		config = this[this.configProperty];
+		if(!this.store) this.store = new FormData({
+			local:true
+		});
 		this.submitButton = new Button();
 		if(this.cancellable) this.cancelButton = new Button();
 		this.inherited(arguments);
