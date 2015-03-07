@@ -2,49 +2,59 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/_base/array",
-	"dojo/when",
+	"dojo/aspect",
+	"dojo/Deferred",
+	"dojo/request",
 	"dojo/store/util/QueryResults",
 	"dstore/Memory",
 	"dstore/Rest",
 	"dstore/SimpleQuery",
 	"dstore/Trackable",
 	"dforma/util/model"
-], function(declare,lang,arrayUtil,when,QueryResults,Memory,Rest,SimpleQuery,Trackable,modelUtil) {
+], function(declare,lang,arrayUtil,aspect,Deferred,request,QueryResults,Memory,Rest,SimpleQuery,Trackable,modelUtil) {
 	
-	return declare("dlagua.c.store.FormData",[],{
+	return declare("dforma.store.FormData",[],{
 		idProperty: "id",
 		model:"",
 		schemaModel:"Class",
 		service:"/model/",
 		local:false,
 		persistent:false,
-		refAttribute:"_ref",
+		refProperty:"_ref",
 		getSchema:function(){
-			return request(this.schemaUri,{
+			var uri = this.service+this.schemaModel+"/"+this.model;
+			return request(uri,{
 				handleAs:"json",
 				headers:{
 					accept:"application/json"
 				}
     		});
 		},
-		put:function(obj,options){
+		/*put:function(obj,options){
 			return when(this.inherited(arguments),lang.hitch(this,function(obj){
 				var fn = this.local ? "coerce" : "fetch";
 				return modelUtil[fn](object,schema,{
 					resolve:true,
 					fetch:true,
-					refAttribute:this.refAttribute,
+					refProperty:this.refProperty,
 					target:this.target
 				});
 			}));
-		},
+		},*/
 		constructor: function(options) {
 			this.headers = {};
 			lang.mixin(this, options);
-			var model = this.model;
 			var schemaModel = this.schemaModel;
-			if(model) this.target = this.service+model+"/";
-			this.schemaUri = this.service+schemaModel+"/"+model;
+			if(!this.model) {
+				this.model = (/([^/]*)\/?$/g).exec(this.target).pop();
+			} else {
+				this.target = this.service+this.model+"/";
+			}
+			if(!this.schema){
+				this.getSchema().then(lang.hitch(this,function(schema){
+	    			this.schema = schema;
+	    		}));
+			}
 			var Store,store = this;
 			if(this.local) {
 				Store = declare([Memory,Trackable]);
@@ -60,6 +70,31 @@ define([
 					target:this.target
 				});
 			}
+			var putFunc = function(put) {
+				return function(object,options) {
+					var refProperty = this.refProperty;
+					var target = this.target;
+					var schema = this.schema;
+					var d = new Deferred();
+					put.call(this,object,options).then(function(object){
+						modelUtil.coerce(object,schema,{
+							resolve:true,
+							fetch:true,
+							refProperty:refProperty,
+							target:target
+						}).then(function(data){
+							d.resolve(data);
+						});
+					});
+					return d;
+				}
+			}
+			aspect.around(store,"put",function(put){
+				return putFunc(put);
+			});
+			aspect.around(store,"add",function(add){
+				return putFunc(add);
+			});
 			// also mixin constructor!
 			lang.mixin(this,store);
 			if(store._getQuerierFactory('filter') || store._getQuerierFactory('sort')) {
