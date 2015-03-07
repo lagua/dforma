@@ -309,9 +309,21 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					}
 				}
 				// create bound subform
-				//if(!cc.store) cc.store = parent.store;
+				if(!cc.store) {
+					cc.store = new FormData({
+						local:true,
+						target:parent.store.target,
+						schema:cc.schema.items[0]
+					});
+				}
+				var store = new FormData({
+					local:true,
+					target:parent && parent.store ? parent.store.target : null,
+					schema:cc.schema.items[0]
+				});
 				cc.subform = new parent.BuilderClass({
 					//label:cc.label,
+					store:store,
 					cancellable:true,
 					cancel: function(){
 						try {
@@ -428,6 +440,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					if(c.options && c.options instanceof Array) {
 						cc.store = new FormData({
 							local:true,
+							refProperty:this.refProperty,
 							data:c.options
 						});
 					} else if(cc.schema && cc.schema.items && cc.schema.items.hasOwnProperty(self.refProperty)) {
@@ -544,6 +557,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				if(!c.storeParams.target) {
 					cc.storeParams.local = true;
 				}
+				cc.storeParams.schema = cc.schema;
 				cc.store = new FormData(cc.storeParams);
 			}
 			// widget param mapping
@@ -839,7 +853,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		}
 		return dd;
 	},
-	_processChildren:function(oldVal,newVal){
+	_processChildren:function(newVal){
 		//var d = new Deferred();
 		// FIXME 
 		// - builder should always have a store
@@ -852,103 +866,60 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		children = children.map(function(_){
 			return (_ instanceof Label) ? _.child : _;
 		});
-		/*children.forEach(function(_){
-			if(_._config && _._config.storeParams && _._config.storeParams.target){
-				toResolve[_.name] = _._config;
-			}
-		});
-		var resolved = {};
-		for(var k in toResolve){
-			if(!oldVal || oldVal[k]!=newVal[k]) {
-				var config = toResolve[k];
-				var query = substitute(config.storeParams.queryString,newVal,[]);
-				var href = config.storeParams.target + "?" + query;
-				var req = {
-					handleAs:"json",
-					headers:{
-						accept:"application/json"
-					}
-				};
-				var p = config.schema;
-				if(p.type=="string" && p.format=="xhtml") {
-					// shouldn't we try to resolve XML?
-					req = {
-						handleAs:"text",
-						failOk:true
-					};
+		children.forEach(function(widget){
+			var config = widget._config;
+			if(!config) return;
+			if(config.storeParams && config.storeParams.queryString){
+				// each component with a store with queryString
+				// should be updated when parent changes
+				// dirty hack: only if type=string
+				if(typeof widget.query == "string") {
+					widget.set("query", substitute(config.storeParams.queryString,newVal,[widget.name]));
 				}
-				console.log("Link "+href+" for "+k+" will be resolved.");
-				toResolve[p.rel] = href;
-				resolved[p.rel] = resolveCache[href] ? 
-					new Deferred().resolve(resolveCache[href]) : request(href,req);
 			}
-		}*/
-		//all(resolved).then(function(res){
-			/*for(var k in res){
-				resolveCache[toResolve[k]] = res[k];
-				newVal[k]=res[k];
-			}
-			d.resolve(newVal);*/
-			children.forEach(function(widget){
-				// force set child value to retain it
-				//if(widget.name in res){
-				//	widget.set("value",res[widget.name]);
-				//}
-				var config = widget._config;
-				if(!config) return;
-				if(config.storeParams && config.storeParams.queryString){
-					// each component with a store with queryString
-					// should be updated when parent changes
-					// dirty hack: only if type=string
-					if(typeof widget.query == "string") {
-						widget.set("query", substitute(config.storeParams.queryString,newVal,[widget.name]));
-					}
-				}
-				if(config.triggers){
-					// each component with trigger should be updated
-					// when the target property changes
-					config.triggers.forEach(function(trigger){
-						var val = trigger.select ? newVal[trigger.select] : newVal;
-						if(val){
-							trigger.value = val;
-							if(trigger.rel){
-								var rel = trigger.rel;
-								var relProp = trigger.foreignKey || "id";
-								var relValue = newVal[rel];
-								// rql: Color/?id={color}&values(code)
-								// if trigger has rel, use it
-								// and assume that it's resolved
-								if(relValue && relValue instanceof Array) {
-									var obj = relValue.filter(function(_){
-										return _.id==trigger.value;
-									}).pop();
-									val = obj ? obj[relProp] : null;
-								} else {
-									// don't update
-									val = null;
-								}
-							}
-							if(val){
-								// default to value
-								var prop = trigger.property || "value";
-								var target = trigger.target ? 
-									lang.getObject(trigger.target,false,this) : this;
-								try {
-									if(trigger.setter){
-										target[trigger.setter](prop,val);
-									} else {
-										target[prop] = val;
-									}
-								} catch(err){
-									console.error("trigger error",err);
-								}
+			if(config.triggers){
+				// each component with trigger should be updated
+				// when the target property changes
+				config.triggers.forEach(function(trigger){
+					var val = trigger.select ? newVal[trigger.select] : newVal;
+					if(val){
+						trigger.value = val;
+						if(trigger.rel){
+							var rel = trigger.rel;
+							var relProp = trigger.foreignKey || "id";
+							var relValue = newVal[rel];
+							// rql: Color/?id={color}&values(code)
+							// if trigger has rel, use it
+							// and assume that it's resolved
+							if(relValue && relValue instanceof Array) {
+								var obj = relValue.filter(function(_){
+									return _.id==trigger.value;
+								}).pop();
+								val = obj ? obj[relProp] : null;
+							} else {
+								// don't update
+								val = null;
 							}
 						}
-					},widget);
-				}
-			});
-		//});
-		//return d;
+						if(val){
+							// default to value
+							var prop = trigger.property || "value";
+							var target = trigger.target ? 
+								lang.getObject(trigger.target,false,this) : this;
+							try {
+								if(trigger.setter){
+									target[trigger.setter](prop,val);
+								} else {
+									target[prop] = val;
+								}
+							} catch(err){
+								console.error("trigger error",err);
+							}
+						}
+					}
+				},widget);
+			}
+		});
 	},
 	_onChildChange: function(/*String*/ attr){
 		// summary:
@@ -973,12 +944,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				delete this._onChangeDelayTimer;
 				var newVal = this.get("value");
 				this.store.put(newVal).then(lang.hitch(this,function(obj){
-					console.warn(obj)
 					this.selectedId = obj.id;
-					this._processChildren(this.value,obj);
-					//.then(lang.hitch(this,function(newVal){
-						this._set("value", obj);
-					//}));
+					this._processChildren(obj);
+					this._set("value", obj);
 				}));
 			}, 20);
 		}
@@ -986,9 +954,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	startup:function(){
 		if(this._started) return;
 		config = this[this.configProperty];
-		if(!this.store) this.store = new FormData({
-			local:true
-		});
 		this.submitButton = new Button();
 		if(this.cancellable) this.cancelButton = new Button();
 		this.inherited(arguments);
