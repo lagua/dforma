@@ -3,8 +3,9 @@ define([
 	"dojo/_base/lang",
 	"dojo/request",
 	"dojo/Deferred",
+	"dojo/when",
 	"dojo/promise/all"
-], function(declare,lang,request,Deferred,all) {
+], function(declare,lang,request,Deferred,when,all) {
 	
 	// from https://github.com/kriszyp/json-schema/blob/master/lib/links.js#L41
 	function substitute(linkTemplate, instance, exclude){
@@ -22,12 +23,15 @@ define([
 	var model = lang.mixin(lang.getObject("dforma.util.model",true),{
 		coerce:function(data,schema,options) {
 			options = options || {};
+			data = data || {};
+			var proms = {};
 			// summary:
 			// Given an input value, this method is responsible
 			// for converting it to the appropriate type for storing on the object.
 			for(var k in schema.properties) {
-				var type = schema.properties[k].type;
-				var deft = schema.properties[k]["default"];
+				var p = schema.properties[k];
+				var type = p.type;
+				var deft = p["default"];
 				var value = data[k]!==undefined ? data[k] : deft ? deft : undefined;
 				if(type) {
 					if (type === 'string') {
@@ -38,6 +42,19 @@ define([
 						value = !!value;
 					} else if (type === 'array') {
 						if(!(value instanceof Array)) value = new Array();
+						if(p.items){
+							proms[k] = [];
+							if(p.items instanceof Array){
+								// iterate p.items
+								for(var i=0;i<p.items.length;i++){
+									proms[k].push(model.coerce(value[i],p.items[i],options));
+								}
+							} else {
+								for(var i=0;i<value.length;i++){
+									proms[k].push(model.coerce(value[i],p.items,options));
+								}
+							}
+						}
 					} else if (type === 'object') {
 						if(!(value instanceof Object)) value = new Object();
 					} else if (typeof type === 'function' && !(value instanceof type)) {
@@ -46,15 +63,26 @@ define([
 					data[k] = value;
 				}
 			}
-			if(options.resolve){
-				return model.resolve(data,schema,options);
-			} else {
-				return new Deferred().resolve(data);
+			var proms2 = {};
+			for(var k in proms) {
+				all(proms[k]).then(lang.hitch({key:k},function(arr){
+					data[this.key] = arr;
+					proms2[this.key] = new Deferred().resolve(data);
+				}));
 			}
+			return all(proms2).then(function(resolved){
+				console.warn(resolved)
+				lang.mixin(data,resolved)
+				if(options.resolve){
+					return model.resolve(data,schema,options);
+				} else {
+					return new Deferred().resolve(data);
+				}
+			});
 		},
 		resolve:function(data,schema,options){
 			options = options || {};
-			var refattr = options.refAttribute || "$ref";
+			var refattr = options.refProperty || "$ref";
 			var exclude = options.exclude;
 			if(schema.links instanceof Array) {
 				schema.links.forEach(function(link){
@@ -74,7 +102,7 @@ define([
 		fetch:function(data,schema,options){
 			var d = new Deferred();
 			options = options || {};
-			var refattr = options.refAttribute || "$ref";
+			var refattr = options.refProperty || "$ref";
 			var target = options.target;
 			// FIXME move to new instance from schema for local store
 			var resolveProps = options.resolveProps || [];
