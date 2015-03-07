@@ -10,9 +10,8 @@ define([
 	"dojo/promise/all",
 	"./Group",
 	"dforma/util/i18n",
-	"dforma/util/model",
 	"dijit/form/Button"
-],function(declare,lang,array,domConstruct,domClass,all,Group,i18n,model,Button){
+],function(declare,lang,array,domConstruct,domClass,all,Group,i18n,Button){
 return declare("dforma.Repeat",[Group],{
 	baseClass:"dformaRepeat",
 	cols:1,
@@ -122,21 +121,6 @@ return declare("dforma.Repeat",[Group],{
  	_setValueAttr: function(/*Object*/ arr){
  		if(!this._started) return;
  		arr = arr || [];
- 		if(this.schema && this.schema.items) {
- 			var schema = {properties:this.schema.items};
- 			console.warn(arr)
- 			all(arr.map(function(obj){
- 				return model.coerce(obj,schema,{
- 					refAttribute:"_ref",
- 					resolve:true,
- 					fetch:true
- 				});
- 			})).then(lang.hitch(this,"_doSetVal"));
-		} else {
-			this._doSetVal(arr);
-		}
- 	},
- 	_doSetVal:function(arr){
 		// summary:
 		//		Fill in form values from according to an Object (in the format returned by get('value'))
  		array.forEach(arr,function(obj,i){
