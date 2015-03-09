@@ -50,6 +50,7 @@ define([
 					data[k] = value;
 				}
 			}
+			if(options.mixin) lang.mixin(data,options.mixin);
 			if(options.resolve){
 				return model.resolve(data,schema,options);
 			} else {
