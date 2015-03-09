@@ -4,43 +4,46 @@ define([
 	"dojo/_base/array",
 	"dojo/aspect",
 	"dojo/Deferred",
+	"dojo/when",
 	"dojo/request",
 	"dojo/store/util/QueryResults",
 	"dstore/Memory",
 	"dstore/Rest",
+	"dstore/LocalDB",
 	"dstore/SimpleQuery",
 	"dstore/Trackable",
 	"dforma/util/model"
-], function(declare,lang,arrayUtil,aspect,Deferred,request,QueryResults,Memory,Rest,SimpleQuery,Trackable,modelUtil) {
+], function(declare,lang,arrayUtil,aspect,Deferred,when,request,QueryResults,Memory,Rest,LocalDB,SimpleQuery,Trackable,modelUtil) {
 	
 	return declare("dforma.store.FormData",[],{
 		idProperty: "id",
 		model:"",
+		schema:null,
 		schemaModel:"Class",
 		service:"/model/",
 		local:false,
 		persistent:false,
+		mixin:null,
 		refProperty:"_ref",
-		getSchema:function(){
+		getSchema:function(sync){
+			if(this.schema) return new Deferred().resolve(this.schema);
 			var uri = this.service+this.schemaModel+"/"+this.model;
-			return request(uri,{
+			var req = request(uri,{
 				handleAs:"json",
+				sync:!!sync,
 				headers:{
 					accept:"application/json"
 				}
     		});
-		},
-		/*put:function(obj,options){
-			return when(this.inherited(arguments),lang.hitch(this,function(obj){
-				var fn = this.local ? "coerce" : "fetch";
-				return modelUtil[fn](object,schema,{
-					resolve:true,
-					fetch:true,
-					refProperty:this.refProperty,
-					target:this.target
-				});
+			when(req,lang.hitch(this,function(schema){
+				this.schema = schema;
+				for(var k in schema.properties) {
+					if(schema.properties[k].primary) this.idProperty = k;
+					if(schema.properties[k].hrkey) this.hrProperty = k;
+				}
 			}));
-		},*/
+			return req;
+		},
 		constructor: function(options) {
 			this.headers = {};
 			lang.mixin(this, options);
@@ -51,12 +54,22 @@ define([
 				this.target = this.service+this.model+"/";
 			}
 			if(!this.schema){
-				this.getSchema().then(lang.hitch(this,function(schema){
-	    			this.schema = schema;
-	    		}));
+				this.getSchema(true);
 			}
 			var Store,store = this;
-			if(this.local) {
+			if(this.local && this.persistent) {
+				// TODO manage in app config
+				var dbConfig = {
+				    version: 0,
+				    stores: {}
+				};
+				Store = declare([LocalDB,Trackable]);
+				store = new Store({
+					idProperty: this.idProperty,
+					dbConfig:dbConfig,
+					storeName:this.target
+				});
+			} else if(this.local) {
 				Store = declare([Memory,Trackable]);
 				store = new Store({
 					idProperty: this.idProperty,
@@ -70,30 +83,27 @@ define([
 					target:this.target
 				});
 			}
-			var putFunc = function(put) {
+			var wrapper = function(mthd) {
 				return function(object,options) {
-					var refProperty = this.refProperty;
-					var target = this.target;
-					var schema = this.schema;
-					var d = new Deferred();
-					put.call(this,object,options).then(function(object){
-						modelUtil.coerce(object,schema,{
+					return when(mthd.call(this,object,options),lang.hitch(this,function(object){
+						return modelUtil.coerce(object,this.schema,{
 							resolve:true,
 							fetch:true,
-							refProperty:refProperty,
-							target:target
-						}).then(function(data){
-							d.resolve(data);
+							refProperty:this.refProperty,
+							target:this.target,
+							mixin:this.mixin
 						});
-					});
-					return d;
+					}));
 				}
 			}
 			aspect.around(store,"put",function(put){
-				return putFunc(put);
+				return wrapper(put);
 			});
 			aspect.around(store,"add",function(add){
-				return putFunc(add);
+				return wrapper(add);
+			});
+			aspect.around(store,"get",function(get){
+				return wrapper(get);
 			});
 			// also mixin constructor!
 			lang.mixin(this,store);
