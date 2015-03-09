@@ -22,7 +22,8 @@
 			"text":"textarea",
 			"lookup":"lookup",
 			"select":"select",
-			"combo":"combo"
+			"combo":"combo",
+			"xuri":"xuri"
 		},
 		"array":{
 			"*":"repeat",
