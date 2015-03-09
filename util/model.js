@@ -42,19 +42,6 @@ define([
 						value = !!value;
 					} else if (type === 'array') {
 						if(!(value instanceof Array)) value = new Array();
-						if(p.items){
-							proms[k] = [];
-							if(p.items instanceof Array){
-								// iterate p.items
-								for(var i=0;i<p.items.length;i++){
-									proms[k].push(model.coerce(value[i],p.items[i],options));
-								}
-							} else {
-								for(var i=0;i<value.length;i++){
-									proms[k].push(model.coerce(value[i],p.items,options));
-								}
-							}
-						}
 					} else if (type === 'object') {
 						if(!(value instanceof Object)) value = new Object();
 					} else if (typeof type === 'function' && !(value instanceof type)) {
@@ -63,22 +50,11 @@ define([
 					data[k] = value;
 				}
 			}
-			var proms2 = {};
-			for(var k in proms) {
-				all(proms[k]).then(lang.hitch({key:k},function(arr){
-					data[this.key] = arr;
-					proms2[this.key] = new Deferred().resolve(data);
-				}));
+			if(options.resolve){
+				return model.resolve(data,schema,options);
+			} else {
+				return new Deferred().resolve(data);
 			}
-			return all(proms2).then(function(resolved){
-				console.warn(resolved)
-				lang.mixin(data,resolved)
-				if(options.resolve){
-					return model.resolve(data,schema,options);
-				} else {
-					return new Deferred().resolve(data);
-				}
-			});
 		},
 		resolve:function(data,schema,options){
 			options = options || {};
@@ -141,9 +117,37 @@ define([
 					console.warn("Link "+key+" won't be resolved.");
 				}
 			});
+			var proms = {};
 			all(toResolve).then(function(resolved){
+				for(var k in resolved){
+					var p = schema.properties[k];
+					var value = resolved[k];
+					if(p.type=="array" && p.items){
+						proms[k] = [];
+						if(p.items instanceof Array){
+							// iterate p.items
+							for(var i=0;i<p.items.length;i++){
+								proms[k].push(model.coerce(value[i],p.items[i],options));
+							}
+						} else {
+							for(var i=0;i<value.length;i++){
+								proms[k].push(model.coerce(value[i],p.items,options));
+							}
+						}
+					}
+				}
 				lang.mixin(data,resolved);
-				d.resolve(data);
+				var proms2 = {};
+				for(var k in proms) {
+					proms2[k] = new Deferred();
+					all(proms[k]).then(lang.hitch({key:k},function(resolved){
+						proms2[this.key].resolve(resolved);
+					}));
+				}
+				return all(proms2).then(function(resolved){
+					lang.mixin(data,resolved);
+					d.resolve(data);
+				});
 			});
 			return d;
 		}
