@@ -9,6 +9,7 @@ define([
 	"dojo/promise/all",
 	"dojo/keys",
 	"dojo/number",
+	"dojo/dom",
 	"dojo/dom-construct",
 	"dojo/dom-class",
 	"dojo/on",
@@ -33,7 +34,7 @@ define([
 	"dforma/validate/us",
 	"dojo/i18n!./nls/common"
 ],function(require,declare,lang,array,aspect,Deferred,when,all,
-		keys,number,domConstruct,domClass,on,request,
+		keys,number,dom,domConstruct,domClass,on,request,
 		FormData,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,
 		_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,registry,
 		Input){
@@ -249,6 +250,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			break;
 			case "switch":
 			break;
+			case "xuri":
+				req = "dbrota/widget/form/Editor";
+			break;
 			default:
 				if(c.required || c.type=="email" || c.type=="phone" || c.readonly) {
 					req = "dijit/form/ValidationTextBox";
@@ -452,10 +456,12 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			break;
 			case "switch":
 			break;
+			case "xuri":
+			break;
 			default:
 			break;
 		}
-		co = new Widget(cc,cc.refNode);
+		co = new Widget(cc);
 		if(cc.type=="list" || cc.type=="grid"){
 			var _lh = aspect.after(parent,"layout",lang.hitch(co,function(){
 				_lh.remove();
@@ -483,6 +489,81 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			);
 		}
 		return co;
+	},
+	placeWidget:function(cc,co,parent,controls,Widget){
+		if(parent.type=="repeat"){
+			parent.addControl(Widget,cc);
+		} else if(cc.type=="grid" || cc.type=="list" || cc.type=="repeat" || cc.type=="group" || cc.type=="xuri" || cc.type=="hidden" || cc.hidden) {
+			if(cc.refNode){
+				co.placeAt(cc.refNode,"replace");
+			} else {
+				parent.addChild(co);
+			}
+		} else if(cc.type=="unhidebutton") {
+			var target;
+			if(cc.target) {
+				for(var i=0;i<controls.length;i++) {
+					if(controls[i].name==cc.target) {
+						target = controls[i].widget;
+						break;
+					}
+				}
+				if(target) {
+					co.addChild(target);
+					parent.addChild(co);
+				}
+			} else {
+				co.placeAt(parent.buttonNode);
+			}
+		} else {
+			var l = new Label({
+				label:cc.label,
+				"class":"dformaLabelFor"+cc.type.toProperCase(),
+				child:co,
+				title:cc.description /*&& !c.schema.dialog*/ ? cc.description : cc.label
+			});
+	 		if(cc.type=="checkbox") {
+	 			l.on("click", function(evt){
+	 				if(evt.target.nodeName=="INPUT") return;
+	 				co.set("checked",!co.checked);
+	 			});
+	 		}
+	 		if(cc.dialog) {
+	 			var bt = new Button({
+	 				label:cc.dialog,
+	 				"class":"dformaPopupTrigger",
+	 				onClick:function(){
+	 					new Dialog({
+							content:cc.description
+						}).show();
+	 				}
+	 			}).placeAt(l["labelNode_"+l.position],"before")
+			}
+	 		if(cc.refNode) {
+	 			l.placeAt(cc.refNode,"replace");
+	 		} else {
+	 			parent.addChild(l);
+	 		}
+
+			if(cc.type=="multiselect_freekey") {
+				l.child = null;
+				l.addChild(co);
+				l.addChild(new TextBox({
+					onChange:function(val){
+						if(val) co.addOption({value:val,label:val,selected:true});
+						this.set("value","");
+					},
+					onBlur:function(){
+						this.onChange(this.value);
+					},
+					onKeyPress:function(e) {
+						if(e.charOrCode==keys.ENTER) {
+							this.focusNode.blur();
+						}
+					}
+				}));
+			}
+		}
 	},
 	rebuild:function(config){
 		var dd = new Deferred();
@@ -549,8 +630,11 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				},
 				templatePath:parent.templatePath ? parent.templatePath+"/"+c.name : "",
 				templateExtension:parent.templateExtension,
-				_config:c
+				_config:c,
+				_parent:parent
 			},c);
+			cc.refNode = c.refNode ? dom.byId(c.refNode) : null;
+			if(c.refNode && !cc.refNode) cc.hidden = true;
 			// default param mapping
 			if(c.hasOwnProperty("readonly")) cc.readOnly = c.readonly;
 			if(c.hasOwnProperty("storeParams")) {
@@ -562,17 +646,18 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			}
 			// widget param mapping
 			co = self.controlWidgetMapper(cc,Widget,parent);
-			// widget placement
-			if(c.controller) {
+			// controller
+			if(cc.controller) {
 				controller = parent.controllerWidget = co;
 			}
-			if(c.type=="grid" || c.type=="list") {
-				parent.addChild(co);
+			// widget placement
+			self.placeWidget(cc,co,parent,controls,Widget);
+			// special cases
+			if(cc.type=="grid" || cc.type=="list") {
 				cc.subform.parentform = co;
 				parent.addChild(cc.subform);
-			} else if(c.type=="repeat" || c.type=="group"){
-				parent.addChild(co);
-				array.forEach(c.options,function(o){
+			} else if(cc.type=="repeat" || cc.type=="group"){
+				array.forEach(cc.options,function(o){
 					if(o.controls) {
 						preload(o.controls).then(function(){
 							array.forEach(o.controls,function(c){
@@ -581,72 +666,9 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						});
 					}
 				});
-				co.set("value",c.value);
-			} else if(parent.type=="repeat"){
-				parent.addControl(Widget,cc);
-			} else if(c.type=="hidden" || c.hidden) {
-				parent.addChild(co);
+				co.set("value",cc.value);
+			} else if(cc.type=="hidden" || cc.hidden) {
 				domClass.toggle(co.domNode,"dijitHidden",true);
-			} else if(c.type=="unhidebutton") {
-				var target;
-				if(c.target) {
-					for(var i=0;i<controls.length;i++) {
-						if(controls[i].name==c.target) {
-							target = controls[i].widget;
-							break;
-						}
-					}
-					if(target) {
-						co.addChild(target);
-						parent.addChild(co);
-					}
-				} else {
-					co.placeAt(parent.buttonNode);
-				}
-			} else {
-		 		l = new Label({
-					label:cc.label,
-					"class":"dformaLabelFor"+c.type.toProperCase(),
-					child:co,
-					title:c.description /*&& !c.schema.dialog*/ ? c.description : cc.label
-				});
-		 		if(c.type=="checkbox") {
-		 			l.on("click", function(evt){
-		 				if(evt.target.nodeName=="INPUT") return;
-		 				co.set("checked",!co.checked);
-		 			});
-		 		}
-		 		if(c.dialog) {
-		 			var bt = new Button({
-		 				label:c.dialog,
-		 				"class":"dformaPopupTrigger",
-		 				onClick:function(){
-		 					new Dialog({
-								content:c.description
-							}).show();
-		 				}
-		 			}).placeAt(l["labelNode_"+l.position],"before")
-				}
-		 		parent.addChild(l);
-
-				if(c.type=="multiselect_freekey") {
-					l.child = null;
-					l.addChild(co);
-					l.addChild(new TextBox({
-						onChange:function(val){
-							if(val) co.addOption({value:val,label:val,selected:true});
-							this.set("value","");
-						},
-						onBlur:function(){
-							this.onChange(this.value);
-						},
-						onKeyPress:function(e) {
-							if(e.charOrCode==keys.ENTER) {
-								this.focusNode.blur();
-							}
-						}
-					}));
-				}
 			}
 			if(c.edit===true || c["delete"]===true) {
 				if(!l) {
@@ -954,6 +976,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	startup:function(){
 		if(this._started) return;
 		config = this[this.configProperty];
+		if(!this.store){
+			this.store = new FormData({
+				local:true,
+				target:this.target,
+				model:this.model
+			});
+		}
 		this.submitButton = new Button();
 		if(this.cancellable) this.cancelButton = new Button();
 		this.inherited(arguments);
