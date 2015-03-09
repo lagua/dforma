@@ -149,7 +149,7 @@ define([
 				}
 				if(type=="repeat" || type=="group"){
 					var items = jsonschema.schemasToController([{
-						properties:type=="repeat"? prop.items : prop.properties
+						properties:type=="repeat"? prop.items.properties : prop.properties
 					}],null,{
 						controller:{
 							type:type,
