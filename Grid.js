@@ -167,9 +167,9 @@ define([
 				local:true
 			});
 			var tracked = this.store.track();
-			tracked.on("add, update, delete", function(event){
+			this.own(tracked.on("add, update, delete", function(event){
 				self._set("value",this.store.fetchSync());
-			});
+			}));
 			var Widget = declare([OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry],{
 	            buildRendering: function () {
 	                this.inherited(arguments);
