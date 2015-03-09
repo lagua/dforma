@@ -59,49 +59,13 @@ define([
 				// TODO: add more types
 				var entry = cmap[prop.type || "string"];
 				var type = prop.format && entry[prop.format] ? entry[prop.format] : entry["*"];
-				/*if(prop.type=="boolean") {
-					type = "checkbox";
-				} else if(prop.type=="integer") {
-					type = "spinner";
-				} else if(prop.type=="number") {
-					if(prop.format=="currency") {
-						type = "currency";
-					} else {
-						type = "number";
-					}
-				} else if(prop.type=="date") {
-					type = "date";
-				} else if(prop.type=="array" || prop.hasOwnProperty("enum") || prop.hasOwnProperty("oneOf")) {
-					if(prop.format == "list") {
-						type = "list";
-					} else if(prop.format == "grid") {
-						type = "grid";
-					} else if(prop.format == "select") {
-						type = "select";
-					} else if(prop.format == "radiogroup") {
-						type = "radiogroup";
-					} else {
-						type = "repeat";
-					}
-				} else if(prop.type=="object") {
-					type = "group";
-				} else if(prop.type=="string" && prop.format=="text"){
-					type = "textarea";
-				} else {
-					if(prop.format=="email") {
-						type = "email";
-					} else if(prop.format=="phone") {
-						type = "phone";
-					} else {
-						type = "input";
-					}
-				}*/
 				var c = {
 					name:k,
 					type:type,
 					schema:prop,
 					required:(prop.required === true),
-					readonly:(prop.readonly === true)
+					readonly:(prop.readonly === true),
+					refNode:options.refPrefix ? options.refPrefix+k : ""
 				};
 				// more or less copied literally
 				if(prop.hasOwnProperty("title")) {
