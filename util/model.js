@@ -20,10 +20,13 @@ define([
 		});
 	};
 	
+	var cache = {};
+	
 	var model = lang.mixin(lang.getObject("dforma.util.model",true),{
 		coerce:function(data,schema,options) {
 			options = options || {};
 			data = data || {};
+			if(!schema || !schema.properties) return new Deferred().resolve(data);
 			var proms = {};
 			// summary:
 			// Given an input value, this method is responsible
@@ -93,10 +96,11 @@ define([
 					resolveProps.push(k);
 				}
 			}
+			var cacheref = {};
 			resolveProps.forEach(function(key){
 				var href = data[key] ? data[key][refattr] : null;
 				if(href) {
-					var req = {
+					var args = {
 						handleAs:"json",
 						headers:{
 							accept:"application/json"
@@ -105,15 +109,16 @@ define([
 					var p = schema.properties[key];
 					if(p.type=="string" && p.format=="xhtml") {
 						// shouldn't we try to resolve XML?
-						req = {
+						args = {
 							handleAs:"text",
 							failOk:true
 						};
 					}
-					console.log("Link "+key+" will be resolved.");
+					//console.log("Link "+key+" will be resolved.");
 					// absolute URI
 					href = href.charAt(0) == "/" ? href : target + href;
-					toResolve[key] = request(href,req);
+					cacheref[key] = href;
+					toResolve[key] = cache[href] ? new Deferred().resolve(cache[href]) : request(href,args);
 				} else {
 					console.warn("Link "+key+" won't be resolved.");
 				}
@@ -123,6 +128,9 @@ define([
 				for(var k in resolved){
 					var p = schema.properties[k];
 					var value = resolved[k];
+					var href = cacheref[k];
+					delete cacheref[k];
+					cache[href] = value;
 					if(p.type=="array" && p.items){
 						proms[k] = [];
 						if(p.items instanceof Array){
