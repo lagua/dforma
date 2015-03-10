@@ -19,7 +19,8 @@ define([
 	"./Group",
 	"./Label",
 	"./jsonschema",
-	"dforma/util/i18n",
+	"./util/model",
+	"./util/i18n",
 	"dijit/Dialog",
 	"dijit/form/Form",
 	"dijit/form/_FormValueWidget",
@@ -35,7 +36,7 @@ define([
 	"dojo/i18n!./nls/common"
 ],function(require,declare,lang,array,aspect,Deferred,when,all,
 		keys,number,dom,domConstruct,domClass,on,request,
-		FormData,_GroupMixin,Group,Label,jsonschema,i18n,Dialog,Form,
+		FormData,_GroupMixin,Group,Label,jsonschema,modelUtil,i18n,Dialog,Form,
 		_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,registry,
 		Input){
 
@@ -316,18 +317,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				if(!cc.store) {
 					cc.store = new FormData({
 						local:true,
-						target:parent.store.target,
+						target:parent && parent.store ? parent.store.target : null,
 						schema:cc.schema.items[0]
 					});
 				}
-				var store = new FormData({
-					local:true,
-					target:parent && parent.store ? parent.store.target : null,
-					schema:cc.schema.items[0]
-				});
 				cc.subform = new parent.BuilderClass({
 					//label:cc.label,
-					store:store,
+					store:cc.store,
 					cancellable:true,
 					cancel: function(){
 						try {
@@ -463,14 +459,15 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 		}
 		co = new Widget(cc);
 		if(cc.type=="list" || cc.type=="grid"){
-			var _lh = aspect.after(parent,"layout",lang.hitch(co,function(){
+			var _lh = aspect.after(co,"startup",lang.hitch(co,function(){
 				_lh.remove();
-				if(this.store && this.store.selectedId) {
-					var id = this.store.selectedId;
-					this.newdata = this.store.newdata;
-					delete this.store.newdata;
-					this.store.selectedId = null;
-					this.onEdit && this.onEdit(id);
+				var items = this.schema.items;
+				items = items ? (items instanceof Array ? items[0] : items) : {};
+				if(items["default"]){
+					this.store.put(items["default"]).then(lang.hitch(this,function(obj){
+						console.warn(obj)
+						this.onEdit && this.onEdit(obj.id);
+					}));
 				}
 			}));
 		} else if(cc.type=="select") {
@@ -965,7 +962,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			this._onChangeDelayTimer = this.defer(function(){
 				delete this._onChangeDelayTimer;
 				var newVal = this.get("value");
-				this.store.put(newVal).then(lang.hitch(this,function(obj){
+				console.warn(this.id,newVal)
+				modelUtil.coerce(newVal,this.store.schema,{
+					resolve:true,
+					fetch:true,
+					refProperty:this.store.refProperty,
+					target:this.store.target
+				}).then(lang.hitch(this,function(obj){
 					this.selectedId = obj.id;
 					this._processChildren(obj);
 					this._set("value", obj);
