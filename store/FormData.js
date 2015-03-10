@@ -26,13 +26,14 @@ define([
 		mixin:null,
 		refProperty:"_ref",
 		getSchema:function(sync){
-			if(this.schema) return new Deferred().resolve(this.schema);
+			if(this.schema || !this.model) return new Deferred().resolve(this.schema);
 			var uri = this.service+this.schemaModel+"/"+this.model;
 			var req = request(uri,{
 				handleAs:"json",
 				sync:!!sync,
 				headers:{
-					accept:"application/json"
+					accept:"application/json",
+					failOk:true
 				}
     		});
 			when(req,lang.hitch(this,function(schema){
@@ -41,14 +42,16 @@ define([
 					if(schema.properties[k].primary) this.idProperty = k;
 					if(schema.properties[k].hrkey) this.hrProperty = k;
 				}
-			}));
+			}),function(err){
+				// let slip
+			});
 			return req;
 		},
 		constructor: function(options) {
 			this.headers = {};
 			lang.mixin(this, options);
 			var schemaModel = this.schemaModel;
-			if(!this.model) {
+			if(!this.model && this.target) {
 				this.model = (/([^/]*)\/?$/g).exec(this.target).pop();
 			} else {
 				this.target = this.service+this.model+"/";
@@ -85,15 +88,22 @@ define([
 			}
 			var wrapper = function(mthd) {
 				return function(object,options) {
-					return when(mthd.call(this,object,options),lang.hitch(this,function(object){
-						return modelUtil.coerce(object,this.schema,{
+					options = options || {};
+					var req = mthd.call(this,object,options);
+					if(options.noop) return req;
+					var d = new Deferred();
+					req.then(lang.hitch(this,function(object){
+						modelUtil.coerce(object,this.schema,{
 							resolve:true,
 							fetch:true,
 							refProperty:this.refProperty,
 							target:this.target,
 							mixin:this.mixin
-						});
+						}).then(function(data){
+							d.resolve(data);
+						})
 					}));
+					return d;
 				}
 			}
 			aspect.around(store,"put",function(put){
