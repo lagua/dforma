@@ -117,20 +117,20 @@ define([
 					//console.log("Link "+key+" will be resolved.");
 					// absolute URI
 					href = href.charAt(0) == "/" ? href : target + href;
-					cacheref[key] = href;
-					toResolve[key] = cache[href] ? new Deferred().resolve(cache[href]) : request(href,args);
+					cacheref[href] = key;
+					toResolve[href] = cache[href] ? new Deferred().resolve(cache[href]) : request(href,args);
 				} else {
 					console.warn("Link "+key+" won't be resolved.");
 				}
 			});
 			var proms = {};
 			all(toResolve).then(function(resolved){
-				for(var k in resolved){
+				var obj = {};
+				for(var href in resolved){
+					var value = resolved[href];
+					if(!href in cache) cache[href] = value;
+					var k = cacheref[href];
 					var p = schema.properties[k];
-					var value = resolved[k];
-					var href = cacheref[k];
-					delete cacheref[k];
-					cache[href] = value;
 					if(p.type=="array" && p.items){
 						proms[k] = [];
 						if(p.items instanceof Array){
@@ -144,8 +144,9 @@ define([
 							}
 						}
 					}
+					obj[k] = value;
 				}
-				lang.mixin(data,resolved);
+				lang.mixin(data,obj);
 				var proms2 = {};
 				for(var k in proms) {
 					proms2[k] = new Deferred();
