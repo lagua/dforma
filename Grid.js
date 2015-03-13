@@ -64,11 +64,12 @@ define([
 	 	},
 	 	_handleOnChange:function(data){
 	 		this.inherited(arguments);
-	 		if(!this.grid) return;
 	 		data = data || [];
 	 		// TODO means we have a Memory type store?
-	 		this.store.setData(data);
-	 		this.grid.refresh();
+	 		data.forEach(function(obj){
+	 			this.store.put(obj);
+	 		},this);
+	 		this.grid && this.grid.refresh();
 	 	},
 	 	destroyRecursive:function(){
 	 		this.inherited(arguments);
@@ -107,7 +108,7 @@ define([
 								value:value,
 								onChange:lang.hitch(this,function(val){
 									obj[this.key] = val;
-									self.store.put(obj);
+									self.store.put(obj,{noop:true});
 								})
 							});
 							req([mid],function(Widget){
@@ -166,10 +167,11 @@ define([
 			if(!this.store) this.store = new FormData({
 				local:true
 			});
-			var tracked = this.store.track();
-			this.own(tracked.on("add, update, delete", function(event){
-				self._set("value",this.store.fetchSync());
-			}));
+			this.own(
+				this.store.on("add, update, delete", lang.hitch(this,function(event){
+					this._set("value",this.store.fetchSync());
+				}))
+			);
 			var Widget = declare([OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry],{
 	            buildRendering: function () {
 	                this.inherited(arguments);
