@@ -32,8 +32,7 @@ define([
 				handleAs:"json",
 				sync:!!sync,
 				headers:{
-					accept:"application/json",
-					failOk:true
+					accept:"application/json"
 				}
     		});
 			when(req,lang.hitch(this,function(schema){
@@ -47,12 +46,26 @@ define([
 			});
 			return req;
 		},
+		processModel: function(object,options,req) {
+			options = options || {};
+			if(options.noop) return req;
+			return when(req,lang.hitch(this,function(object){
+				return modelUtil.coerce(object,this.schema,{
+					resolve:true,
+					fetch:true,
+					refProperty:this.refProperty,
+					target:this.target,
+					mixin:this.mixin,
+					clearCache:options.clearCache
+				});
+			}));
+		},
 		constructor: function(options) {
 			this.headers = {};
 			lang.mixin(this, options);
 			var schemaModel = this.schemaModel;
 			if(!this.model && this.target) {
-				this.model = (/([^/]*)\/?$/g).exec(this.target).pop();
+				this.model = (/([^\/]*)\/?$/g).exec(this.target).pop();
 			} else {
 				this.target = this.service+this.model+"/";
 			}
@@ -86,35 +99,24 @@ define([
 					target:this.target
 				});
 			}
-			var wrapper = function(mthd) {
+			aspect.around(store,"put",lang.hitch(this,function(put){
 				return function(object,options) {
-					options = options || {};
-					var req = mthd.call(this,object,options);
-					if(options.noop) return req;
-					var d = new Deferred();
-					req.then(lang.hitch(this,function(object){
-						modelUtil.coerce(object,this.schema,{
-							resolve:true,
-							fetch:true,
-							refProperty:this.refProperty,
-							target:this.target,
-							mixin:this.mixin
-						}).then(function(data){
-							d.resolve(data);
-						})
-					}));
-					return d;
-				}
-			}
-			aspect.around(store,"put",function(put){
-				return wrapper(put);
-			});
-			aspect.around(store,"add",function(add){
-				return wrapper(add);
-			});
-			aspect.around(store,"get",function(get){
-				return wrapper(get);
-			});
+					var req = put.call(this,object,options);
+					return this.processModel(object,lang.mixin({clearCache:true},options),req);
+				};
+			}));
+			aspect.around(store,"add",lang.hitch(this,function(add){
+				return function(object,options) {
+					var req = add.call(this,object,options);
+					return this.processModel(object,options,req);
+				};
+			}));
+			aspect.around(store,"get",lang.hitch(this,function(get){
+				return function(object,options) {
+					var req = get.call(this,object,options);
+					return this.processModel(object,options,req);
+				};
+			}));
 			// also mixin constructor!
 			lang.mixin(this,store);
 			if(store._getQuerierFactory('filter') || store._getQuerierFactory('sort')) {
