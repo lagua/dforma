@@ -251,9 +251,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			break;
 			case "switch":
 			break;
-			case "xuri":
-				req = "dbrota/widget/form/Editor";
-			break;
 			default:
 				if(c.required || c.type=="email" || c.type=="phone" || c.readonly) {
 					req = "dijit/form/ValidationTextBox";
@@ -295,12 +292,14 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				cc.cols = c.options[0].controls.length;
 				cc.item = c.options[0];
 				cc.hint = c.description || "";
+				cc.nolabel = true;
 			break;
 			case "textarea":
 				cc.block = true;
 			break;
 			case "list":
 			case "grid":
+				cc.nolabel = true;
 				cc.hint = c.description || "";
 				if(c.columns) {
 					for(var k in c.columns) {
@@ -409,6 +408,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				};
 			break;
 			case "group":
+				cc.nolabel = true;
 				cc.item = c.options[0];
 				cc.hint = c.description || "";
 			break;
@@ -452,8 +452,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			break;
 			case "switch":
 			break;
-			case "xuri":
-			break;
 			default:
 			break;
 		}
@@ -490,7 +488,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	placeWidget:function(cc,co,parent,controls,Widget){
 		if(parent.type=="repeat"){
 			parent.addControl(Widget,cc);
-		} else if(cc.type=="grid" || cc.type=="list" || cc.type=="repeat" || cc.type=="group" || cc.type=="xuri" || cc.type=="hidden" || cc.hidden) {
+		} else if(cc.nolabel || cc.type=="hidden" || cc.hidden) {
 			if(cc.refNode){
 				co.placeAt(cc.refNode,"replace");
 			} else {
