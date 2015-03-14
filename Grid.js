@@ -2,81 +2,34 @@ define([
     "require",
 	"dojo/_base/declare",
 	"dojo/_base/lang",
-	"dojo/_base/array",
 	"dojo/_base/json",
 	"dojo/dom-construct",
 	"dojo/dom-class",
 	"dojo/request",
 	"dojo/currency",
-	"dijit/_WidgetBase",
-	"dijit/_Contained",
-	"dijit/_Container",
-	"dijit/_TemplatedMixin",
-	"dijit/form/_FormValueMixin",
+	"dojo/keys",
 	"dijit/form/Button",
 	"dgrid/OnDemandGrid",
-	"dgrid/Editor",
 	"dgrid/Keyboard",
 	"dgrid/Selection",
+	"dgrid/Editor",
 	"dgrid/extensions/DijitRegistry",
-	"dforma/store/FormData",
-	"dforma/util/i18n",
+	"./_ArrayWidgetBase",
+	"./util/i18n",
 	"mustache/mustache",
-	"rql/js-array"
-],function(req,declare,lang,array,djson,domConstruct,domClass,request,currency,
-		_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin, Button, 
+	"rql/js-array",
+	"dojo/text!./templates/List.html"
+],function(req,
+		declare,lang,djson,domConstruct,domClass,request,currency,dkeys,
+		Button, 
 		OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry,
-		FormData,i18n,mustache,rql){
+		_ArrayWidgetBase,i18n,
+		mustache,
+		rql,
+		templateString){
 	
-	return declare("dforma.Grid",[_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin],{
-		templateString: "<div class=\"dijit dijitReset\" data-dojo-attach-point=\"focusNode\" aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden dformaGridLabel\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><div class=\"dijitReset dijitHidden dformaGridHint\" data-dojo-attach-point=\"hintNode\"></div><div class=\"dformaGridContainer\" data-dojo-attach-point=\"containerNode\"></div><div class=\"dijitReset dijitHidden dformaGridMessage\" data-dojo-attach-point=\"messageNode\"></div></div>",
-		store:null,
-		newdata:false,
-		defaultInstance:{},
-		add:true,
-		edit:true,
-		remove:true,
-		readOnly:false,
+	return declare("dforma.Grid",[_ArrayWidgetBase],{
 		baseClass:"dformaGrid",
-		multiple:true, // needed for setValueAttr array value
-		_setHintAttr: function(/*String*/ content){
-			// summary:
-			//		Hook for set('label', ...) to work.
-			// description:
-			//		Set the label (text) of the button; takes an HTML string.
-			this._set("hint", content);
-			this.hintNode.innerHTML = content;
-			domClass.toggle(this.hintNode,"dijitHidden",!this.hint);
-	 	},
-		_setLabelAttr: function(/*String*/ content){
-			// summary:
-			//		Hook for set('label', ...) to work.
-			// description:
-			//		Set the label (text) of the button; takes an HTML string.
-			this._set("label", content);
-			this["labelNode"].innerHTML = content;
-			domClass.toggle(this.labelNode,"dijitHidden",!this.label);
-	 	},
-	 	_getValueAttr:function(){
-	 		if(!this.grid) return;
-	 		this.grid.save();
-	 		return this.store.fetchSync();
-	 	},
-	 	_handleOnChange:function(data){
-	 		this.inherited(arguments);
-	 		data = data || [];
-	 		// TODO means we have a Memory type store?
-	 		data.forEach(function(obj){
-	 			this.store.put(obj);
-	 		},this);
-	 		this.grid && this.grid.refresh();
-	 	},
-	 	destroyRecursive:function(){
-	 		this.inherited(arguments);
-	 		this.addButton && this.addButton.destroyRecursive();
-	 		this.editButton && this.editButton.destroyRecursive();
-	 		this.removeButton && this.removeButton.destroyRecursive();
-	 	},
 	 	_parseColumns:function(columns) {
 	 		var self = this;
 			for(k in columns){
@@ -109,7 +62,15 @@ define([
 								onChange:lang.hitch(this,function(val){
 									obj[this.key] = val;
 									self.store.put(obj,{noop:true});
-								})
+								}),
+								onBlur:function(){
+									this.onChange(this.value);
+								},
+								onKeyPress:function(e) {
+									if(e.charOrCode==dkeys.ENTER) {
+										this.focusNode.blur();
+									}
+								}
 							});
 							req([mid],function(Widget){
 								var widget = new Widget(props);
@@ -131,7 +92,7 @@ define([
 						}
 						if(this.summary){
 							var totals = self.getTotals();
-							self.grid.set("summary",totals);
+							self.widget.set("summary",totals);
 						}
 						div.innerHTML = value;
 						return div;
@@ -147,7 +108,7 @@ define([
 			for(k in this.columns){
 				if(this.columns[k].summary) totals[k] = 0;
 			}
-			for(var i = data.length; i--;) {
+			for(var i = data.length; i>0; i--) {
 				for(k in totals){
 					totals[k] += data[i][k];
 				}
@@ -161,17 +122,8 @@ define([
 			}
 			return totals;
 		},
-	 	postCreate:function(){
-			var common = i18n.load("dforma","common");
+	 	addWidget:function(){
 			var self = this;
-			if(!this.store) this.store = new FormData({
-				local:true
-			});
-			this.own(
-				this.store.on("add, update, delete", lang.hitch(this,function(event){
-					this._set("value",this.store.fetchSync());
-				}))
-			);
 			var Widget = declare([OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry],{
 	            buildRendering: function () {
 	                this.inherited(arguments);
@@ -256,51 +208,41 @@ define([
 				selectionMode:"single",
 				summary:totals
 			};
-			this.grid = new Widget(gridParams);
-			this.addChild(this.grid);
-			if(this.add){
-				this.addButton = new Button({
-					label:common.buttonAdd,
-					disabled:this.readOnly,
-					"class": "dformaGridAddButton",
-					onClick:function(){
-						self._add();
-					}
-				}).placeAt(this.grid.footerNode);
-			}
+			this.widget = new Widget(gridParams);
+			this.addChild(this.widget);
+	 	},
+		startup:function(){
+			this.inherited(arguments);
+			var common = i18n.load("dforma","common");
 			if(this.edit){
 				this.editButton = new Button({
 					label:common.buttonEditSelected,
 					disabled:true,
-					"class": "dformaGridEditButton",
+					"class": this.baseClass+"EditButton",
 					onClick:function(){
 						self.editSelected();
 					}
-				}).placeAt(this.grid.footerNode);
+				}).placeAt(this.widget.footerNode);
 			}
 			if(this.remove){
 				this.removeButton = new Button({
 					label:common.buttonRemoveSelected,
 					disabled:true,
-					"class": "dformaGridRemoveButton",
+					"class": this.baseClass+"RemoveButton",
 					onClick:function(){
 						self.removeSelected();
 					}
-				}).placeAt(this.grid.footerNode);
+				}).placeAt(this.widget.footerNode);
 			}
-			this.inherited(arguments);
-	 	},
-		startup:function(){
-			this.inherited(arguments);
 			var self = this;
 			var selected = 0;
 			this.own(
-				this.grid.on("dgrid-select", function(e){
+				this.widget.on("dgrid-select", function(e){
 					selected += e.rows.length;
 					if(self.edit && !self.readonly) self.editButton.set("disabled", !selected);
 					if(self.remove) self.removeButton.set("disabled", !selected);
 				}),
-				this.grid.on("dgrid-deselect", function(e){
+				this.widget.on("dgrid-deselect", function(e){
 					selected -= e.rows.length;
 					if(self.edit && !self.readonly) self.editButton.set("disabled", !selected);
 					if(self.remove) self.removeButton.set("disabled", !selected);
@@ -315,7 +257,7 @@ define([
 				var id = data.id;
 				this.onAdd(id);
 				this.newdata = true;
-				this.grid.select(id);
+				this.widget.select(id);
 				this.onEdit(id);
 			}));
 		},
@@ -325,12 +267,12 @@ define([
 		save:function(id,options){
 			this.newdata = false;
 			this.store.put(id,options);
-			this.grid.refresh();
+			this.widget.refresh();
 		},
 		editSelected:function(){
-			if(this.grid.selection.length>1) return; 
-			for(var id in this.grid.selection) {
-				if(this.grid.selection[id]) {
+			if(this.widget.selection.length>1) return; 
+			for(var id in this.widget.selection) {
+				if(this.widget.selection[id]) {
 					this.onEdit(id,{
 						overwrite:true
 					});
@@ -338,10 +280,10 @@ define([
 			}
 		},
 		removeSelected:function(){
-			for(var id in this.grid.selection) {
-				if(this.grid.selection[id]) this.store.remove(id);
+			for(var id in this.widget.selection) {
+				if(this.widget.selection[id]) this.store.remove(id);
 			}
-			this.grid.refresh();
+			this.widget.refresh();
 		}
 	});
 });
