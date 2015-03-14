@@ -24,6 +24,7 @@ define([
 		local:false,
 		persistent:false,
 		mixin:null,
+		cache:null,
 		refProperty:"_ref",
 		getSchema:function(sync){
 			if(this.schema || !this.model) return new Deferred().resolve(this.schema);
@@ -48,6 +49,8 @@ define([
 		},
 		processModel: function(object,options,req) {
 			options = options || {};
+			//modelUtil.clean(object,this.schema);
+			req = req || new Deferred().resolve(object);
 			if(options.noop) return req;
 			return when(req,lang.hitch(this,function(object){
 				return modelUtil.coerce(object,this.schema,{
@@ -56,7 +59,7 @@ define([
 					refProperty:this.refProperty,
 					target:this.target,
 					mixin:this.mixin,
-					clearCache:options.clearCache
+					cache:this.cache
 				});
 			}));
 		},
@@ -72,6 +75,8 @@ define([
 			if(!this.schema){
 				this.getSchema(true);
 			}
+			// used for resolved urls, optimize by overriding
+			this.cache = new Memory();
 			var Store,store = this;
 			if(this.local && this.persistent) {
 				// TODO manage in app config
@@ -99,24 +104,26 @@ define([
 					target:this.target
 				});
 			}
-			aspect.around(store,"put",lang.hitch(this,function(put){
-				return function(object,options) {
-					var req = put.call(this,object,options);
-					return this.processModel(object,lang.mixin({clearCache:true},options),req);
-				};
-			}));
-			aspect.around(store,"add",lang.hitch(this,function(add){
-				return function(object,options) {
-					var req = add.call(this,object,options);
-					return this.processModel(object,options,req);
-				};
-			}));
-			aspect.around(store,"get",lang.hitch(this,function(get){
-				return function(object,options) {
-					var req = get.call(this,object,options);
-					return this.processModel(object,options,req);
-				};
-			}));
+			if(this.schema){
+				aspect.around(store,"put",lang.hitch(this,function(put){
+					return function(object,options) {
+						var req = put.call(this,object,options);
+						return this.processModel(object,options,req);
+					};
+				}));
+				aspect.around(store,"add",lang.hitch(this,function(add){
+					return function(object,options) {
+						var req = add.call(this,object,options);
+						return this.processModel(object,options,req);
+					};
+				}));
+				aspect.around(store,"get",lang.hitch(this,function(get){
+					return function(object,options) {
+						var req = get.call(this,object,options);
+						return this.processModel(object,options,req);
+					};
+				}));
+			}
 			// also mixin constructor!
 			lang.mixin(this,store);
 			if(store._getQuerierFactory('filter') || store._getQuerierFactory('sort')) {
