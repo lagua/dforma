@@ -2,9 +2,11 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/dom-class",
+	"dijit/form/_FormValueWidget",
+	"dijit/form/_FormMixin",
 	"dijit/_Container"
-],function(declare,lang,domClass,_Container){
-return declare("dforma._GroupMixin",[_Container],{
+],function(declare,lang,domClass,_Container,_FormValueWidget,_FormMixin){
+return declare("dforma._GroupMixin",[_Container,_FormValueWidget,_FormMixin],{
 	templateString: "<div class=\"dijit dijitReset\" data-dojo-attach-point=\"focusNode\" aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden ${baseClass}Label\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><div class=\"dijitReset dijitHidden ${baseClass}Hint\" data-dojo-attach-point=\"hintNode\"></div><div data-dojo-attach-point=\"containerNode\"></div><div class=\"dijitReset dijitHidden ${baseClass}Message\" data-dojo-attach-point=\"messageNode\"></div><div class=\"dijitReset dijitHidden ${baseClass}ButtonNode\" data-dojo-attach-point=\"buttonNode\"></div></div>",
 	hint:"",
 	label: "",
