@@ -7,19 +7,18 @@ define([
 	"dojo/sniff",
 	"dijit/_WidgetBase",
 	"dgrid/OnDemandList",
-	"dgrid/Editor",
 	"dgrid/Keyboard",
 	"dgrid/Selection",
+	"dgrid/Editor",
 	"dgrid/extensions/DijitRegistry",
 	"./_ArrayWidgetBase",
-	"./store/FormData",
 	"./util/i18n",
-	"mustache/mustache",
-	"dojo/text!./templates/List.html"
-],function(declare,lang,array,domClass,request,
+	"mustache/mustache"
+],function(declare,lang,array,domClass,request,sniff,
 		_WidgetBase, 
 		OnDemandList, Keyboard, Selection, Editor, DijitRegistry,
-		FormData,i18n,mustache,templateString){
+		_ArrayWidgetBase,i18n,
+		mustache){
 	
 	var isIE = !!sniff("ie");
 	
@@ -54,9 +53,6 @@ define([
 	});
 	
 	return declare("dforma.List",[_ArrayWidgetBase],{
-		add:true,
-		edit:true,
-		remove:true,
 		baseClass:"dformaList",
 	 	attachWidget:function(){
 	 		var self = this;
@@ -72,7 +68,7 @@ define([
 			 			child.on("click",function(){
 			 				var w = registry.getEnclosingWidget(this);
 				 			if(w && w.value) {
-				 				self.list.select(w.value.id);
+				 				self.widget.select(w.value.id);
 				 				self.onEdit(w.value.id);
 				 			}
 				 		})
@@ -85,22 +81,23 @@ define([
 				}
 			});
 			var listParams = {
-				showFooter:(this.add || this.edit),
+				showFooter:this.add,
 				collection:this.store,
 				selectionMode:"single"
 			};
-			this.list = new Widget(listParams);
-			this.addChild(this.list);
+			this.widget = new Widget(listParams);
+			this.addChild(this.widget);
+			this.addButton && this.addButton.placeAt(this.widget.footerNode);
 	 	},
 		onAdd:function(id){
 			// override to set initial data
 		},
-		add:function(){
+		addItem:function(){
 			this.store.add(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(data){
 				var id = data.id;
 				this.onAdd(id);
 				this.newdata = true;
-				this.list.select(id);
+				this.widget.select(id);
 				this.onEdit(id);
 			}));
 		},
@@ -110,12 +107,12 @@ define([
 		save:function(obj,options){
 			this.newdata = false;
 			this.store.put(obj,options);
-			this.list.refresh();
+			this.widget.refresh();
 		},
 		editSelected:function(){
-			if(this.list.selection.length>1) return; 
-			for(var id in this.list.selection) {
-				if(this.list.selection[id]) {
+			if(this.widget.selection.length>1) return; 
+			for(var id in this.widget.selection) {
+				if(this.widget.selection[id]) {
 					this.onEdit(id,{
 						overwrite:true
 					});
@@ -123,10 +120,10 @@ define([
 			}
 		},
 		removeSelected:function(){
-			for(var id in this.list.selection) {
-				if(this.list.selection[id]) this.store.remove(id);
+			for(var id in this.widget.selection) {
+				if(this.widget.selection[id]) this.store.remove(id);
 			}
-			this.list.refresh();
+			this.widget.refresh();
 		}
 	});
 });

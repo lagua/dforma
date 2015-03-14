@@ -17,16 +17,14 @@ define([
 	"./_ArrayWidgetBase",
 	"./util/i18n",
 	"mustache/mustache",
-	"rql/js-array",
-	"dojo/text!./templates/List.html"
+	"rql/js-array"
 ],function(req,
 		declare,lang,djson,domConstruct,domClass,request,currency,dkeys,
 		Button, 
 		OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry,
 		_ArrayWidgetBase,i18n,
 		mustache,
-		rql,
-		templateString){
+		rql){
 	
 	return declare("dforma.Grid",[_ArrayWidgetBase],{
 		baseClass:"dformaGrid",
@@ -83,7 +81,7 @@ define([
 						} else if(this.tpl){
 							value = mustache.render(this.tpl,obj);
 						} else if(this.template) {
-							request(self.templatePath+"_column_"+this.key+self.templateExtension).then(lang.hitch(this,function(tpl){
+							request(this.templatePath+"_column_"+this.key+this.templateExtension).then(lang.hitch(this,function(tpl){
 								this.tpl = tpl;
 								div.innerHTML = mustache.render(tpl,obj);
 							}));
@@ -122,8 +120,7 @@ define([
 			}
 			return totals;
 		},
-	 	addWidget:function(){
-			var self = this;
+	 	attachWidget:function(){
 			var Widget = declare([OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry],{
 	            buildRendering: function () {
 	                this.inherited(arguments);
@@ -210,8 +207,24 @@ define([
 			};
 			this.widget = new Widget(gridParams);
 			this.addChild(this.widget);
+			this.addButton && this.addButton.placeAt(this.widget.footerNode);
+			this.editButton && this.editButton.placeAt(this.widget.footerNode);
+			this.removeButton && this.removeButton.placeAt(this.widget.footerNode);
+			var selected = 0;
+			this.own(
+				this.widget.on("dgrid-select", lang.hitch(this,function(e){
+					selected += e.rows.length;
+					if(this.edit && !this.readonly) this.editButton.set("disabled", !selected);
+					if(this.remove) this.removeButton.set("disabled", !selected);
+				})),
+				this.widget.on("dgrid-deselect", lang.hitch(this,function(e){
+					selected -= e.rows.length;
+					if(this.edit && !this.readonly) this.editButton.set("disabled", !selected);
+					if(this.remove) this.removeButton.set("disabled", !selected);
+				}))
+			);
 	 	},
-		startup:function(){
+		postCreate:function(){
 			this.inherited(arguments);
 			var common = i18n.load("dforma","common");
 			if(this.edit){
@@ -219,40 +232,26 @@ define([
 					label:common.buttonEditSelected,
 					disabled:true,
 					"class": this.baseClass+"EditButton",
-					onClick:function(){
-						self.editSelected();
-					}
-				}).placeAt(this.widget.footerNode);
+					onClick:lang.hitch(this,function(){
+						this.editSelected();
+					})
+				});
 			}
 			if(this.remove){
 				this.removeButton = new Button({
 					label:common.buttonRemoveSelected,
 					disabled:true,
 					"class": this.baseClass+"RemoveButton",
-					onClick:function(){
-						self.removeSelected();
-					}
-				}).placeAt(this.widget.footerNode);
+					onClick:lang.hitch(this,function(){
+						this.removeSelected();
+					})
+				});
 			}
-			var self = this;
-			var selected = 0;
-			this.own(
-				this.widget.on("dgrid-select", function(e){
-					selected += e.rows.length;
-					if(self.edit && !self.readonly) self.editButton.set("disabled", !selected);
-					if(self.remove) self.removeButton.set("disabled", !selected);
-				}),
-				this.widget.on("dgrid-deselect", function(e){
-					selected -= e.rows.length;
-					if(self.edit && !self.readonly) self.editButton.set("disabled", !selected);
-					if(self.remove) self.removeButton.set("disabled", !selected);
-				})
-			);
 		},
 		onAdd:function(id){
 			// override to set initial data
 		},
-		_add:function(){
+		addItem:function(){
 			this.store.add(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(data){
 				var id = data.id;
 				this.onAdd(id);

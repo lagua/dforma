@@ -6,21 +6,19 @@ define([
 	"dojo/_base/lang",
 	"dojo/_base/array",
 	"dojo/dom-construct",
-	"dgrid/OnDemandGrid",
-	"dgrid/extensions/OnDemandGrid",
+	"dgrid/OnDemandList",
+	"dgrid/extensions/DijitRegistry",
 	"./_ArrayWidgetBase",
 	"./Group",
 	"./util/i18n",
-	"dijit/form/Button",
-	"dojo/text!./templates/List.html"
+	"dijit/form/Button"
 ],function(declare,lang,array,domConstruct,
-		OnDemandGrid,OnDemandGrid,
-		Group,_ArrayWidgetBase,i18n,
-		Button,templateString){
+		OnDemandList,DijitRegistry,
+		_ArrayWidgetBase,Group,i18n,
+		Button){
 	
-	return declare("dforma.Repeat",[],{
+	return declare("dforma.Repeat",[_ArrayWidgetBase],{
 		baseClass:"dformaRepeat",
-		templateString: templateString,
 		_controls:null,
 		postCreate:function(){
 			this._controls = [];
@@ -38,37 +36,30 @@ define([
 	 	},
 	 	attachWidget:function(){
 	 		var self = this;
-	 		var Widget = declare([OnDemandGrid, DijitRegistry]{
+	 		var Widget = declare([OnDemandList, DijitRegistry],{
 				renderRow:lang.hitch(this,function(object, options){
-			 		var child = new ListItem({
-			 			value:object,
-			 			writer:this.writer,
-			 			tokens:this.tokens,
-			 			template:this.template
-			 		});
-			 		child.own(
-			 			child.on("click",function(){
-			 				var w = registry.getEnclosingWidget(this);
-				 			if(w && w.value) {
-				 				self.list.select(w.value.id);
-				 				self.onEdit(w.value.id);
-				 			}
-				 		})
-			 		);
-			 		child.startup();
-			 		return child.domNode;
+			 		var row = new Group();
+			 		array.forEach(this._controls,function(_){
+						// TODO add _setValueAttr
+						_.params.row = row;
+						var widget = new _.Widget(_.params);
+						row.addChild(widget);
+					},this);
+			 		row.startup();
+			 		return row.domNode;
 				}),
 				removeRow:function(rowElement){
 					this.inherited(arguments);
 				}
 			});
 			var listParams = {
-				showFooter:(this.add || this.edit),
+				showFooter:this.add,
 				collection:this.store,
 				selectionMode:"single"
 			};
-			this.list = new Widget(listParams);
-			this.addChild(this.list);
+			this.widget = new Widget(listParams);
+			this.addChild(this.widget);
+			this.addButton && this.addButton.placeAt(this.widget.footerNode);
 	 	},
 	 	cloneRow:function(){
 	 		// add new row
