@@ -22,7 +22,7 @@ define([
 		},
 		coerce:function(data,schema,options) {
 			options = options || {};
-			data = data || {};
+			data = lang.clone(data || {});
 			if(!schema || !schema.properties) return new Deferred().resolve(data);
 			var proms = {};
 			// summary:
@@ -57,19 +57,45 @@ define([
 				return new Deferred().resolve(data);
 			}
 		},
+		clean:function(data,schema,options){
+			// remove linked
+			if(!schema || !schema.properties) return;
+			options = options || {};
+			var links = schema.links || [];
+			links.forEach(function(link){
+				if(!data[link.rel]) return;
+				if(link.resolution=="lazy"){
+					delete data[link.rel];
+				}
+			});
+			for(var k in schema.properties){
+				var p = schema.properties[k];
+				if(p.type=="array" && data[k] && data[k] instanceof Array && p.items){
+					if(p.items instanceof Array){
+						// iterate p.items
+						for(var i=0;i<p.items.length;i++){
+							modelUtil.clean(data[k][i],p.items[i],options);
+						}
+					} else {
+						for(var i=0;i<data[k].length;i++){
+							modelUtil.coerce(data[k][i],p.items,options);
+						}
+					}
+				}
+			}
+		},
 		resolve:function(data,schema,options){
 			options = options || {};
 			var refattr = options.refProperty || "$ref";
 			var exclude = options.exclude;
-			if(schema.links instanceof Array) {
-				schema.links.forEach(function(link){
-					if(!data[link.rel]) return;
-					if(link.resolution=="lazy"){
-						data[link.rel] = {};
-						data[link.rel][refattr] = modelUtil.substitute(link.href,data,exclude);
-					}
-				});
-			}
+			var links = schema.links || [];
+			links.forEach(function(link){
+				if(!data[link.rel]) return;
+				if(link.resolution=="lazy"){
+					data[link.rel] = {};
+					data[link.rel][refattr] = modelUtil.substitute(link.href,data,exclude);
+				}
+			});
 			if(options.fetch){
 				return modelUtil.fetch(data,schema,options);
 			} else {
@@ -81,7 +107,7 @@ define([
 			options = options || {};
 			var refattr = options.refProperty || "$ref";
 			var target = options.target;
-			var cached = options.cached || {};
+			var cache = options.cache;
 			// allow for external properties, but won't be used when property isn't json-ref
 			var resolveProps = options.resolveProperties ? [].concat(options.resolveProperties) : [];
 			var toResolve = {};
@@ -91,6 +117,7 @@ define([
 					resolveProps.push(k);
 				}
 			}
+			var cacheref = {};
 			resolveProps.forEach(function(key){
 				var href = data[key] ? data[key][refattr] : null;
 				if(href) {
@@ -108,18 +135,19 @@ define([
 					}
 					// absolute URI
 					href = href.charAt(0) == "/" ? href : target + href;
-					if(cached[key]){
-						console.warn("loading from cache",href,cached[key])
-					}
-					toResolve[key] = cached[key] ? new Deferred().resolve(cached[key]) : request(href,args);
+					cacheref[href] = key;
+					var cached = cache ? cache.getSync(href) : null;
+					toResolve[href] = cached ? new Deferred().resolve(cached.value) : request(href,args);
 				}
 			});
 			var proms = {};
 			all(toResolve).then(function(resolved){
 				var obj = {};
-				for(var k in resolved){
-					var value = resolved[k];
-					cached[k] = value;
+				for(var href in resolved){
+					var k = cacheref[href];
+					delete cacheref[href];
+					var value = resolved[href];
+					cache && cache.putSync({id:href,key:k,value:value});
 					var p = schema.properties[k];
 					if(p.type=="array" && p.items){
 						proms[k] = [];
