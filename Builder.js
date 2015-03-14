@@ -8,7 +8,6 @@ define([
 	"dojo/when",
 	"dojo/promise/all",
 	"dojo/keys",
-	"dojo/number",
 	"dojo/dom",
 	"dojo/dom-construct",
 	"dojo/dom-class",
@@ -18,8 +17,8 @@ define([
 	"./_GroupMixin",
 	"./Group",
 	"./Label",
+	"./Input",
 	"./jsonschema",
-	"./util/model",
 	"./util/i18n",
 	"dijit/Dialog",
 	"dijit/form/Form",
@@ -29,16 +28,14 @@ define([
 	"dijit/form/ComboBox",
 	"dijit/form/TextBox",
 	"dijit/registry",
-	"./Input",
-	"dforma/util/string/toProperCase",
-	"dforma/validate/web",
-	"dforma/validate/us",
+	"./util/string/toProperCase",
+	"./validate/web",
+	"./validate/us",
 	"dojo/i18n!./nls/common"
 ],function(require,declare,lang,array,aspect,Deferred,when,all,
-		keys,number,dom,domConstruct,domClass,on,request,
-		FormData,_GroupMixin,Group,Label,jsonschema,modelUtil,i18n,Dialog,Form,
-		_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,registry,
-		Input){
+		keys,dom,domConstruct,domClass,on,request,
+		FormData,_GroupMixin,Group,Label,Input,jsonschema,i18n,Dialog,Form,
+		_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,registry){
 
 var common = i18n.load("dforma","common");
 
@@ -217,8 +214,10 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				req = "dijit/form/CurrencyTextBox";
 			break;
 			case "grid":
-			case "list":
 				req = "dforma/Grid";
+			break;
+			case "list":
+				req = "dforma/List";
 			break;
 			case "multiselect":
 			case "multiselect_freekey":
@@ -293,6 +292,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				cc.item = c.options[0];
 				cc.hint = c.description || "";
 				cc.nolabel = true;
+				if(!cc.store) {
+					cc.store = new FormData({
+						local:true,
+						target:parent && parent.store ? parent.store.target : null,
+						schema:cc.schema.items
+					});
+				}
 			break;
 			case "textarea":
 				cc.block = true;
@@ -301,23 +307,12 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			case "grid":
 				cc.nolabel = true;
 				cc.hint = c.description || "";
-				if(c.columns) {
-					for(var k in c.columns) {
-						if(c.columns[k].format=="currency") {
-							cc.columns[k].get = function(object){
-				                return number.format(object[k], {
-				                	places: 2
-				                });
-				            }
-						}
-					}
-				}
 				// create bound subform
 				if(!cc.store) {
 					cc.store = new FormData({
 						local:true,
 						target:parent && parent.store ? parent.store.target : null,
-						schema:cc.schema.items[0]
+						schema:cc.schema.items
 					});
 				}
 				cc.subform = new parent.BuilderClass({
@@ -326,7 +321,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					cancellable:true,
 					cancel: function(){
 						try {
-							domClass.toggle(this.parentform.domNode,"dformaSubformActive",false);
+							domClass.toggle(this.parent.domNode,"dformaSubformActive",false);
 							domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
 							domClass.toggle(parent.hintNode,"dformaSubformActive",false);
 							domClass.toggle(this.domNode,"dijitHidden",true);
@@ -336,13 +331,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						}
 						if(!this.data) return;
 						// cancelled new?
-						if(this.data && this.data.id && this.parentform.newdata) this.parentform.store.remove(this.data.id);
+						if(this.data && this.data.id && this.parent.newdata) this.parent.store.remove(this.data.id);
 						this.data.id = null;
-						this.parentform.newdata = false;
+						this.parent.newdata = false;
 					},
 					submit: function(){
 						if(!this.validate()) return;
-						domClass.toggle(this.parentform.domNode,"dformaSubformActive",false);
+						domClass.toggle(this.parent.domNode,"dformaSubformActive",false);
 						domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
 						domClass.toggle(parent.hintNode,"dformaSubformActive",false);
 						domClass.toggle(this.domNode,"dijitHidden",true);
@@ -356,7 +351,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 								data[k] = data[k][0];
 							}
 						});
-						this.parentform.save(data,{
+						this.parent.save(data,{
 							overwrite:true
 						});
 						return true;
@@ -383,15 +378,15 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						domClass.toggle(parent.buttonNode,"dformaSubformActive",true);
 						domClass.toggle(parent.hintNode,"dformaSubformActive",true);
 						domClass.toggle(this.subform.domNode,"dijitHidden",false);
-						var items = c.schema.items;
-						if(!items || !(items instanceof Array) || !items.length) {
-							throw new Error("Items where not found on the schema for "+c.name);
+						var items = this.schema.items;
+						if(!items) {
+							throw new Error("Items were not found on the schema for "+this.name);
 						}
-						var controls = c.controller ? [jsonschema.schemasToController(items,data,{
+						var controls = this.controller ? [jsonschema.schemasToController([items],data,{
 							selectFirst:true,
-							controller:c.controller,
+							controller:this.controller,
 							controlmap:parent.controlmap
-						})] : jsonschema.schemaToControls(items[0],data,{
+						})] : jsonschema.schemaToControls(items,data,{
 							controlmap:parent.controlmap,
 							uri:this.store.target
 						});
@@ -456,16 +451,19 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			break;
 		}
 		co = new Widget(cc);
-		if(cc.type=="list" || cc.type=="grid"){
+		if(cc.type=="list" || cc.type=="grid" || cc.type=="repeat"){
 			var _lh = aspect.after(co,"startup",lang.hitch(co,function(){
 				_lh.remove();
 				var items = this.schema.items;
-				items = items ? (items instanceof Array ? items[0] : items) : {};
-				if(items["default"]){
-					this.store.put(items["default"]).then(lang.hitch(this,function(obj){
-						console.warn(obj)
-						this.onEdit && this.onEdit(obj.id);
-					}));
+				var data = this.store.fetchSync();
+				if(data.length) {
+					this.onEdit && this.onEdit(data[0].id);
+				} else {
+					if(items["default"]){
+						this.store.put(items["default"]).then(lang.hitch(this,function(obj){
+							this.onEdit && this.onEdit(obj.id);
+						}));
+					}
 				}
 			}));
 		} else if(cc.type=="select") {
@@ -547,14 +545,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 					onChange:function(val){
 						if(val) co.addOption({value:val,label:val,selected:true});
 						this.set("value","");
-					},
-					onBlur:function(){
-						this.onChange(this.value);
-					},
-					onKeyPress:function(e) {
-						if(e.charOrCode==keys.ENTER) {
-							this.focusNode.blur();
-						}
 					}
 				}));
 			}
@@ -616,6 +606,14 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 						if(parent && typeof parent.rebuild=="function") parent.rebuild();
 					}
 				},
+				onBlur:function(){
+					this.onChange(this.value);
+				},
+				onKeyPress:function(e) {
+					if(e.charOrCode==keys.ENTER) {
+						this.focusNode.blur();
+					}
+				},
 				getParent:function(){
 					var parent = registry.getEnclosingWidget(this.domNode.parentNode);
 					if(parent instanceof Label){
@@ -649,12 +647,13 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			self.placeWidget(cc,co,parent,controls,Widget);
 			// special cases
 			if(cc.type=="grid" || cc.type=="list") {
-				cc.subform.parentform = co;
+				cc.subform.parent = co;
 				parent.addChild(cc.subform);
 			} else if(cc.type=="repeat" || cc.type=="group"){
 				array.forEach(cc.options,function(o){
 					if(o.controls) {
 						preload(o.controls).then(function(){
+							console.warn(o)
 							array.forEach(o.controls,function(c){
 								render(c,co);
 							});
@@ -960,13 +959,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			this._onChangeDelayTimer = this.defer(function(){
 				delete this._onChangeDelayTimer;
 				var newVal = this.get("value");
-				console.warn(this.id,newVal)
-				modelUtil.coerce(newVal,this.store.schema,{
-					resolve:true,
-					fetch:true,
-					refProperty:this.store.refProperty,
-					target:this.store.target
-				}).then(lang.hitch(this,function(obj){
+				this.store.processModel.call(this.store,newVal).then(lang.hitch(this,function(obj){
 					this.selectedId = obj.id;
 					this._processChildren(obj);
 					this._set("value", obj);
@@ -977,13 +970,6 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 	startup:function(){
 		if(this._started) return;
 		config = this[this.configProperty];
-		if(!this.store){
-			this.store = new FormData({
-				local:true,
-				target:this.target,
-				model:this.model
-			});
-		}
 		this.submitButton = new Button();
 		if(this.cancellable) this.cancelButton = new Button();
 		this.inherited(arguments);
