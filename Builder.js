@@ -459,7 +459,7 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 				if(data.length) {
 					this.onEdit && this.onEdit(data[0].id);
 				} else {
-					if(items["default"]){
+					if(items && items["default"]){
 						this.store.put(items["default"]).then(lang.hitch(this,function(obj){
 							this.onEdit && this.onEdit(obj.id);
 						}));
