@@ -5,11 +5,9 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/array",
 	"dojo/_base/lang",
-	"./_GroupMixin",
-	"dijit/form/_FormValueWidget",
-	"dijit/form/_FormMixin"
-],function(declare,array,lang,_GroupMixin, _FormValueWidget, _FormMixin){
-return declare("dforma.Group",[_FormValueWidget,_GroupMixin, _FormMixin],{
+	"./_GroupBase"
+],function(declare,array,lang,_GroupBase){
+return declare("dforma.Group",[_GroupBase],{
 	name:"",
 	baseClass:"dformaGroup",
 	value:null, // in case of object
