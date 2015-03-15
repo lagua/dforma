@@ -4,11 +4,12 @@ define([
         "dojo/_base/array",
         "dojo/aspect",
         "dojo/dom-construct",
-        "dijit/form/_FormValueWidget",
+        "dijit/_Container",
+        "./_FormValueWidget",
         "dijit/form/RadioButton"
-    ], function (declare, lang, array, aspect, domConstruct, _FormValueWidget,RadioButton) {
+    ], function (declare, lang, array, aspect, domConstruct, _Container,_FormValueWidget,RadioButton) {
 
-    return declare("dforma.RadioGroup",[_FormValueWidget], {
+    return declare("dforma.RadioGroup",[_FormValueWidget,_Container], {
     	options:null,
     	labelAttr:"label",
     	baseClass:"dformaRadioGroup",
@@ -17,7 +18,8 @@ define([
 			array.forEach(this.options,function(_,i){
     			var rb = new RadioButton(lang.mixin(_,{
     				checked:this.value ? _.id==this.value : i===0
-    			})).placeAt(this.containerNode);
+    			}));
+    			this.addChild(rb);
     			var self = this;
     			this.own(
     				aspect.after(rb,"onClick",lang.hitch(rb,function(){
@@ -37,7 +39,7 @@ define([
     		});
 			this.inherited(arguments);
 		},
-    	buildRendering:function(){
+    	postCreate:function(){
     		this.inherited(arguments);
     		if(this.store && !this.options) {
 				this.store.query(null,{
