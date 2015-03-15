@@ -92,7 +92,7 @@ define([
 				}
 				if(type=="list" || type=="grid") {
 					c.columns = prop.columns;
-					c.controller = prop.controller;
+					//c.controller = prop.controller;
 				}
 				//if(type=="select" || type=="radiogroup") {
 				if(prop.hasOwnProperty("enum")) {
@@ -115,10 +115,10 @@ define([
 					var items = jsonschema.schemasToController([{
 						properties:type=="repeat"? prop.items.properties : prop.properties
 					}],null,{
-						controller:{
-							type:type,
-							name:c.name
-						}
+						//controller:{
+						//	type:type,
+						//	name:c.name
+						//}
 					});
 					c = lang.mixin(c,items);
 				}
