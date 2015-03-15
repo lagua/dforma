@@ -20,9 +20,9 @@ define([
 	"./Input",
 	"./jsonschema",
 	"./util/i18n",
+	"dijit/_Container",
 	"dijit/Dialog",
 	"dijit/form/Form",
-	"dijit/form/_FormValueWidget",
 	"dijit/form/Button",
 	"dijit/form/FilteringSelect",
 	"dijit/form/ComboBox",
@@ -34,8 +34,8 @@ define([
 	"dojo/i18n!./nls/common"
 ],function(require,declare,lang,array,aspect,Deferred,when,all,
 		keys,dom,domConstruct,domClass,on,request,
-		FormData,_GroupMixin,Group,Label,Input,jsonschema,i18n,Dialog,Form,
-		_FormValueWidget,Button,FilteringSelect,ComboBox,TextBox,registry){
+		FormData,_GroupMixin,Group,Label,Input,jsonschema,i18n,
+		_Container,Dialog,Form,Button,FilteringSelect,ComboBox,TextBox,registry){
 
 var common = i18n.load("dforma","common");
 
@@ -54,7 +54,7 @@ function substitute(linkTemplate, instance, exclude){
 
 var resolveCache = {};
 
-var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
+var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 	baseClass:"dformaBuilder",
 	templateString: "<div aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden ${baseClass}Label\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><form class=\"dformaBuilderForm\" data-dojo-attach-point='containerNode' data-dojo-attach-event='onreset:_onReset,onsubmit:_onSubmit' ${!nameAttrSetting}></form><div class=\"dijitReset dijitHidden ${baseClass}Hint\" data-dojo-attach-point=\"hintNode\"></div><div class=\"dijitReset dijitHidden ${baseClass}Message\" data-dojo-attach-point=\"messageNode\"></div><div class=\"dijitReset ${baseClass}ButtonNode\" data-dojo-attach-point=\"buttonNode\"></div></div>",
 	controller:null,
@@ -451,8 +451,8 @@ var Builder = declare("dforma.Builder",[_GroupMixin,Form],{
 			break;
 		}
 		co = new Widget(cc);
-		if(cc.type=="list" || cc.type=="grid" || cc.type=="repeat"){
-			var _lh = aspect.after(co,"startup",lang.hitch(co,function(){
+		if(cc.type=="list" || cc.type=="grid"){
+			var _lh = aspect.after(co.subform,"startup",lang.hitch(co,function(){
 				_lh.remove();
 				var items = this.schema.items;
 				var data = this.store.fetchSync();
