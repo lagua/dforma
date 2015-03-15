@@ -5,10 +5,14 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/array",
 	"dojo/_base/lang",
-	"./_GroupBase"
-],function(declare,array,lang,_GroupBase){
-return declare("dforma.Group",[_GroupBase],{
+	"./_FormValueWidget",
+	"./_FormMixin",
+	"dijit/_Container",
+	"./_GroupMixin"
+],function(declare,array,lang,_FormValueWidget,_FormMixin,_GroupMixin){
+return declare("dforma.Group",[_GroupMixin],{
 	name:"",
+	templateString: "<div class=\"dijit dijitReset\" data-dojo-attach-point=\"focusNode\" aria-labelledby=\"${id}_label\"><div class=\"dijitReset dijitHidden ${baseClass}Label\" data-dojo-attach-point=\"labelNode\" id=\"${id}_label\"></div><div class=\"dijitReset dijitHidden ${baseClass}Hint\" data-dojo-attach-point=\"hintNode\"></div><div data-dojo-attach-point=\"containerNode\"></div><div class=\"dijitReset dijitHidden ${baseClass}Message\" data-dojo-attach-point=\"messageNode\"></div><div class=\"dijitReset dijitHidden ${baseClass}ButtonNode\" data-dojo-attach-point=\"buttonNode\"></div></div>",
 	baseClass:"dformaGroup",
 	value:null, // in case of object
 	_getValueAttr: function(){
