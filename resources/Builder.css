@@ -60,7 +60,18 @@
 .dformaBuilderForm .dijitTextArea {
 	width:400px;
 }
-.dformaBuilderForm .dgrid {
+.dformaGrid .dgrid {
 	width:500px;
 	height:200px;
+}
+.dformaRepeat .dgrid {
+    height:auto;
+}
+.dformaRepeat .dformaGroupButtonNode,.dformaRepeat .dformaGroupContainer {
+	display:inline;
+}
+.dformaRepeat .dgrid-scroller {
+    margin:0;
+    overflow: hidden;
+    position: relative;
 }
