@@ -2,83 +2,44 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/_base/array",
+	"dojo/dom-construct",
 	"dojo/dom-class",
 	"dojo/request",
 	"dojo/sniff",
-	"dijit/_WidgetBase",
 	"dgrid/OnDemandList",
 	"dgrid/Keyboard",
 	"dgrid/Selection",
-	"dgrid/Editor",
 	"dgrid/extensions/DijitRegistry",
 	"./_ArrayWidgetBase",
 	"./util/i18n",
 	"mustache/mustache"
-],function(declare,lang,array,domClass,request,sniff,
-		_WidgetBase, 
-		OnDemandList, Keyboard, Selection, Editor, DijitRegistry,
+],function(declare,lang,array,domConstruct,domClass,request,sniff,
+		OnDemandList, Keyboard, Selection, DijitRegistry,
 		_ArrayWidgetBase,i18n,
 		mustache){
 	
 	var isIE = !!sniff("ie");
 	
-	var ListItem = declare("dforma.ListItem",[_WidgetBase],{
-		template:"",
-		tokens:null,
-		value:null,
-		writer:null,
-		startup:function(){
-			if(this._started) return;
-			this._createContext();
-			this.render();
-		},
-		_setValueAttr:function(value){
-			this.value = value;
-			this._createContext();
-			this.render();
-		},
-		_createContext:function(obj){
-			this.context = new mustache.Context(this.value);
-		},
-		render:function(){
-			if(!this.writer) return;
-			this.domNode.innerHTML = this.writer.renderTokens(this.tokens,this.context,{},this.template);
-			// IE style workaround
-			if(isIE) {
-				query("*[data-style]",this.domNode).forEach(function(_){
-					domAttr.set(_,"style",domAttr.get(_,"data-style"));
-				});
-			}
-		}
-	});
-	
 	return declare("dforma.List",[_ArrayWidgetBase],{
 		baseClass:"dformaList",
 	 	attachWidget:function(){
 	 		var self = this;
-	 		var Widget = declare([OnDemandList, Keyboard, Selection, Editor, DijitRegistry],{
+	 		// FIXME use identity
+	 		var Widget = declare([OnDemandList, Keyboard, Selection, DijitRegistry],{
 				renderRow:lang.hitch(this,function(object, options){
-			 		var child = new ListItem({
-			 			value:object,
-			 			writer:this.writer,
-			 			tokens:this.tokens,
-			 			template:this.template
-			 		});
-			 		child.own(
-			 			child.on("click",function(){
-			 				var w = registry.getEnclosingWidget(this);
-				 			if(w && w.value) {
-				 				self.widget.select(w.value.id);
-				 				self.onEdit(w.value.id);
-				 			}
-				 		})
-			 		);
-			 		child.startup();
-			 		return child.domNode;
-				}),
-				removeRow:function(rowElement){
-					this.inherited(arguments);
-				}
+					if(!this.writer) return;
+					var context = new mustache.Context(object);
+					var div = domConstruct.create("div",{
+						innerHTML:this.writer.renderTokens(this.tokens,context,{},this.template)
+					});
+					// IE style workaround
+					if(isIE) {
+						query("*[data-style]",div).forEach(function(_){
+							domAttr.set(_,"style",domAttr.get(_,"data-style"));
+						});
+					}
+			 		return div;
+				})
 			});
 			var listParams = {
 				showFooter:this.add,
