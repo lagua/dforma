@@ -52,7 +52,12 @@ define([
 			domClass.toggle(this.labelNode,"dijitHidden",!this.label);
 	 	},
 	 	_getValueAttr:function(){
-	 		return this.store.fetchSync();
+	 		var idProp = this.store.idProperty || "id";
+	 		return this.store.fetchSync().map(function(_){
+	 			var obj = lang.mixin({},_);
+	 			delete obj[idProp];
+	 			return obj;
+	 		});
 	 	},
 	 	_handleOnChange:function(data){
 	 		this.inherited(arguments);
@@ -64,17 +69,18 @@ define([
 	 	},
 	 	destroyRecursive:function(){
 	 		this.inherited(arguments);
-	 		this.addButton && this.addButton.destroyRecursive();
-	 		this.editButton && this.editButton.destroyRecursive();
-	 		this.removeButton && this.removeButton.destroyRecursive();
+	 		this.addButton && this.addButton.destroy();
+	 		this.editButton && this.editButton.destroy();
+	 		this.removeButton && this.removeButton.destroy();
 	 	},
 	 	postCreate:function(){
 			var self = this;
 			if(!this.store) this.store = new FormData({
 				local:true
 			});
+			if(!this.schema) this.schema = {};
 			var common = i18n.load("dforma","common");
-			if(this.add){
+			if((!this.schema.hasOwnProperty("add") && this.add) || this.schema.add) {
 				this.addButton = new Button({
 					label:common.buttonAdd+(this.label ? " "+this.label : ""),
 					disabled:this.readOnly,
