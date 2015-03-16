@@ -8,6 +8,18 @@ define([
 	var jsonschema = lang.getObject("dforma.jsonschema", true);
 	var controlmap = JSON.parse(controlmapjson);
 	lang.mixin(jsonschema,{
+		substitute:function(linkTemplate, instance, exclude){
+			// from https://github.com/kriszyp/json-schema/blob/master/lib/links.js#L41
+			exclude = exclude || [];
+			return linkTemplate.replace(/\{([^\}]*)\}/g, function(t, property){
+				var value = exclude.indexOf(property)>-1 ? "*" : instance[decodeURIComponent(property)];
+				if(value instanceof Array){
+					// the value is an array, it should produce a URI like /Table/(4,5,8) and store.get() should handle that as an array of values
+					return '(' + value.join(',') + ')';
+				}
+				return value;
+			});
+		},
 		schemasToController:function(schemaList,data,options){
 			if(!options) options = {};
 			var control = lang.mixin({
@@ -50,6 +62,7 @@ define([
 			return control;
 		},
 		schemaToControls:function(schema,data,options){
+			data = data || {};
 			options = options || {};
 			var cmap = options.controlmap || controlmap;
 			var properties = schema.properties;
@@ -84,6 +97,12 @@ define([
 				if(prop.hasOwnProperty("invalidMessage")) {
 					c.invalidMessage = prop.invalidMessage;
 				}
+				// set data
+				if(data.hasOwnProperty(k) && data[k]!==undefined) {
+					c.value = data[k];
+				} else if(prop.hasOwnProperty("default")) {
+					c.value = prop["default"];
+				}
 				// widget-type-specific
 				if(prop.hasOwnProperty("minimum") || prop.hasOwnProperty("maximum")) {
 					c.constraints = {};
@@ -112,15 +131,7 @@ define([
 					c.isValid = prop["enum"];
 				}
 				if(type=="repeat" || type=="group"){
-					var items = jsonschema.schemasToController([{
-						properties:type=="repeat"? prop.items.properties : prop.properties
-					}],null,{
-						//controller:{
-						//	type:type,
-						//	name:c.name
-						//}
-					});
-					c = lang.mixin(c,items);
+					c.controls = jsonschema.schemaToControls(type=="repeat"? prop.items : prop, c.value);
 				}
 				if(prop.rel) {
 					var key = prop.rel;
@@ -175,11 +186,6 @@ define([
 				if(options.hasOwnProperty("delete") && options["delete"]===true) c["delete"] = true;
 				if(options.hasOwnProperty("descriptionProperty")) {
 					c.description = prop[options.descriptionProperty];
-				}
-				if(data && data.hasOwnProperty(k) && data[k]!==undefined) {
-					c.value = data[k];
-				} else if(prop.hasOwnProperty("default")) {
-					c.value = prop["default"];
 				}
 				controls.push(c);
 			}
