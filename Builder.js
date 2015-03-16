@@ -39,19 +39,6 @@ define([
 
 var common = i18n.load("dforma","common");
 
-// from https://github.com/kriszyp/json-schema/blob/master/lib/links.js#L41
-function substitute(linkTemplate, instance, exclude){
-	exclude = exclude || [];
-	return linkTemplate.replace(/\{([^\}]*)\}/g, function(t, property){
-		var value = exclude.indexOf(property)>-1 ? "*" : instance[decodeURIComponent(property)];
-		if(value instanceof Array){
-			// the value is an array, it should produce a URI like /Table/(4,5,8) and store.get() should handle that as an array of values
-			return '(' + value.join(',') + ')';
-		}
-		return value;
-	});
-};
-
 var resolveCache = {};
 
 var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
@@ -288,8 +275,6 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 				}
 			break;
 			case "repeat":
-				cc.cols = c.options[0].controls.length;
-				cc.item = c.options[0];
 				cc.hint = c.description || "";
 				cc.nolabel = true;
 				if(!cc.store) {
@@ -650,15 +635,10 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 				cc.subform.parent = co;
 				parent.addChild(cc.subform);
 			} else if(cc.type=="repeat" || cc.type=="group"){
-				array.forEach(cc.options,function(o){
-					if(o.controls) {
-						preload(o.controls).then(function(){
-							console.warn(o)
-							array.forEach(o.controls,function(c){
-								render(c,co);
-							});
-						});
-					}
+				preload(cc.controls).then(function(){
+					array.forEach(cc.controls,function(c){
+						render(c,co);
+					});
 				});
 				co.set("value",cc.value);
 			} else if(cc.type=="hidden" || cc.hidden) {
@@ -890,7 +870,7 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 				// should be updated when parent changes
 				// dirty hack: only if type=string
 				if(typeof widget.query == "string") {
-					widget.set("query", substitute(config.storeParams.queryString,newVal,[widget.name]));
+					widget.set("query", jsonschema.substitute(config.storeParams.queryString,newVal,[widget.name]));
 				}
 			}
 			if(config.triggers){
@@ -959,7 +939,8 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 			this._onChangeDelayTimer = this.defer(function(){
 				delete this._onChangeDelayTimer;
 				var newVal = this.get("value");
-				this.store.processModel.call(this.store,newVal).then(lang.hitch(this,function(obj){
+				var req = this.store ? this.store.processModel.call(this.store,newVal) : new Deferred().resolve(newVal);
+				req.then(lang.hitch(this,function(obj){
 					this.selectedId = obj.id;
 					this._processChildren(obj);
 					this._set("value", obj);
