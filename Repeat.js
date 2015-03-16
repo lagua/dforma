@@ -6,22 +6,50 @@ define([
 	"dojo/_base/lang",
 	"dojo/_base/array",
 	"dojo/dom-construct",
+	"dojo/dom-class",
 	"dgrid/OnDemandList",
 	"dgrid/extensions/DijitRegistry",
 	"./_ArrayWidgetBase",
 	"./Group",
 	"./util/i18n",
+	"dijit/registry",
 	"dijit/form/Button"
-],function(declare,lang,array,domConstruct,
+],function(declare,lang,array,domConstruct,domClass,
 		OnDemandList,DijitRegistry,
 		_ArrayWidgetBase,Group,i18n,
-		Button){
+		registry,Button){
+	
+	var Row = declare("dforma.RepeatRow",[Group],{
+		edit:true,
+		remove:true,
+		removeButton:null,
+		rowIndex:null,
+		postCreate:function(){
+			this.inherited(arguments);
+			var common = i18n.load("dforma","common");
+			if(this.remove){
+				domClass.remove(this.buttonNode,"dijitHidden");
+				this.removeButton = new Button({
+					label:common.buttonRemove,
+					"class": this.baseClass+"RemoveButton",
+					onClick:lang.hitch(this,function(){
+						this.removeItem();
+					})
+				}).placeAt(this.buttonNode);
+			}
+		},
+		destroyRecursive:function(){
+			this.removeButton && this.removeButton.destroy();
+			this.inherited(arguments);
+		}
+	});
 	
 	return declare("dforma.Repeat",[_ArrayWidgetBase],{
 		baseClass:"dformaRepeat",
 		_controls:null,
 		postCreate:function(){
 			this._controls = [];
+			this.remove = !this.schema.hasOwnProperty("delete") || this.schema["delete"];
 			this.inherited(arguments);
 		},
 		addControl:function(Widget,params){
@@ -29,74 +57,50 @@ define([
 	 			Widget:Widget,
 	 			params:params
 	 		});
-	 		if(this._controls.length==this.options[0].controls.length) {
-	 			// add first row
-	 			if(!this.schema.hasOwnProperty("minItems") || this.schema.minItems>0) this.store.put(this.defaultInstance);
-	 		}
 	 	},
 	 	attachWidget:function(){
 	 		var self = this;
 	 		var Widget = declare([OnDemandList, DijitRegistry],{
-				renderRow:lang.hitch(this,function(object, options){
-			 		var row = new Group();
-			 		array.forEach(this._controls,function(_){
-						// TODO add _setValueAttr
+				renderRow:function(object, options){
+			 		var row = new Row({
+			 			remove:self.remove,
+			 			rowIndex:object.id,
+			 			removeItem:function(){
+			 				var l = self.store.data.length;
+			 				if(self.schema.hasOwnProperty("minItems") && l==self.schema.minItems) return;
+			 				self.store.remove(this.rowIndex);
+			 			}
+			 		});
+			 		array.forEach(self._controls,function(_){
 						_.params.row = row;
 						var widget = new _.Widget(_.params);
 						row.addChild(widget);
-					},this);
+					});
 			 		row.startup();
+			 		row.set("value",object);
 			 		return row.domNode;
-				}),
+				},
 				removeRow:function(rowElement){
+					var w = registry.byNode(rowElement);
+					w.destroyRecursive();
+					delete w;
 					this.inherited(arguments);
 				}
 			});
-			var listParams = {
+			this.widget = new Widget({
 				showFooter:this.add,
 				collection:this.store,
 				selectionMode:"single"
-			};
-			this.widget = new Widget(listParams);
+			});
 			this.addChild(this.widget);
 			this.addButton && this.addButton.placeAt(this.widget.footerNode);
-	 	},
-	 	cloneRow:function(){
-	 		// add new row
-	 		var common = i18n.load("dforma","common");
-	 		var row = this._rows.length;
-	 		var self = this;
-			this._rows.push({
-				node:domConstruct.create("tr",{},this.repeatNode),
-				controls:[]
-			});
-			array.forEach(this._controls,function(_){
-				// TODO add _setValueAttr
-				_.params.row = row;
-				var widget = new _.Widget(_.params);
-				this.addChild(widget);
-			},this);
-			var removeNode = domConstruct.create("td",{
-	 			"class":"dformaRepeatCol"
-	 		},this._rows[row].node);
-			if(!this.schema.hasOwnProperty("delete") || this.schema["delete"]) {
-				var removeBtn = new Button({
-					row:row,
-					label:common.buttonRemove,
-					onClick:function(){
-						self.removeRow(this.row);
-					}
-				}).placeAt(removeNode);
-				this._rows[row].controls.push(removeBtn);
+			if(!this.schema.hasOwnProperty("minItems") || this.schema.minItems>0){
+				if(!this.store.data.length) this.store.put(lang.clone(this.defaultInstance));
 			}
+			this.widget.resize();
 	 	},
-	 	removeRow:function(row){
-	 		if(this.schema.minItems && this._rows.length==this.schema.minItems) return;
-	 		array.forEach(this._rows[row].controls,function(_){
-	 			_.destroyRecursive();
-	 		});
-	 		this.repeatNode.removeChild(this._rows[row].node);
-	 		this._rows.splice(row,1);
-	 	}
+	 	addItem:function(){
+			this.store.add(lang.clone(this.defaultInstance));
+		}
 	});
 });
