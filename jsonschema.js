@@ -72,6 +72,13 @@ define([
 				// TODO: add more types
 				var entry = cmap[prop.type || "string"];
 				var type = prop.format && entry[prop.format] ? entry[prop.format] : entry["*"];
+				// do some array type juggling
+				if(prop.items && entry.items) {
+					// default to string
+					var subentry = entry.items[prop.items.type];
+					type = prop.format && subentry instanceof Object && subentry[prop.format] ? subentry[prop.format] :
+						subentry ? subentry : type;
+				}
 				var c = {
 					name:k,
 					type:type,

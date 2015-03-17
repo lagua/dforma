@@ -26,9 +26,15 @@
 		"combo":"combo"
 	},
 	"array":{
-		"*":"repeat",
-		"grid":"grid",
-		"list":"list"
+		"*":"multiselect",
+		"items":{
+			"boolean":"checkboxgroup",
+			"object":{
+				"*":"repeat",
+				"grid":"grid",
+				"list":"list"
+			}
+		}
 	},
 	"object":{
 		"*":"group"
