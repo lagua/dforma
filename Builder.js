@@ -3,12 +3,14 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/_base/array",
+	"dojo/_base/json",
 	"dojo/aspect",
 	"dojo/Deferred",
 	"dojo/when",
 	"dojo/promise/all",
 	"dojo/keys",
 	"dojo/dom",
+	"dojo/dom-attr",
 	"dojo/dom-construct",
 	"dojo/dom-class",
 	"dojo/on",
@@ -32,8 +34,8 @@ define([
 	"./validate/web",
 	"./validate/us",
 	"dojo/i18n!./nls/common"
-],function(require,declare,lang,array,aspect,Deferred,when,all,
-		keys,dom,domConstruct,domClass,on,request,
+],function(require,declare,lang,array,djson,aspect,Deferred,when,all,
+		keys,dom,domAttr,domConstruct,domClass,on,request,
 		FormData,_GroupMixin,Group,Label,Input,jsonschema,i18n,
 		_Container,Dialog,Form,Button,FilteringSelect,ComboBox,TextBox,registry){
 
@@ -612,6 +614,9 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 				_parent:parent
 			},c);
 			cc.refNode = c.refNode ? dom.byId(c.refNode) : null;
+			// parse params on the refNode
+			var props = cc.refNode ? domAttr.get(cc.refNode,"data-dojo-props") : "";
+			lang.mixin(cc,props ? djson.fromJson("{"+props+"}") : {});
 			if(c.refNode && !cc.refNode) cc.hidden = true;
 			// default param mapping
 			if(c.hasOwnProperty("readonly")) cc.readOnly = c.readonly;
