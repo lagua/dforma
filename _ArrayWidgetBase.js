@@ -2,25 +2,21 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/dom-class",
-	"dojo/request",
 	"dojo/aspect",
-	"dijit/_WidgetBase",
 	"dijit/_Contained",
 	"dijit/_Container",
-	"dijit/_TemplatedMixin",
-	"dijit/form/_FormValueMixin",
 	"dijit/form/Button",
-	"dforma/store/FormData",
-	"dforma/util/i18n",
-	"mustache/mustache",
+	"./_FormValueWidget",
+	"./_TemplatedMixin",
+	"./store/FormData",
+	"./util/i18n",
 	"dojo/text!./templates/_ArrayWidgetBase.html"
-],function(declare,lang,domClass,request,aspect,
-		_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin, Button, 
-		FormData,i18n,
-		mustache,
+],function(declare,lang,domClass,aspect,
+		_Contained,_Container, Button, 
+		_FormValueWidget,_TemplatedMixin,FormData,i18n,
 		templateString){
 	
-	return declare([_WidgetBase,_Contained,_Container,_TemplatedMixin, _FormValueMixin],{
+	return declare("dforma._ArrayWidgetMixin",[_FormValueWidget,_TemplatedMixin,_Contained,_Container],{
 		store:null,
 		newdata:false,
 		defaultInstance:{},
@@ -59,9 +55,19 @@ define([
 	 			return obj;
 	 		});
 	 	},
-	 	_handleOnChange:function(data){
+	 	_setValueAttr:function(data){
 	 		this.inherited(arguments);
 	 		data = data || [];
+	 		var idProp = this.store.idProperty || "id";
+	 		var ids = data.map(function(_){
+	 			return data[idProp];
+	 		});
+	 		this.store.fetchSync().forEach(function(_){
+	 			var id = _[idProp];
+	 			if(ids.indexOf(id)==-1){
+	 				this.store.remove(id);
+	 			} 
+	 		},this);
 	 		// TODO means we have a Memory type store?
 	 		data.forEach(function(obj){
 	 			this.store.put(obj);
@@ -109,20 +115,10 @@ define([
 					}))
 				);
 			}
-			request(this.templatePath+this.templateExtension).then(lang.hitch(this,function(tpl){
-				if(tpl) {
-					this.template = tpl;
-					if(!this.writer) {
-						this.writer = new mustache.Writer();
-						this.tokens = this.writer.parse(tpl);
-					}
-				}
-				this.attachWidget();
-			}),lang.hitch(this,function(err){
-				// also attach widget if no template
-				this.attachWidget();
-			}));
 			this.inherited(arguments);
+		},
+		onTemplate:function(){
+			this.attachWidget();
 		},
 		attachWidget:function(){
 			// override
