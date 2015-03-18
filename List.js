@@ -10,13 +10,10 @@ define([
 	"dgrid/Keyboard",
 	"dgrid/Selection",
 	"dgrid/extensions/DijitRegistry",
-	"./_ArrayWidgetBase",
-	"./util/i18n",
-	"mustache/mustache"
+	"./_ArrayWidgetBase"
 ],function(declare,lang,array,domConstruct,domClass,request,sniff,
 		OnDemandList, Keyboard, Selection, DijitRegistry,
-		_ArrayWidgetBase,i18n,
-		mustache){
+		_ArrayWidgetBase){
 	
 	var isIE = !!sniff("ie");
 	
@@ -27,10 +24,8 @@ define([
 	 		// FIXME use identity
 	 		var Widget = declare([OnDemandList, Keyboard, Selection, DijitRegistry],{
 				renderRow:lang.hitch(this,function(object, options){
-					if(!this.writer) return;
-					var context = new mustache.Context(object);
 					var div = domConstruct.create("div",{
-						innerHTML:this.writer.renderTokens(this.tokens,context,{},this.template)
+						innerHTML:this.renderTemplate(object)
 					});
 					// IE style workaround
 					if(isIE) {
