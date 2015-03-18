@@ -76,7 +76,8 @@ define([
 				if(prop.items && entry.items) {
 					// default to string
 					var subentry = entry.items[prop.items.type];
-					type = prop.format && subentry instanceof Object && subentry[prop.format] ? subentry[prop.format] :
+					type = subentry instanceof Object ? 
+						(prop.format && subentry[prop.format] ? subentry[prop.format] : subentry["*"]) :
 						subentry ? subentry : type;
 				}
 				var c = {
