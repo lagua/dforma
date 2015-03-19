@@ -19,7 +19,7 @@ define([
 	return declare("dforma._ArrayWidgetMixin",[_FormValueWidget,_TemplatedMixin,_Contained,_Container],{
 		store:null,
 		newdata:false,
-		defaultInstance:{},
+		defaultInstance:null,
 		add:true,
 		edit:true,
 		remove:true,
@@ -85,6 +85,8 @@ define([
 				local:true
 			});
 			if(!this.schema) this.schema = {};
+			this.defaultInstance = this.schema.items && this.schema.items["default"] ?
+				lang.clone(this.schema.items["default"]) : {};
 			var common = i18n.load("dforma","common");
 			if((!this.schema.hasOwnProperty("add") && this.add) || this.schema.add) {
 				this.addButton = new Button({
@@ -105,7 +107,7 @@ define([
 				this.own(
 					aspect.after(this.subform,"cancel",lang.hitch(this,function(){
 						this.selected = null;
-						this.refresh();
+						this.widget.refresh();
 					})),
 					this.subform.watch("value",lang.hitch(this,function(prop,oldVal,newVal){
 						if(this.autosave && this.newdata) {
