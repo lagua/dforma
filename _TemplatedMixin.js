@@ -15,29 +15,34 @@ define([
 			if(!this.partials) this.partials = {};
 			this.fetchTemplate();
 		},
+		parseTemplate:function(tpl){
+			if(tpl) this.template = tpl;
+			if(this.template){
+				if(!this.writer) {
+					this.writer = new mustache.Writer();
+				}
+				if(!this.tokens){
+					this.tokens = this.writer.parse(this.template);
+				}
+			}
+			this.onTemplate();
+		},
 		fetchTemplate:function(path){
 			if(path) this.templatePath = path;
 			if(!this.templatePath || !this.templateExtension) {
-				setTimeout(lang.hitch(this,"onTemplate"),1);
+				setTimeout(lang.hitch(this,"parseTemplate"),1);
 			} else {
 				request(this.templatePath+this.templateExtension).then(lang.hitch(this,function(tpl){
-					if(tpl) {
-						this.template = tpl;
-						if(!this.writer) {
-							this.writer = new mustache.Writer();
-							this.tokens = this.writer.parse(tpl);
-						}
-					}
-					this.onTemplate();
+					this.parseTemplate(tpl);
 				}),lang.hitch(this,function(err){
-					this.onTemplate();
+					this.parseTemplate();
 				}));
 			}
 		},
 		onTemplate:function(){
 			// override
 		},
-		renderTemplate:function(){
+		renderTemplate:function(object){
 			if(!this.writer) return;
 			var context = new mustache.Context(object);
 			return this.writer.renderTokens(this.tokens,context,this.partials,this.template);
