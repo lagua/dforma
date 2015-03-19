@@ -645,7 +645,7 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 						render(c,co);
 					});
 				});
-				co.set("value",cc.value);
+				//co.set("value",cc.value);
 			} else if(cc.type=="hidden" || cc.hidden) {
 				domClass.toggle(co.domNode,"dijitHidden",true);
 			}
