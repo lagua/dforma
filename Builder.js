@@ -15,6 +15,8 @@ define([
 	"dojo/dom-class",
 	"dojo/on",
 	"dojo/request",
+	"dojo/topic",
+	"rql/js-array",
 	"./store/FormData",
 	"./_GroupMixin",
 	"./Group",
@@ -35,7 +37,8 @@ define([
 	"./validate/us",
 	"dojo/i18n!./nls/common"
 ],function(require,declare,lang,array,djson,aspect,Deferred,when,all,
-		keys,dom,domAttr,domConstruct,domClass,on,request,
+		keys,dom,domAttr,domConstruct,domClass,on,request,topic,
+		rql,
 		FormData,_GroupMixin,Group,Label,Input,jsonschema,i18n,
 		_Container,Dialog,Form,Button,FilteringSelect,ComboBox,TextBox,registry){
 
@@ -56,12 +59,12 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 	submittable:true,
 	templatePath:"",
 	templateExtension:".html",
+	optional:null,
 	hideOptional:false,
 	allowFreeKey:false, // schema editor: set true for add
 	allowOptionalDeletion:false, // schema editor: set false for edit/delete
 	editControls:null, // schema editor: set as controls for the editor
 	controlmap:null, // controlmap for internal jsonschema
-	BuilderClass:Builder,
 	submit:function(){},
 	cancel:function(){},
 	onSubmit:function(e) {
@@ -104,7 +107,7 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 					}
 				});
 				// TODO: insert a subform
-				var fb = new parent.BuilderClass({
+				var fb = new this.BuilderClass({
 					style:"height:100%;border:1px solid gray",
 					cancel:function(){
 						self.rebuild();
@@ -210,7 +213,7 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 			break;
 			case "multiselect":
 			case "multiselect_freekey":
-				req = "dforma/MultiSelect";
+				req = "dforma/MultiCombo";
 			break;
 			case "hslider":
 				req = "dijit/form/HorizontalSlider";
@@ -441,16 +444,13 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 		if(cc.type=="list" || cc.type=="grid"){
 			var _lh = aspect.after(co.subform,"startup",lang.hitch(co,function(){
 				_lh.remove();
-				var items = this.schema.items;
 				var data = this.store.fetchSync();
 				if(data.length) {
 					this.onEdit && this.onEdit(data[0].id);
 				} else {
-					if(items && items["default"]){
-						this.store.put(items["default"]).then(lang.hitch(this,function(obj){
-							this.onEdit && this.onEdit(obj.id);
-						}));
-					}
+					this.store.put(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(obj){
+						this.onEdit && this.onEdit(obj.id);
+					}));
 				}
 			}));
 		} else if(cc.type=="select") {
@@ -470,7 +470,8 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 		}
 		return co;
 	},
-	placeWidget:function(cc,co,parent,controls,Widget){
+	placeWidget:function(cc,co,parent,controls,Widget,controller){
+		var self = this;
 		if(parent.type=="repeat"){
 			parent.addControl(Widget,cc);
 		} else if(cc.nolabel || cc.type=="hidden" || cc.hidden) {
@@ -524,16 +525,75 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 	 		} else {
 	 			parent.addChild(l);
 	 		}
-
-			if(cc.type=="multiselect_freekey") {
-				l.child = null;
-				l.addChild(co);
-				l.addChild(new TextBox({
-					onChange:function(val){
-						if(val) co.addOption({value:val,label:val,selected:true});
-						this.set("value","");
+			if(cc.edit===true) {
+				co.editButton = new Button({
+					label:"Edit",
+					target:{
+						control:cc,
+						widget:co,
+						label:l
+					},
+					controller:controller,
+					showLabel:false,
+					iconClass:"dijitEditorIcon dformaEditIcon",
+					onClick:function(){
+						var fb = self._addEditForm(this.target.control,this.controller);
+						this.target.label.addChild(fb);
+						var _sh, _ch;
+						function end(){
+							if(_sh) _sh.remove();
+							if(_ch) _ch.remove();
+							this.target.widget.editButton.destroyRecursive();
+							if(this.target.widget.deleteButton) this.target.widget.deleteButton.destroyRecursive();
+							if(this.target.control.add && add) {
+								// try destroying add button
+								if(self.optional.length || self.allowFreeKey) {
+									add.set("disabled",false);
+								} else {
+									add.destroyRecursive();
+								}
+							}
+						};
+						_sh = aspect.after(fb,"submit",lang.hitch(this,end));
+						_ch = aspect.after(fb,"cancel",lang.hitch(this,end));
 					}
-				}));
+				});
+				l.addChild(co.editButton);
+			}
+			if(cc["delete"]) {
+				co.deleteButton = new Button({
+					label:"Delete",
+					showLabel:false,
+					target:{
+						control:cc,
+						widget:co,
+						label:l
+					},
+					iconClass:"dijitEditorIcon dformaDeleteIcon",
+					onClick:function(){
+						this.target.widget.set("value",null);
+						this.target.label.destroyRecursive();
+						var control = this.target.control;
+						// edit means typeStore must be modified
+						if(control.edit || (control["delete"] && !self.allowOptionalDeletion)) {
+							self._removeProperty(control, controller);
+						} else {
+							// if in controls push back up stack
+							controls.forEach(function(c,i){
+								if(control.name===c.name) {
+									self.optional.push(control);
+									self.optional.sort(function(a,b){
+									    return (a.name < b.name) ? -1 : (a.name > b.name) ? 1 : 0;
+									});
+								}
+							});
+						}
+					}
+				});
+				l.addChild(co.deleteButton);
+			}
+			if(cc.edit && cc.add) {
+				co.editButton.onClick();
 			}
 		}
 	},
@@ -555,14 +615,9 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 				});
 			}
 		});
-		var optional = [];
+		if(!this.optional) this.optional = [];
 		var hideOptional = this.hideOptional;
 		var add;
-		function optionalSort(){
-			optional.sort(function(a,b){
-			    return (a.name < b.name) ? -1 : (a.name > b.name) ? 1 : 0;
-			});
-		}
 		function preload(controls) {
 			var reqs = controls.map(lang.hitch(self,"controlModuleMapper"));
 			var d = new Deferred();
@@ -634,7 +689,7 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 				controller = parent.controllerWidget = co;
 			}
 			// widget placement
-			self.placeWidget(cc,co,parent,controls,Widget);
+			self.placeWidget(cc,co,parent,controls,Widget,controller);
 			// special cases
 			if(cc.type=="grid" || cc.type=="list") {
 				cc.subform.parent = co;
@@ -650,7 +705,7 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 				domClass.toggle(co.domNode,"dijitHidden",true);
 			}
 			if(c.edit===true || c["delete"]===true) {
-				if(!l) {
+				/*if(!l) {
 					l = new Label({
 						label: cc.label,
 						"class":"dformaLabelFor"+c.type.toProperCase(),
@@ -658,7 +713,7 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 						title:c.description ? c.description : cc.label
 					});
 					parent.addChild(l);
-				}
+				}*/
 				/*if(!self.allowOptionalDeletion && c.description) {
 					domConstruct.create("span",{
 						innerHTML:strings.truncatewords_html(c.description,{
@@ -668,74 +723,6 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 						"class":"dijitReset dijitInline"
 					},l.domNode);
 				}*/
-				if(c.edit===true) {
-					co.editButton = new Button({
-						label:"Edit",
-						target:{
-							control:c,
-							widget:co,
-							label:l
-						},
-						controller:controller,
-						showLabel:false,
-						iconClass:"dijitEditorIcon dformaEditIcon",
-						onClick:function(){
-							var fb = self._addEditForm(this.target.control,this.controller);
-							this.target.label.addChild(fb);
-							var _sh, _ch;
-							function end(){
-								if(_sh) _sh.remove();
-								if(_ch) _ch.remove();
-								this.target.widget.editButton.destroyRecursive();
-								if(this.target.widget.deleteButton) this.target.widget.deleteButton.destroyRecursive();
-								if(this.target.control.add && add) {
-									// try destroying add button
-									if(optional.length || self.allowFreeKey) {
-										add.set("disabled",false);
-									} else {
-										add.destroyRecursive();
-									}
-								}
-							};
-							_sh = aspect.after(fb,"submit",lang.hitch(this,end));
-							_ch = aspect.after(fb,"cancel",lang.hitch(this,end));
-						}
-					});
-					l.addChild(co.editButton);
-				}
-				if(c["delete"]) {
-					co.deleteButton = new Button({
-						label:"Delete",
-						showLabel:false,
-						target:{
-							control:c,
-							widget:co,
-							label:l
-						},
-						iconClass:"dijitEditorIcon dformaDeleteIcon",
-						onClick:function(){
-							this.target.widget.set("value",null);
-							this.target.label.destroyRecursive();
-							var control = this.target.control;
-							// edit means typeStore must be modified
-							if(control.edit || (control["delete"] && !self.allowOptionalDeletion)) {
-								self._removeProperty(control, controller);
-							} else {
-								// if in controls push back up stack
-								controls.forEach(function(c,i){
-									if(control.name===c.name) {
-										optional.push(control);
-										optionalSort();
-									}
-								});
-							}
-						}
-					});
-					l.addChild(co.deleteButton);
-				}
-				if(c.edit && c.add) {
-					co.editButton.onClick();
-				}
 			}
 			return co;
 		};
@@ -745,21 +732,23 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 				if(!c.required && self.allowOptionalDeletion) c["delete"] = true;
 			} else {
 				c["delete"] = true;
-				optional.push(c);
+				self.optional.push(c);
 			}
 			return c;
 		},this);
-		optionalSort();
+		self.optional.sort(function(a,b){
+		    return (a.name < b.name) ? -1 : (a.name > b.name) ? 1 : 0;
+		});
 		preload(controls).then(lang.hitch(this,function(){
 			var widgets = {};
 			controls.forEach(function(c,i){
-				if(optional.indexOf(c)==-1) {
+				if(self.optional.indexOf(c)==-1) {
 					var widget = render(c);
 					if(widget) widgets[c.name] = widget;
 				}
 			});
 			this.layout && this.layout();
-			if((hideOptional && optional.length) || this.allowFreeKey) {
+			if((hideOptional && self.optional.length) || this.allowFreeKey) {
 				function addSelect(optional){
 					var props = {
 						store: new FormData({
@@ -829,7 +818,7 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 					iconClass:"dijitEditorIcon dformaAddIcon",
 					onClick:function(){
 						this.set("disabled",true);
-						addSelect(optional);
+						addSelect(self.optional);
 					}
 				});
 				self.addChild(add);
@@ -903,18 +892,27 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 							}
 						}
 						if(val){
-							// default to value
-							var prop = trigger.property || "value";
-							var target = trigger.target ? 
-								lang.getObject(trigger.target,false,this) : this;
-							try {
-								if(trigger.setter){
-									target[trigger.setter](prop,val);
-								} else {
-									target[prop] = val;
+							if(trigger.total){
+								// expect array
+								var total = rql.executeQuery("sum("+trigger.total+")",{},val);
+								val = {total:total};
+							}
+							if(trigger.publish){
+								topic.publish("/triggers/"+trigger.publish,val);
+							} else {
+								// default to value
+								var prop = trigger.property || "value";
+								var target = trigger.target ? 
+									lang.getObject(trigger.target,false,this) : this;
+								try {
+									if(trigger.setter){
+										target[trigger.setter](prop,val);
+									} else {
+										target[prop] = val;
+									}
+								} catch(err){
+									console.error("trigger error",err);
 								}
-							} catch(err){
-								console.error("trigger error",err);
 							}
 						}
 					}
@@ -967,5 +965,8 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 		}
 	}
 });
-return Builder;
+
+return declare("dforma.Builder",Builder,{
+	BuilderClass:Builder
+});
 });
