@@ -109,7 +109,7 @@ define([
 				if(data.hasOwnProperty(k) && data[k]!==undefined) {
 					c.value = data[k];
 				} else if(prop.hasOwnProperty("default")) {
-					c.value = prop["default"];
+					c.value = prop.type=="object" ? lang.clone(prop["default"]) : prop["default"];
 				}
 				// widget-type-specific
 				if(prop.hasOwnProperty("minimum") || prop.hasOwnProperty("maximum")) {
