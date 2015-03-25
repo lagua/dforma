@@ -161,8 +161,8 @@ define([
 							foreignKey = k;
 							c.storeParams = {
 								idProperty:idProperty,
-								labelProperty:foreignKey,
-								data:data ? data[key] : []
+								labelProperty:foreignKey//,
+								//data:data ? data[key] : []
 							};
 						} else {
 							var refar = link.href.split("?");
