@@ -15,6 +15,7 @@ define([
 	"dgrid/Editor",
 	"dgrid/extensions/DijitRegistry",
 	"./_ArrayWidgetBase",
+	"./_SubFormMixin",
 	"./util/i18n",
 	"mustache/mustache",
 	"rql/js-array"
@@ -22,11 +23,11 @@ define([
 		declare,lang,djson,domConstruct,domClass,request,currency,dkeys,
 		Button, 
 		OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry,
-		_ArrayWidgetBase,i18n,
+		_ArrayWidgetBase,_SubFormMixin,i18n,
 		mustache,
 		rql){
 	
-	return declare("dforma.Grid",[_ArrayWidgetBase],{
+	return declare("dforma.Grid",[_ArrayWidgetBase,_SubFormMixin],{
 		baseClass:"dformaGrid",
 	 	_parseColumns:function(columns) {
 	 		var self = this;

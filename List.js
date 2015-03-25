@@ -10,14 +10,15 @@ define([
 	"dgrid/Keyboard",
 	"dgrid/Selection",
 	"dgrid/extensions/DijitRegistry",
-	"./_ArrayWidgetBase"
+	"./_ArrayWidgetBase",
+	"./_SubFormMixin"
 ],function(declare,lang,array,domConstruct,domClass,request,sniff,
 		OnDemandList, Keyboard, Selection, DijitRegistry,
-		_ArrayWidgetBase){
+		_ArrayWidgetBase,_SubFormMixin){
 	
 	var isIE = !!sniff("ie");
 	
-	return declare("dforma.List",[_ArrayWidgetBase],{
+	return declare("dforma.List",[_ArrayWidgetBase,_SubFormMixin],{
 		baseClass:"dformaList",
 	 	attachWidget:function(){
 	 		var self = this;
