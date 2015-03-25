@@ -81,7 +81,7 @@ define([
 						} else if(this.tpl){
 							value = mustache.render(this.tpl,obj);
 						} else if(this.template) {
-							request(this.templatePath+"_column_"+this.key+this.templateExtension).then(lang.hitch(this,function(tpl){
+							request(self.templatePath+"_column_"+this.key+self.templateExtension).then(lang.hitch(this,function(tpl){
 								this.tpl = tpl;
 								div.innerHTML = mustache.render(tpl,obj);
 							}));
@@ -106,7 +106,7 @@ define([
 			for(k in this.columns){
 				if(this.columns[k].summary) totals[k] = 0;
 			}
-			for(var i = data.length; i>0; i--) {
+			for(var i = 0,l = data.length; i<l; i++) {
 				for(k in totals){
 					totals[k] += data[i][k];
 				}
@@ -124,7 +124,6 @@ define([
 			var Widget = declare([OnDemandGrid, Keyboard, Selection, Editor, DijitRegistry],{
 	            buildRendering: function () {
 	                this.inherited(arguments);
-	     
 	                var areaNode = this.summaryAreaNode =
 	                    domConstruct.create('div', {
 	                        className: 'summary-row',
@@ -142,7 +141,6 @@ define([
 	                    this._setSummary(this.summary);
 	                }
 	            },
-	     
 	            _updateColumns: function () {
 	                this.inherited(arguments);
 	                if (this.summary) {
@@ -151,7 +149,6 @@ define([
 	                    this._setSummary(this.summary);
 	                }
 	            },
-	     
 	            _renderSummaryCell: function (item, cell, column) {
 	                // summary:
 	                //      Simple method which outputs data for each
@@ -164,7 +161,6 @@ define([
 	                var value = item[column.field] || '';
 	                cell.appendChild(document.createTextNode(value));
 	            },
-	     
 	            _setSummary: function (data) {
 	                // summary:
 	                //      Given an object whose keys map to column IDs,
@@ -194,12 +190,10 @@ define([
 	                }
 	            }
 	 		});
-			// parse column expressions:
-			var gridColumns = this._parseColumns(lang.mixin({},this.params.columns));
 			if(this.summary) this.add = this.edit = this.remove = false;
 			var totals = this.getTotals();
 			var gridParams = {
-				columns:gridColumns,
+				columns:this.gridColumns,
 				showFooter:(this.add || this.edit || this.remove || this.summary),
 				collection:this.store,
 				selectionMode:"single",
@@ -223,9 +217,12 @@ define([
 					if(this.remove) this.removeButton.set("disabled", !selected);
 				}))
 			);
+			this.widget.resize();
 	 	},
 		postCreate:function(){
 			this.inherited(arguments);
+			// parse column expressions:
+			this.gridColumns = this._parseColumns(lang.mixin({},this.params.columns));
 			var common = i18n.load("dforma","common");
 			if(this.edit){
 				this.editButton = new Button({
