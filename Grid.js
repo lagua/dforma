@@ -246,13 +246,9 @@ define([
 				});
 			}
 		},
-		onAdd:function(id){
-			// override to set initial data
-		},
 		addItem:function(){
 			this.store.add(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(data){
 				var id = data.id;
-				this.onAdd(id);
 				this.newdata = true;
 				this.widget.select(id);
 				this.onEdit(id);
@@ -260,11 +256,7 @@ define([
 		},
 		onEdit:function(id,options){
 			// override to edit
-		},
-		save:function(id,options){
-			this.newdata = false;
-			this.store.put(id,options);
-			this.widget.refresh();
+			this.inherited(arguments);
 		},
 		editSelected:function(){
 			if(this.widget.selection.length>1) return; 

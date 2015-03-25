@@ -55,9 +55,6 @@ define([
 			);
 			this.widget.resize();
 	 	},
-		onAdd:function(id){
-			// override to set initial data
-		},
 		addItem:function(){
 			if(!this.subform.submit()) {
 				if(this.oldSelection) this.widget.select(this.oldSelection);
@@ -66,7 +63,6 @@ define([
 			}
 			this.store.add(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(data){
 				var id = data.id;
-				this.onAdd(id);
 				this.newdata = true;
 				this.widget.select(id);
 				this.onEdit(id);
@@ -74,10 +70,7 @@ define([
 		},
 		onEdit:function(id,options){
 			// override to edit
-		},
-		save:function(obj,options){
-			this.newdata = false;
-			this.store.put(obj,options);
+			this.inherited(arguments);
 		},
 		editSelected:function(id){
 			if(!this.subform.submit()) {
