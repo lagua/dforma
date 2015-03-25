@@ -44,11 +44,25 @@ define([
 			this.widget = new Widget(listParams);
 			this.addChild(this.widget);
 			this.addButton && this.addButton.placeAt(this.widget.footerNode);
+			this.own(
+				this.widget.on("dgrid-select", lang.hitch(this,function(e){
+					this.editSelected(e.rows[0].data.id);
+				})),
+				this.widget.on("dgrid-deselect", lang.hitch(this,function(e){
+					this.oldSelection = e.rows[0].data.id;
+				}))
+			);
+			this.widget.resize();
 	 	},
 		onAdd:function(id){
 			// override to set initial data
 		},
 		addItem:function(){
+			if(!this.subform.submit()) {
+				if(this.oldSelection) this.widget.select(this.oldSelection);
+				delete this.oldSelection;
+				return;
+			}
 			this.store.add(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(data){
 				var id = data.id;
 				this.onAdd(id);
@@ -63,17 +77,16 @@ define([
 		save:function(obj,options){
 			this.newdata = false;
 			this.store.put(obj,options);
-			this.widget.refresh();
 		},
-		editSelected:function(){
-			if(this.widget.selection.length>1) return; 
-			for(var id in this.widget.selection) {
-				if(this.widget.selection[id]) {
-					this.onEdit(id,{
-						overwrite:true
-					});
-				}
+		editSelected:function(id){
+			if(!this.subform.submit()) {
+				if(this.oldSelection) this.widget.select(this.oldSelection);
+				delete this.oldSelection;
+				return;
 			}
+			this.onEdit(id,{
+				overwrite:true
+			});
 		},
 		removeSelected:function(){
 			for(var id in this.widget.selection) {
