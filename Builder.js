@@ -305,96 +305,99 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 						schema:cc.schema.items
 					});
 				}
-				cc.subform = new parent.BuilderClass({
-					//label:cc.label,
-					store:cc.store,
-					cancellable:true,
-					cancel: function(){
-						try {
-							domClass.toggle(this.parent.domNode,"dformaSubformActive",false);
-							domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
-							domClass.toggle(parent.hintNode,"dformaSubformActive",false);
-							domClass.toggle(this.domNode,"dijitHidden",true);
-							parent.layout();
-						} catch(err) {
-							console.error("Subform domClass Error: "+err.description);
-						}
-						if(!this.data) return;
-						// cancelled new?
-						if(this.data && this.data.id && this.parent.newdata) this.parent.store.remove(this.data.id);
-						this.data.id = null;
-						this.parent.newdata = false;
-					},
-					submit: function(){
-						if(!this.validate()) return;
-						domClass.toggle(this.parent.domNode,"dformaSubformActive",false);
-						domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
-						domClass.toggle(parent.hintNode,"dformaSubformActive",false);
-						domClass.toggle(this.domNode,"dijitHidden",true);
-						parent.layout();
-						var data = this.get("value");
-						// checkboxes
-						var columns=c.columns ? c.columns : [];
-						array.forEach(columns,function(c){
-							var k = c.field;
-							if(c.editor=="checkbox" && data[k] instanceof Array) {
-								data[k] = data[k][0];
-							}
-						});
-						this.parent.save(data,{
-							overwrite:true
-						});
-						return true;
-					}
-				});
-				domClass.toggle(cc.subform.domNode,"dijitHidden",true);
-				/*var validate = lang.hitch(cc.subform,cc.subform.validate);
-				cc.subform.validate = function(){
-					if(!this[config]) return true;
-					return validate();
-				};*/
-				cc.subform.own(
-					aspect.after(cc.subform,"layout",lang.hitch(parent,function(){
-						this.layout();
-					})),
-					aspect.after(parent,"cancel",lang.hitch(cc.subform,function(){
-						this.cancel();
-					}))
-				);
-				cc.onEdit = function(id,options){
-					options = options || {};
-					this.store.get(id).then(lang.hitch(this,function(data){
-						domClass.toggle(this.domNode,"dformaSubformActive",true);
-						domClass.toggle(parent.buttonNode,"dformaSubformActive",true);
-						domClass.toggle(parent.hintNode,"dformaSubformActive",true);
-						domClass.toggle(this.subform.domNode,"dijitHidden",false);
-						var items = this.schema.items;
-						if(!items) {
-							throw new Error("Items were not found on the schema for "+this.name);
-						}
-						var controls = this.controller ? [jsonschema.schemasToController([items],data,{
-							selectFirst:true,
-							controller:this.controller,
-							controlmap:parent.controlmap
-						})] : jsonschema.schemaToControls(items,data,{
-							controlmap:parent.controlmap,
-							uri:this.store.target
-						});
-						this.subform.rebuild({
-							id:id,
-							options:options,
+				if(cc.schema.items){
+					var controls = cc.controller ? [jsonschema.schemasToController([cc.schema.items],null,{
+						selectFirst:true,
+						controller:cc.controller,
+						controlmap:parent.controlmap
+					})] : jsonschema.schemaToControls(cc.schema.items,null,{
+						controlmap:parent.controlmap,
+						uri:cc.store.target
+					});
+					cc.subform = new parent.BuilderClass({
+						//label:cc.label,
+						data:{
 							// TODO: create type for items instanceof array
 							controls:controls,
 							submit:{
 								label:common.buttonSave
 							}
-						});
-					}));
-				};
+						},
+						store:cc.store,
+						cancellable:true,
+						cancel: function(){
+							try {
+								domClass.toggle(this.parent.domNode,"dformaSubformActive",false);
+								domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
+								domClass.toggle(parent.hintNode,"dformaSubformActive",false);
+								domClass.toggle(this.domNode,"dijitHidden",true);
+								parent.layout();
+							} catch(err) {
+								console.error("Subform domClass Error: "+err.description);
+							}
+							if(!this.data) return;
+							// cancelled new?
+							if(this.data && this.data.id && this.parent.newdata) this.parent.store.remove(this.data.id);
+							this.data.id = null;
+							this.parent.newdata = false;
+						},
+						submit: function(){
+							if(!this.validate()) return;
+							domClass.toggle(this.parent.domNode,"dformaSubformActive",false);
+							domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
+							domClass.toggle(parent.hintNode,"dformaSubformActive",false);
+							domClass.toggle(this.domNode,"dijitHidden",true);
+							parent.layout();
+							/*var data = this.get("value");
+							// checkboxes
+							var columns=c.columns ? c.columns : [];
+							array.forEach(columns,function(c){
+								var k = c.field;
+								if(c.editor=="checkbox" && data[k] instanceof Array) {
+									data[k] = data[k][0];
+								}
+							});
+							console.warn(data)
+							this.parent.save(data,{
+								noop:true,
+								overwrite:true
+							});*/
+							return true;
+						}
+					});
+					domClass.toggle(cc.subform.domNode,"dijitHidden",true);
+					/*var validate = lang.hitch(cc.subform,cc.subform.validate);
+					cc.subform.validate = function(){
+						if(!this[config]) return true;
+						return validate();
+					};*/
+					cc.subform.own(
+						aspect.after(cc.subform,"layout",lang.hitch(parent,function(){
+							this.layout();
+						})),
+						aspect.after(parent,"cancel",lang.hitch(cc.subform,function(){
+							this.cancel();
+						}))
+					);
+					cc.onEdit = function(id,options){
+						options = options || {};
+						this.store.get(id).then(lang.hitch(this,function(data){
+							domClass.toggle(this.domNode,"dformaSubformActive",true);
+							domClass.toggle(parent.buttonNode,"dformaSubformActive",true);
+							domClass.toggle(parent.hintNode,"dformaSubformActive",true);
+							domClass.toggle(this.subform.domNode,"dijitHidden",false);
+							var items = this.schema.items;
+							if(!items) {
+								throw new Error("Items were not found on the schema for "+this.name);
+							}
+							this.subform.set("value",data);
+						}));
+					};
+				}
 			break;
 			case "group":
 				cc.nolabel = true;
-				cc.item = c.options[0];
+				//cc.item = c.options[0];
 				cc.hint = c.description || "";
 			break;
 			case "email":
@@ -441,7 +444,7 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 			break;
 		}
 		co = new Widget(cc);
-		if(cc.type=="list" || cc.type=="grid"){
+		if((cc.type=="list" || cc.type=="grid") && co.subform){
 			var _lh = aspect.after(co.subform,"startup",lang.hitch(co,function(){
 				_lh.remove();
 				var data = this.store.fetchSync();
@@ -691,7 +694,7 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 			// widget placement
 			self.placeWidget(cc,co,parent,controls,Widget,controller);
 			// special cases
-			if(cc.type=="grid" || cc.type=="list") {
+			if((cc.type=="grid" || cc.type=="list") && cc.subform) {
 				cc.subform.parent = co;
 				parent.addChild(cc.subform);
 			} else if(cc.type=="repeat" || cc.type=="group"){
