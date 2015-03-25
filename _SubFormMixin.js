@@ -4,14 +4,18 @@ define([
 	"dojo/aspect",
 	"dojo/dom-class",
 	"./Builder",
-],function(declare,lang,aspect,domClass,Builder){
+	"./jsonschema",
+	"./util/i18n"
+],function(declare,lang,aspect,domClass,Builder,jsonschema,i18n){
 	
 	return declare("dforma._SubFormMixin",null,{
 		subform:null,
 		postCreate:function(){
 			this.inherited(arguments);
+			var common = i18n.load("dforma","common");
 			// create bound subform
 			if(this.schema.items){
+				var self = this;
 				var parent = this.getParent() || this._parent;
 				var controls = this.controller ? [jsonschema.schemasToController([this.schema.items],null,{
 					selectFirst:true,
@@ -34,7 +38,7 @@ define([
 					cancellable:true,
 					cancel: function(){
 						try {
-							domClass.toggle(this.parent.domNode,"dformaSubformActive",false);
+							domClass.toggle(self.domNode,"dformaSubformActive",false);
 							domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
 							domClass.toggle(parent.hintNode,"dformaSubformActive",false);
 							domClass.toggle(this.domNode,"dijitHidden",true);
@@ -44,13 +48,13 @@ define([
 						}
 						if(!this.data) return;
 						// cancelled new?
-						if(this.data && this.data.id && this.parent.newdata) this.parent.store.remove(this.data.id);
+						if(this.data && this.data.id && self.newdata) self.store.remove(this.data.id);
 						this.data.id = null;
-						this.parent.newdata = false;
+						self.newdata = false;
 					},
 					submit: function(){
 						if(!this.validate()) return;
-						domClass.toggle(this.parent.domNode,"dformaSubformActive",false);
+						domClass.toggle(self.domNode,"dformaSubformActive",false);
 						domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
 						domClass.toggle(parent.hintNode,"dformaSubformActive",false);
 						domClass.toggle(this.domNode,"dijitHidden",true);
@@ -65,10 +69,11 @@ define([
 							}
 						});
 						console.warn(data)
-						this.parent.save(data,{
+						self.save(data,{
 							noop:true,
 							overwrite:true
 						});*/
+						this.reset();
 						return true;
 					}
 				});
@@ -81,8 +86,20 @@ define([
 						this.cancel();
 					}))
 				);
+				this.own(
+					aspect.after(this.subform,"cancel",lang.hitch(this,function(){
+						this.selected = null;
+						this.widget.refresh();
+					})),
+					this.subform.watch("value",lang.hitch(this,function(prop,oldVal,newVal){
+						if(this.autosave && this.newdata) {
+							this.newdata = false;
+						}
+						this.store.put(newVal);
+					}))
+				);
+				parent.addChild(this.subform);
 			}
-			parent.addChild(this.subform);
 		},
 		startup:function(){
 			this.inherited(arguments);
@@ -97,6 +114,7 @@ define([
 		},
 		onEdit:function(id,options){
 			options = options || {};
+			var parent = this.getParent() || this._parent;
 			this.store.get(id).then(lang.hitch(this,function(data){
 				domClass.toggle(this.domNode,"dformaSubformActive",true);
 				domClass.toggle(parent.buttonNode,"dformaSubformActive",true);

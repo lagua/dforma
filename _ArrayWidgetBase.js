@@ -103,20 +103,6 @@ define([
 					this._set("value",this.store.fetchSync());
 				}))
 			);
-			if(this.subform){
-				this.own(
-					aspect.after(this.subform,"cancel",lang.hitch(this,function(){
-						this.selected = null;
-						this.widget.refresh();
-					})),
-					this.subform.watch("value",lang.hitch(this,function(prop,oldVal,newVal){
-						if(this.autosave && this.newdata) {
-							this.newdata = false;
-						}
-						this.store.put(newVal);
-					}))
-				);
-			}
 			this.inherited(arguments);
 		},
 		onTemplate:function(){
