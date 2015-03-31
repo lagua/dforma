@@ -840,7 +840,7 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 			this._onChangeDelayTimer = this.defer(function(){
 				delete this._onChangeDelayTimer;
 				var newVal = this.get("value");
-				var req = this.store ? this.store.processModel.call(this.store,newVal) : new Deferred().resolve(newVal);
+				var req = this.store && this.store.processModel ? this.store.processModel.call(this.store,newVal) : new Deferred().resolve(newVal);
 				req.then(lang.hitch(this,function(obj){
 					this.selectedId = obj.id;
 					this._processChildren(obj);
