@@ -80,8 +80,8 @@ define([
 			var Store,store = this;
 			if(this.local && this.persistent) {
 				// TODO manage in app config
-				var dbConfig = {
-				    version: 0,
+				var dbConfig = window.dbConfig || {
+				    version: 1,
 				    stores: {}
 				};
 				Store = declare([LocalDB,Trackable]);
