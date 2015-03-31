@@ -128,7 +128,7 @@ define([
 						}
 					};
 					var p = schema.properties[key];
-					if(p.type=="string" && p.format=="xhtml") {
+					if(p && p.type=="string" && p.format=="xhtml") {
 						args = {
 							handleAs:"text"
 						};
@@ -149,7 +149,7 @@ define([
 					var value = resolved[href];
 					cache && cache.putSync({id:href,key:k,value:value});
 					var p = schema.properties[k];
-					if(p.type=="array" && p.items){
+					if(p && p.type=="array" && p.items){
 						proms[k] = [];
 						if(p.items instanceof Array){
 							// iterate p.items
