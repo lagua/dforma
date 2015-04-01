@@ -35,7 +35,13 @@ define([
 						});
 					}
 			 		return div;
-				})
+				}),
+				_singleSelectionHandler: function (event, target) {
+					if(self.subform && !self.subform.submit()) {
+						return;
+					}
+					this.inherited(arguments);
+				}
 			});
 			var listParams = {
 				showFooter:this.add,
@@ -47,40 +53,25 @@ define([
 			this.addButton && this.addButton.placeAt(this.widget.footerNode);
 			this.own(
 				this.widget.on("dgrid-select", lang.hitch(this,function(e){
-					this.editSelected(e.rows[0].data.id);
-				})),
-				this.widget.on("dgrid-deselect", lang.hitch(this,function(e){
-					this.oldSelection = e.rows[0].data.id;
+					this.onEdit(e.rows[0].data.id);
 				}))
 			);
 			this.widget.resize();
 	 	},
 		addItem:function(){
 			if(!this.subform.submit()) {
-				if(this.oldSelection) this.widget.select(this.oldSelection);
-				delete this.oldSelection;
 				return;
 			}
 			this.store.add(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(data){
 				var id = data.id;
 				this.newdata = true;
+				this.widget.clearSelection();
 				this.widget.select(id);
-				this.onEdit(id);
 			}));
 		},
 		onEdit:function(id,options){
 			// override to edit
 			this.inherited(arguments);
-		},
-		editSelected:function(id){
-			if(!this.subform.submit()) {
-				if(this.oldSelection) this.widget.select(this.oldSelection);
-				delete this.oldSelection;
-				return;
-			}
-			this.onEdit(id,{
-				overwrite:true
-			});
 		},
 		removeSelected:function(){
 			for(var id in this.widget.selection) {
