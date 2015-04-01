@@ -35,7 +35,7 @@ define([
 				var value = data[k]!==undefined ? data[k] : deft ? deft : undefined;
 				if(type) {
 					if (type === 'string') {
-						data[k] = '' + value;
+						value = '' + value;
 					} else if (type === 'number') {
 						value = +value;
 					} else if (type === 'boolean') {
