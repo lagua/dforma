@@ -86,18 +86,6 @@ define([
 						this.cancel();
 					}))
 				);
-				this.own(
-					aspect.after(this.subform,"cancel",lang.hitch(this,function(){
-						this.selected = null;
-						this.widget.refresh();
-					})),
-					this.subform.watch("value",lang.hitch(this,function(prop,oldVal,newVal){
-						if(this.autosave && this.newdata) {
-							this.newdata = false;
-						}
-						this.store.put(newVal);
-					}))
-				);
 				parent.addChild(this.subform);
 			}
 		},
@@ -105,16 +93,28 @@ define([
 			this.inherited(arguments);
 			var data = this.store.fetchSync();
 			if(data.length) {
-				this.onEdit && this.onEdit(data[0].id);
+				this.widget.select(data[0].id);
 			} else {
 				this.store.put(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(obj){
-					this.onEdit && this.onEdit(obj.id);
+					this.widget.select(obj.id);
 				}));
 			}
+			// watch subform here, so the first setvalue won't be watched
+			this.own(
+				aspect.after(this.subform,"cancel",lang.hitch(this,function(){
+					this.widget.clearSelection();
+					this.widget.refresh();
+				})),
+				this.subform.watch("value",lang.hitch(this,function(prop,oldVal,newVal){
+					// only update if something is selected
+					if(this.widget.isSelected(newVal.id)) this.store.put(newVal);
+				}))
+			);
 		},
 		onEdit:function(id,options){
 			options = options || {};
 			var parent = this.getParent() || this._parent;
+			this.subform.reset();
 			this.store.get(id).then(lang.hitch(this,function(data){
 				domClass.toggle(this.domNode,"dformaSubformActive",true);
 				domClass.toggle(parent.buttonNode,"dformaSubformActive",true);
