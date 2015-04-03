@@ -68,12 +68,11 @@ define([
 								data[k] = data[k][0];
 							}
 						});
-						console.warn(data)
 						self.save(data,{
 							noop:true,
 							overwrite:true
 						});*/
-						this.reset();
+						//this.reset();
 						return true;
 					}
 				});
@@ -114,7 +113,8 @@ define([
 		onEdit:function(id,options){
 			options = options || {};
 			var parent = this.getParent() || this._parent;
-			this.subform.reset();
+			//this.subform.reset();
+			// wait a short while for the subform to reset 
 			this.store.get(id).then(lang.hitch(this,function(data){
 				domClass.toggle(this.domNode,"dformaSubformActive",true);
 				domClass.toggle(parent.buttonNode,"dformaSubformActive",true);
