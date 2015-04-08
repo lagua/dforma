@@ -279,22 +279,12 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 					selector:"date"
 				}
 			break;
-			case "repeat":
-				cc.hint = c.description || "";
-				cc.nolabel = true;
-				if(!cc.store) {
-					cc.store = new FormData({
-						local:true,
-						target:parent && parent.store ? parent.store.target : null,
-						schema:cc.schema.items
-					});
-				}
-			break;
 			case "textarea":
 				cc.block = true;
 			break;
 			case "list":
 			case "grid":
+			case "repeat":
 				cc.nolabel = true;
 				cc.hint = c.description || "";
 				if(!cc.store) {
@@ -839,13 +829,10 @@ var Builder = declare("dforma.Builder",[Form,_Container,_GroupMixin],{
 			}
 			this._onChangeDelayTimer = this.defer(function(){
 				delete this._onChangeDelayTimer;
-				var newVal = this.get("value");
-				var req = this.store && this.store.processModel ? this.store.processModel.call(this.store,newVal) : new Deferred().resolve(newVal);
-				req.then(lang.hitch(this,function(obj){
-					this.selectedId = obj.id;
-					this._processChildren(obj);
-					this._set("value", obj);
-				}));
+				var obj = this.get("value");
+				this.selectedId = obj.id;
+				this._processChildren(obj);
+				this._set("value", obj);
 			}, 20);
 		}
 	},
