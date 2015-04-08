@@ -34,7 +34,6 @@ define([
 							label:common.buttonSave
 						}
 					},
-					store:this.store,
 					cancellable:true,
 					cancel: function(){
 						try {
@@ -90,16 +89,28 @@ define([
 		},
 		startup:function(){
 			this.inherited(arguments);
-			var data = this.store.fetchSync();
-			if(data.length) {
-				this.widget.select(data[0].id);
-			} else {
-				this.store.put(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(obj){
-					this.widget.select(obj.id);
-				}));
-			}
 			// watch subform here, so the first setvalue won't be watched
 			this.own(
+				aspect.after(this,"attachWidget",lang.hitch(this,function(){
+					var data = this.store.fetchSync();
+					if(data.length) {
+						this.widget.select(data[0].id);
+					} else {
+						this.store.put(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(obj){
+							this.widget.select(obj.id);
+						}));
+					}
+				})),
+				aspect.around(this.subform,"_processChildren",lang.hitch(this,function(fn){
+					return lang.hitch(this,function(newVal){
+						console.warn("_processChildren",newVal)
+						//var req = this.autoSave ? this.store.put(newVal) : this.store.processModel.call(this.store,newVal);
+						this.store.put(newVal).then(lang.hitch(this,function(obj){
+							console.warn("_processChildren2",obj)
+							fn.call(this.subform,obj);
+						}));
+					})
+				})),
 				aspect.after(this.subform,"cancel",lang.hitch(this,function(){
 					this.widget.clearSelection();
 					this.widget.refresh();
