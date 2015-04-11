@@ -4,9 +4,10 @@ define([
 	"dojo/request",
 	"dojo/Deferred",
 	"dojo/when",
-	"dojo/promise/all"
-], function(declare,lang,request,Deferred,when,all) {
-	
+	"dojo/promise/all",
+	"dstore/Memory"
+], function(declare,lang,request,Deferred,when,all,Memory) {
+	var cache = new Memory();
 	var modelUtil = lang.mixin(lang.getObject("dforma.util.model",true),{
 		substitute:function(linkTemplate, instance, exclude){
 			// modified from https://github.com/kriszyp/json-schema/blob/master/lib/links.js#L41
@@ -107,7 +108,6 @@ define([
 			options = options || {};
 			var refattr = options.refProperty || "$ref";
 			var target = options.target;
-			var cache = options.cache;
 			// allow for external properties, but won't be used when property isn't json-ref
 			var resolveProps = options.resolveProperties ? [].concat(options.resolveProperties) : [];
 			var toResolve = {};
@@ -137,7 +137,7 @@ define([
 					href = href.charAt(0) == "/" ? href : target + href;
 					cacheref[href] = key;
 					var cached = cache ? cache.getSync(href) : null;
-					toResolve[href] = cached ? new Deferred().resolve(cached.value) : request(href,args);
+					toResolve[href] = !!cached ? new Deferred().resolve(cached.value) : request(href,args);
 				}
 			});
 			var proms = {};
