@@ -10,6 +10,10 @@ define([
 	
 	return declare("dforma._SubFormMixin",null,{
 		subform:null,
+		destroyRecursive:function(){
+			this.subform && this.subform.destroyRecursive();
+			this.inherited(arguments);
+		},
 		postCreate:function(){
 			this.inherited(arguments);
 			var common = i18n.load("dforma","common");
@@ -37,11 +41,11 @@ define([
 					cancellable:true,
 					cancel: function(){
 						try {
-							domClass.toggle(self.domNode,"dformaSubformActive",false);
+							if(!self._beyingDestroyed) domClass.toggle(self.domNode,"dformaSubformActive",false);
 							domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
 							domClass.toggle(parent.hintNode,"dformaSubformActive",false);
-							domClass.toggle(this.domNode,"dijitHidden",true);
-							parent.layout();
+							if(!this._beyingDestroyed) domClass.toggle(this.domNode,"dijitHidden",true);
+							//parent.resize();
 						} catch(err) {
 							console.error("Subform domClass Error: "+err.description);
 						}
@@ -53,11 +57,11 @@ define([
 					},
 					submit: function(){
 						if(!this.validate()) return;
-						domClass.toggle(self.domNode,"dformaSubformActive",false);
+						if(!self._beyingDestroyed) domClass.toggle(self.domNode,"dformaSubformActive",false);
 						domClass.toggle(parent.buttonNode,"dformaSubformActive",false);
 						domClass.toggle(parent.hintNode,"dformaSubformActive",false);
-						domClass.toggle(this.domNode,"dijitHidden",true);
-						parent.layout();
+						if(!this._beyingDestroyed) domClass.toggle(this.domNode,"dijitHidden",true);
+						//parent.resize();
 						/*var data = this.get("value");
 						// checkboxes
 						var columns=c.columns ? c.columns : [];
@@ -77,49 +81,44 @@ define([
 				});
 				domClass.toggle(this.subform.domNode,"dijitHidden",true);
 				this.subform.own(
-					aspect.after(this.subform,"layout",lang.hitch(parent,function(){
-						this.layout();
-					})),
 					aspect.after(parent,"cancel",lang.hitch(this.subform,function(){
 						this.cancel();
 					}))
 				);
 				parent.addChild(this.subform);
+				this.own(
+					aspect.after(this,"attachWidget",lang.hitch(this,function(){
+						var data = this.store.fetchSync();
+						if(data.length) {
+							this.widget.select(data[0].id);
+						} else {
+							this.store.put(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(obj){
+								this.widget.select(obj.id);
+							}));
+						}
+					})),
+					aspect.around(this.subform,"_processChildren",lang.hitch(this,function(fn){
+						return lang.hitch(this,function(newVal){
+							if(newVal && newVal.id && this.widget.isSelected(newVal.id)){
+								this.store.processModel(newVal).then(lang.hitch(this,function(obj){
+									fn.call(this.subform,obj);
+									this.store.put(obj,{noop:true});
+								}));
+							} else {
+								fn.call(this.subform,newVal);
+							}
+						})
+					})),
+					aspect.after(this.subform,"cancel",lang.hitch(this,function(){
+						if(!this.subform.validate()){
+							var obj = this.subform.get("value");
+							this.store.remove(obj.id);
+						}
+						this.widget.clearSelection();
+						this.widget.refresh();
+					}))
+				);
 			}
-		},
-		startup:function(){
-			this.inherited(arguments);
-			// watch subform here, so the first setvalue won't be watched
-			this.own(
-				aspect.after(this,"attachWidget",lang.hitch(this,function(){
-					var data = this.store.fetchSync();
-					if(data.length) {
-						this.widget.select(data[0].id);
-					} else {
-						this.store.put(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(obj){
-							this.widget.select(obj.id);
-						}));
-					}
-				})),
-				aspect.around(this.subform,"_processChildren",lang.hitch(this,function(fn){
-					return lang.hitch(this,function(newVal){
-						console.warn("_processChildren",newVal)
-						//var req = this.autoSave ? this.store.put(newVal) : this.store.processModel.call(this.store,newVal);
-						this.store.put(newVal).then(lang.hitch(this,function(obj){
-							console.warn("_processChildren2",obj)
-							fn.call(this.subform,obj);
-						}));
-					})
-				})),
-				aspect.after(this.subform,"cancel",lang.hitch(this,function(){
-					this.widget.clearSelection();
-					this.widget.refresh();
-				})),
-				this.subform.watch("value",lang.hitch(this,function(prop,oldVal,newVal){
-					// only update if something is selected
-					if(this.widget.isSelected(newVal.id)) this.store.put(newVal);
-				}))
-			);
 		},
 		onEdit:function(id,options){
 			options = options || {};
