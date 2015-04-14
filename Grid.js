@@ -191,7 +191,6 @@ define([
 	                }
 	            }
 	 		});
-			if(this.summary) this.add = this.edit = this.remove = false;
 			var totals = this.getTotals();
 			var gridParams = {
 				columns:this.gridColumns,
@@ -221,9 +220,9 @@ define([
 			this.widget.resize();
 	 	},
 		postCreate:function(){
-			this.inherited(arguments);
 			// parse column expressions:
 			this.gridColumns = this._parseColumns(lang.mixin({},this.params.columns));
+			if(this.summary) this.add = this.edit = this.remove = false;
 			var common = i18n.load("dforma","common");
 			if(this.edit){
 				this.editButton = new Button({
@@ -245,6 +244,7 @@ define([
 					})
 				});
 			}
+			this.inherited(arguments);
 		},
 		addItem:function(){
 			this.store.add(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(data){
