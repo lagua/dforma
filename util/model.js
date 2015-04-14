@@ -140,8 +140,9 @@ define([
 					toResolve[href] = cached ? new Deferred().resolve(cached.value) : request(href,args);
 				}
 			});
+			
 			var proms = {};
-			all(toResolve).then(function(resolved){
+			var handleResponse = function(resolved){
 				var obj = {};
 				for(var href in resolved){
 					var k = cacheref[href];
@@ -170,12 +171,21 @@ define([
 					proms2[k] = new Deferred();
 					all(proms[k]).then(lang.hitch({key:k},function(resolved){
 						proms2[this.key].resolve(resolved);
-					}));
+					}),function(err){
+						console.error("Couldn't resolve "+k+". "+err.description);
+						proms2[this.key].resolve({});
+					});
 				}
 				return all(proms2).then(function(resolved){
 					lang.mixin(data,resolved);
 					d.resolve(data);
+				},function(err){
+					console.error(err.description);
+					d.resolve(data);
 				});
+			}
+			all(toResolve).then(handleResponse,function(err){
+				handleResponse({});
 			});
 			return d;
 		}
