@@ -191,6 +191,7 @@ define([
 			//	|	store.query({ prime: true }).forEach(function(object){
 			//	|		// handle each object
 			//	|	});
+			if(typeof query == "string" && query.charAt(0)=="?") query = query.substr(1);
 			options = options || {};
 
 			var results = this.filter(query);
