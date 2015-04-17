@@ -6,16 +6,19 @@ define([
 	"dojo/_base/lang",
 	"dojo/_base/array",
 	"dojo/dom-construct",
+	"dojo/dom-attr",
 	"dojo/dom-class",
+	"dojo/aspect",
 	"dgrid/OnDemandList",
+	"dgrid/Selection",
 	"dgrid/extensions/DijitRegistry",
 	"./_ArrayWidgetBase",
 	"./Group",
 	"./util/i18n",
 	"dijit/registry",
 	"dijit/form/Button"
-],function(declare,lang,array,domConstruct,domClass,
-		OnDemandList,DijitRegistry,
+],function(declare,lang,array,domConstruct,domAttr,domClass,aspect,
+		OnDemandList,Selection,DijitRegistry,
 		_ArrayWidgetBase,Group,i18n,
 		registry,Button){
 	
@@ -58,11 +61,24 @@ define([
 	 			params:params
 	 		});
 	 	},
+	 	_getValueAttr:function(){
+	 		if(!this.widget) return this.inherited(arguments);
+	 		var data = this.widget._rows.map(function(row){
+	 			return registry.byId(row.id).get("value");
+	 		});
+	 		this.store.setData(data);
+	 		return this.inherited(arguments);
+	 	},
+	 	isFocusable:function(){
+	 		return false;
+	 	},
 	 	attachWidget:function(){
 	 		var self = this;
-	 		var Widget = declare([OnDemandList, DijitRegistry],{
+	 		var Widget = declare([OnDemandList,DijitRegistry],{
 				renderRow:function(object, options){
+					var id = this.id+ '-row-' + this.collection.getIdentity(object);
 			 		var row = new Row({
+			 			id:id,
 			 			remove:self.remove,
 			 			rowIndex:object.id,
 			 			removeItem:function(){
