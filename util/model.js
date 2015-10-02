@@ -7,7 +7,26 @@ define([
 	"dojo/promise/all",
 	"dstore/Memory"
 ], function(declare,lang,request,Deferred,when,all,Memory) {
+	
 	var cache = new Memory();
+	
+	function coerce(value,type){
+		if (type === 'string') {
+			value = value ? '' + value : '';
+		} else if (type === 'number') {
+			value = +value;
+		} else if (type === 'boolean') {
+			value = !!value;
+		} else if (type === 'array') {
+			if(!(value instanceof Array)) value = new Array();
+		} else if (type === 'object') {
+			if(!(value instanceof Object)) value = new Object();
+		} else if (typeof type === 'function' && !(value instanceof type)) {
+			value = new type(value);
+		}
+		return value;
+	}
+	
 	var modelUtil = lang.mixin(lang.getObject("dforma.util.model",true),{
 		substitute:function(linkTemplate, instance, exclude){
 			// modified from https://github.com/kriszyp/json-schema/blob/master/lib/links.js#L41
@@ -35,20 +54,7 @@ define([
 				var deft = p["default"];
 				var value = data[k]!==undefined ? data[k] : deft ? deft : undefined;
 				if(type) {
-					if (type === 'string') {
-						value = value ? '' + value : '';
-					} else if (type === 'number') {
-						value = +value;
-					} else if (type === 'boolean') {
-						value = !!value;
-					} else if (type === 'array') {
-						if(!(value instanceof Array)) value = new Array();
-					} else if (type === 'object') {
-						if(!(value instanceof Object)) value = new Object();
-					} else if (typeof type === 'function' && !(value instanceof type)) {
-						value = new type(value);
-					}
-					data[k] = value;
+					data[k] = coerce(value,type);
 				}
 			}
 			if(options.mixin) lang.mixin(data,options.mixin);
@@ -185,7 +191,21 @@ define([
 				});
 			}
 			all(toResolve).then(handleResponse,function(err){
-				handleResponse({});
+				var data = {};
+				for(var url in toResolve){
+					if(toResolve[url].isRejected()) {
+						// overwrite what is rejected
+						var k = cacheref[url];
+						if(k && schema.properties[k]){
+							var p = schema.properties[k];
+							data[url] = coerce(p["default"],p.type);
+							console.warn("rejected!",k);
+						} else {
+							console.warn("No key for ",url);
+						}
+					}
+				}
+				handleResponse(data);
 			});
 			return d;
 		}
