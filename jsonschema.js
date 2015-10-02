@@ -71,6 +71,7 @@ define([
 				var prop = properties[k];
 				// TODO: add more types
 				var entry = cmap[prop.type || "string"];
+				// CONTROL type
 				var type = prop.format && entry[prop.format] ? entry[prop.format] : entry["*"];
 				// do some array type juggling
 				if(prop.items && entry.items) {
@@ -116,6 +117,9 @@ define([
 					c.constraints = {};
 					if(prop.hasOwnProperty("minimum")) c.constraints.min = prop.minimum;
 					if(prop.hasOwnProperty("maximum")) c.constraints.max = prop.maximum;
+				}
+				if(prop.type=="string" && prop.hasOwnProperty("trim")){
+					c.trim = prop.trim;
 				}
 				if(type=="list" || type=="grid") {
 					c.columns = prop.columns;
