@@ -36,11 +36,11 @@
 .dformaLabel:last-child{
 	clear:right;
 }
-.dformaGroup, .dformaRepeat {
+.dformaGroup, .dformaRepeat, .dformaList {
 	clear:both;
 	margin:10px;
 }
-.dformaGroupLabel, .dformaRepeatLabel {
+.dformaGroupLabel, .dformaRepeatLabel, .dformaListLabel {
 	font-weight:bold;
 	padding: 0 0 3px;
 }
