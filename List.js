@@ -6,19 +6,20 @@ define([
 	"dojo/dom-class",
 	"dojo/request",
 	"dojo/sniff",
+	"dojo/parser",
 	"dgrid/OnDemandList",
 	"dgrid/Keyboard",
 	"dgrid/Selection",
 	"dgrid/extensions/DijitRegistry",
 	"./_ArrayWidgetBase",
 	"./_SubFormMixin"
-],function(declare,lang,array,domConstruct,domClass,request,sniff,
+],function(declare,lang,array,domConstruct,domClass,request,sniff,parser,
 		OnDemandList, Keyboard, Selection, DijitRegistry,
 		_ArrayWidgetBase,_SubFormMixin){
 	
 	var isIE = !!sniff("ie");
 	
-	return declare("dforma.List",[_ArrayWidgetBase,_SubFormMixin],{
+	return declare("dforma.List",[_ArrayWidgetBase],{
 		baseClass:"dformaList",
 	 	attachWidget:function(){
 	 		var self = this;
@@ -34,6 +35,7 @@ define([
 							domAttr.set(_,"style",domAttr.get(_,"data-style"));
 						});
 					}
+					parser.parse(div);
 			 		return div;
 				}),
 				_singleSelectionHandler: function (event, target) {
