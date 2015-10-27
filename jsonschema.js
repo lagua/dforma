@@ -159,25 +159,29 @@ define([
 					}
 					// if it is in the schema, either internally linked or generated
 					if(link){
-						var foreignKey = link.key;
-						var idProperty = link.idProperty || "id";
-						if(link.resolution=="eager") {
-							foreignKey = k;
-							c.storeParams = {
-								idProperty:idProperty,
-								labelProperty:foreignKey//,
-								//data:data ? data[key] : []
-							};
+						if(link.href && options.stores && options.stores[link.href]){
+							c.store = options.stores[link.href];
 						} else {
-							var refar = link.href.split("?");
-							var target = refar.shift();
-							if(options.uri) target = options.uri+target;
-							c.storeParams = {
-								target:target,
-								queryString:refar.shift(),
-								idProperty:idProperty,
-								labelProperty:foreignKey
-							};
+							var foreignKey = link.key;
+							var idProperty = link.idProperty || "id";
+							if(link.resolution=="eager") {
+								foreignKey = k;
+								c.storeParams = {
+									idProperty:idProperty,
+									labelProperty:foreignKey//,
+									//data:data ? data[key] : []
+								};
+							} else {
+								var refar = link.href.split("?");
+								var target = refar.shift();
+								if(options.uri) target = options.uri+target;
+								c.storeParams = {
+									target:target,
+									queryString:refar.shift(),
+									idProperty:idProperty,
+									labelProperty:foreignKey
+								};
+							}
 						}
 					}
 				}
