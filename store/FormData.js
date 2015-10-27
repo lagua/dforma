@@ -20,7 +20,7 @@ define([
 		model:"",
 		schema:null,
 		schemaModel:"Class",
-		service:"/model/",
+		service:"model/",
 		local:false,
 		persistent:false,
 		mixin:null,
