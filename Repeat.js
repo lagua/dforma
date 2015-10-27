@@ -111,7 +111,9 @@ define([
 			this.addChild(this.widget);
 			this.addButton && this.addButton.placeAt(this.widget.footerNode);
 			if(!this.schema.hasOwnProperty("minItems") || this.schema.minItems>0){
-				if(!this.store.data.length) this.store.put(lang.clone(this.defaultInstance));
+				this.store.fetch().then(lang.hitch(this,function(res){
+					if(!res.length) this.store.put(lang.clone(this.defaultInstance));
+				}));
 			}
 			this.widget.resize();
 	 	},
