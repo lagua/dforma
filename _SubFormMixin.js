@@ -91,7 +91,7 @@ define([
 						var data = this.store.fetchSync();
 						if(data.length) {
 							this.widget.select(data[0].id);
-						} else {
+						} else if(!this.schema.hasOwnProperty("minItems") || this.schema.minItems>0){
 							this.store.put(lang.clone(this.defaultInstance)).then(lang.hitch(this,function(obj){
 								this.widget.select(obj.id);
 							}));
