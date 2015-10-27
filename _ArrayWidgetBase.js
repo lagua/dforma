@@ -57,17 +57,28 @@ define([
 	 	},
 	 	_setValueAttr:function(data){
 	 		this.inherited(arguments);
-	 		data = data || [];
+	 		data = lang.clone(data) || [];
 	 		var idProp = this.store.idProperty || "id";
 	 		var ids = data.map(function(_){
-	 			return data[idProp];
+	 			return _[idProp];
 	 		});
-	 		this.store.fetchSync().forEach(function(_){
-	 			var id = _[idProp];
-	 			if(ids.indexOf(id)==-1){
-	 				this.store.remove(id);
-	 			} 
-	 		},this);
+	 		if(!this.store.fetchSync){
+	 			var ret = this.store.fetch();
+	 			console.warn(ret)
+	 			ret.forEach(function(_){
+		 			var id = _[idProp];
+		 			if(ids.indexOf(id)==-1){
+		 				this.store.remove(id);
+		 			} 
+		 		},this);
+			} else {
+		 		this.store.fetchSync().forEach(function(_){
+		 			var id = _[idProp];
+		 			if(ids.indexOf(id)==-1){
+		 				this.store.remove(id);
+		 			} 
+		 		},this);
+			}
 	 		// TODO means we have a Memory type store?
 	 		data.forEach(function(obj){
 	 			this.store.put(obj);
