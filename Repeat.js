@@ -14,14 +14,15 @@ define([
 	"dgrid/extensions/DijitRegistry",
 	"./_ArrayWidgetBase",
 	"./Group",
+	"./Label",
 	"./util/i18n",
 	"dijit/registry",
 	"dijit/form/Button"
 ],function(declare,lang,array,domConstruct,domAttr,domClass,aspect,
 		OnDemandList,Selection,DijitRegistry,
-		_ArrayWidgetBase,Group,i18n,
+		_ArrayWidgetBase,Group,Label,i18n,
 		registry,Button){
-	
+
 	var Row = declare("dforma.RepeatRow",[Group],{
 		edit:true,
 		remove:true,
@@ -42,17 +43,17 @@ define([
 			}
 		},
 		destroyRecursive:function(){
-			this.removeButton && this.removeButton.destroy();
+			if(this.removeButton) this.removeButton.destroy();
 			this.inherited(arguments);
 		}
 	});
-	
+
 	return declare("dforma.Repeat",[_ArrayWidgetBase],{
 		baseClass:"dformaRepeat",
 		_controls:null,
 		postCreate:function(){
 			this._controls = [];
-			this.remove = !this.schema.hasOwnProperty("delete") || this.schema["delete"];
+			this.remove = this.schema ? !this.schema.hasOwnProperty("delete") || this.schema["delete"] : null;
 			this.inherited(arguments);
 		},
 		addControl:function(Widget,params){
@@ -88,9 +89,28 @@ define([
 			 			}
 			 		});
 			 		array.forEach(self._controls,function(_){
-						_.params.row = row;
-						var widget = new _.Widget(_.params);
-						row.addChild(widget);
+						var cc = _.params;
+						cc.row = row;
+						var co = row.controlWidgetMapper(cc,_.Widget,row);
+						if(cc.type=="checkbox") {
+							var l = new Label({
+								label:cc.label ? cc.label : cc.name.toProperCase(),
+								"class":"dformaLabelFor"+cc.type.toProperCase(),
+								child:co,
+								title:cc.description /*&& !c.schema.dialog*/ ? cc.description : cc.label
+							});
+				 			l.on("click", function(evt){
+				 				if(evt.target.nodeName=="INPUT") return;
+				 				co.set("checked",!co.checked);
+				 			});
+							if(cc.refNode) {
+					 			l.placeAt(cc.refNode,"replace");
+					 		} else {
+					 			row.addChild(l);
+					 		}
+				 		} else {
+							row.addChild(co);
+						}
 					});
 			 		row.startup();
 			 		row.set("value",object);
@@ -99,7 +119,7 @@ define([
 				removeRow:function(rowElement){
 					var w = registry.byNode(rowElement);
 					w.destroyRecursive();
-					delete w;
+					//delete w;
 					this.inherited(arguments);
 				}
 			});
@@ -109,16 +129,15 @@ define([
 				selectionMode:"single"
 			});
 			this.addChild(this.widget);
-			this.addButton && this.addButton.placeAt(this.widget.footerNode);
+			if(this.addButton) this.addButton.placeAt(this.widget.footerNode);
 			if(!this.schema.hasOwnProperty("minItems") || this.schema.minItems>0){
-				this.store.fetch().then(lang.hitch(this,function(res){
-					if(!res.length) this.store.put(lang.clone(this.defaultInstance));
-				}));
+				var res = this.store.fetchSync();
+				if(!res.length) this.addItem();
 			}
 			this.widget.resize();
 	 	},
 	 	addItem:function(){
-			this.store.add(lang.clone(this.defaultInstance));
+			this.store.addSync(lang.clone(this.defaultInstance));
 		}
 	});
 });
