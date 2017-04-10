@@ -12,10 +12,10 @@ define([
 	"./util/i18n",
 	"dojo/text!./templates/_ArrayWidgetBase.html"
 ],function(declare,lang,domClass,aspect,
-		_Contained,_Container, Button, 
+		_Contained,_Container, Button,
 		_FormValueWidget,_TemplatedMixin,FormData,i18n,
 		templateString){
-	
+
 	return declare("dforma._ArrayWidgetMixin",[_FormValueWidget,_TemplatedMixin,_Contained,_Container],{
 		store:null,
 		newdata:false,
@@ -44,7 +44,7 @@ define([
 			// description:
 			//		Set the label (text) of the button; takes an HTML string.
 			this._set("label", content);
-			this["labelNode"].innerHTML = content;
+			this.labelNode.innerHTML = content;
 			domClass.toggle(this.labelNode,"dijitHidden",!this.label);
 	 	},
 	 	_getValueAttr:function(){
@@ -59,29 +59,32 @@ define([
 	 		this.inherited(arguments);
 	 		data = lang.clone(data) || [];
 	 		var idProp = this.store.idProperty || "id";
-	 		var ids = data.map(function(_){
+			// use this to remove duplicates
+			// however, ignore generated ids
+			// nevermind I totally don't understand anymore
+	 		var ids = this.store.fetchSync().map(function(_){
 	 			return _[idProp];
-	 		});
-	 		if(!this.store.fetchSync){
+	 		}).filter(function(_){
+				return !!_;
+			});
+	 		/*if(!this.store.fetchSync){
 	 			var ret = this.store.fetch();
-	 			console.warn(ret)
+	 			console.warn(ret);
 	 			ret.forEach(function(_){
 		 			var id = _[idProp];
 		 			if(ids.indexOf(id)==-1){
 		 				this.store.remove(id);
-		 			} 
+		 			}
 		 		},this);
-			} else {
-		 		this.store.fetchSync().forEach(function(_){
-		 			var id = _[idProp];
-		 			if(ids.indexOf(id)==-1){
-		 				this.store.remove(id);
-		 			} 
-		 		},this);
-			}
+			} else {*/
+				// console.log(ret);
+				ids.forEach(function(_){
+	 	 			this.store.remove(_);
+				},this);
+			//}
 	 		// TODO means we have a Memory type store?
 	 		data.forEach(function(obj){
-	 			this.store.put(obj);
+	 			this.store.putSync(obj);
 	 		},this);
 	 	},
 	 	destroyRecursive:function(){
