@@ -16,7 +16,11 @@ return declare("dforma.Label",[_Widget,_TemplatedMixin,_Container,_Contained],{
  	startup: function(){
  		if(this._started){ return; } // prevent double-triggering
 		this.inherited(arguments);
-		domClass.remove(this.id+"_label_"+this.position,"dijitHidden");
+		try {
+			domClass.remove(this["labelNode_"+this.position],"dijitHidden");
+		} catch(err) {
+			console.error(err);
+		}
 		if(this.child) {
 			if(this.child.required) domClass.add(this.id+"_label_"+this.position,"dformaRequired");
 			if(this.child.block) domClass.add(this.domNode,"dformaBlock");
