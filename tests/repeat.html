@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="../../dijit/themes/claro/claro.css"/>
+        <link rel="stylesheet" href="../../dgrid/css/skins/claro.css"/>
+        <script src="../../dojo/dojo.js" data-dojo-config="async:true,locale:'en-us'"></script>
+        <style>
+        	.dexistCollectionBrowser {
+        		height:100%;
+        		min-height:500px;
+        	}
+        </style>
+        <script type="text/javascript">
+			require(["dforma/Builder","dforma/Group","dijit/form/TextBox","dojo/domReady!"],function(Builder,Group,TextBox){
+				var builder = new Builder({
+					data:{
+						controls:[{
+							type:"repeat",
+							name:"group",
+							schema:{
+								items:{
+									type:"object"
+								}
+							},
+							controls:[{
+								name:"title",
+								type:"input"
+							}]
+						}]
+					}
+				});
+				builder.placeAt(document.body);
+				builder.startup();
+			});
+    	</script>
+    </head>
+    <body class="claro">
+    </body>
+</html>
