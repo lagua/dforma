@@ -14,7 +14,7 @@ define([
 	"dstore/Trackable",
 	"dforma/util/model"
 ], function(declare,lang,arrayUtil,aspect,Deferred,when,request,QueryResults,Memory,Rest,LocalDB,SimpleQuery,Trackable,modelUtil) {
-	
+
 	return declare("dforma.store.FormData",[],{
 		idProperty: "id",
 		model:"",
@@ -27,25 +27,28 @@ define([
 		cache:null,
 		refProperty:"_ref",
 		getSchema:function(sync){
-			if(this.schema || !this.model) return new Deferred().resolve(this.schema);
+			if(this.schema || !this.model) {
+			    if(this.schema instanceof Deferred) return this.schema;
+			    return new Deferred().resolve(this.schema);
+			}
 			var uri = this.service+this.schemaModel+"/"+this.model;
-			var req = request(uri,{
+			this.schema = request(uri,{
 				handleAs:"json",
 				sync:!!sync,
 				headers:{
 					accept:"application/json"
 				}
     		});
-			when(req,lang.hitch(this,function(schema){
+			when(this.schema,lang.hitch(this,function(schema){
 				this.schema = schema;
 				for(var k in schema.properties) {
 					if(schema.properties[k].primary) this.idProperty = k;
 					if(schema.properties[k].hrkey) this.hrProperty = k;
 				}
 			}),function(err){
-				// let slip
+				console.error("Schema " + uri + " not available",err);
 			});
-			return req;
+			return this.schema;
 		},
 		processModel: function(object,options,req) {
 			options = options || {};
@@ -263,5 +266,5 @@ define([
 
 		}
 	});
-	
+
 });
